@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NON | مركز قيادة مسؤول النظام</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--orange:#ea580c;--blue:#0284c7;--green:#059669;--red:#dc2626}
+*{box-sizing:border-box;font-family:Tahoma,Arial,sans-serif}body{margin:0;background:var(--bg);color:var(--ink);padding:14px;direction:rtl}
+body.dark{--bg:#0b1220;--card:#172033;--ink:#f8fafc;--muted:#a7b3c5;--line:#334155}
+header{background:linear-gradient(120deg,#0f172a,#1e293b);color:#fff;padding:20px;border-radius:16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:22px;margin:0 0 6px;color:#fb923c}h2{font-size:17px;margin:0 0 12px;color:var(--orange)}
+button,a.btn{border:0;border-radius:9px;padding:10px 14px;font-weight:bold;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;font-size:13px}
+.orange{background:var(--orange);color:white}.blue{background:var(--blue);color:white}.green{background:var(--green);color:white}.red{background:var(--red);color:white}.gray{background:#334155;color:#fff}.soft{background:var(--card);border:1px solid var(--line);color:var(--ink)}
+.layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px}.sidebar,.card,.stat{background:var(--card);border:1px solid var(--line);border-radius:13px}
+.sidebar{padding:12px;height:max-content;position:sticky;top:12px}.nav{display:flex;flex-direction:column;gap:6px}.nav button{justify-content:flex-start;background:transparent;color:var(--ink);text-align:right}.nav button.active,.nav button:hover{background:rgba(234,88,12,.12);color:var(--orange)}
+main{min-width:0}.section{display:none}.section.active{display:block}.card{padding:15px;margin-bottom:13px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:13px}.stat{padding:14px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:24px;margin-top:5px;color:var(--orange)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.dept{border:1px solid var(--line);border-radius:11px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--card)}
+.dept b{display:block;margin-bottom:4px}.muted{color:var(--muted);font-size:12px}input,textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);margin-top:6px}textarea{min-height:95px;resize:vertical}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.switch{position:relative;width:48px;height:27px;flex:0 0 48px}.switch input{display:none}.slider{position:absolute;inset:0;background:#94a3b8;border-radius:30px;cursor:pointer}.slider:before{content:"";position:absolute;width:19px;height:19px;right:4px;top:4px;background:#fff;border-radius:50%;transition:.2s}.switch input:checked+.slider{background:#10b981}.switch input:checked+.slider:before{transform:translateX(-21px)}
+.pill{padding:4px 8px;border-radius:20px;font-size:11px;font-weight:bold}.on{background:#dcfce7;color:#166534}.off{background:#fee2e2;color:#991b1b}.log{padding:9px;border-bottom:1px solid var(--line);font-size:12px}.log:last-child{border:0}.notice{padding:12px;border-radius:9px;background:rgba(2,132,199,.1);border:1px solid var(--blue);line-height:1.8;margin-bottom:12px}.dangerbox{background:rgba(220,38,38,.08);border:1px solid var(--red);padding:12px;border-radius:10px;line-height:1.8}
+#lockScreen{position:fixed;inset:0;background:#0f172a;z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;color:white}#lockScreen .box{width:min(420px,100%);background:#1e293b;padding:24px;border-radius:16px;text-align:center;border:1px solid #475569}#lockScreen input{background:#fff;color:#111;text-align:center;font-size:20px;letter-spacing:5px}
+#toast{position:fixed;bottom:18px;left:18px;background:#0f172a;color:#fff;padding:12px 16px;border-radius:9px;display:none;z-index:100000}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{position:static}.nav{display:grid;grid-template-columns:repeat(3,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:580px){body{padding:7px}.grid2,.grid3{grid-template-columns:1fr}.nav{grid-template-columns:repeat(2,1fr)}header{padding:14px}}
+</style></head>
+<body>
+<div id="lockScreen"><div class="box"><div style="font-size:42px">🛡️</div><h2 style="color:#fb923c">مسؤول نظام أوتو نون</h2><p>أدخل رمز المسؤول لفتح لوحة التحكم</p><input id="pinInput" type="password" inputmode="numeric" placeholder="••••••" maxlength="12"><button class="orange" style="width:100%;justify-content:center;margin-top:12px" onclick="unlock()">فتح لوحة التحكم</button><p class="muted" style="margin-top:12px;color:#cbd5e1">أول تشغيل: الرمز الافتراضي 246810 — غيّره فور الدخول.</p></div></div>
+<header><div><h1><i class="fa-solid fa-shield-halved"></i> مركز قيادة NON</h1><div>لوحة مسؤول النظام وإدارة المشروع والصيانة التقنية</div></div><div class="row" style="flex:0 1 auto"><button class="soft" onclick="toggleTheme()">الوضع الليلي</button><button class="red" onclick="lockPanel()">قفل اللوحة</button></div></header>
+<div class="layout">
+<aside class="sidebar"><div class="nav">
+<button class="active" data-tab="overview" onclick="tab('overview',this)">📊 نظرة عامة</button>
+<button data-tab="departments" onclick="tab('departments',this)">🧩 الأقسام</button>
+<button data-tab="system" onclick="tab('system',this)">🔐 تحكم النظام</button>
+<button data-tab="diagnostics" onclick="tab('diagnostics',this)">🩺 الفحص والإصلاح</button>
+<button data-tab="assistant" onclick="tab('assistant',this)">🤖 مساعد المصمم AI</button>
+<button data-tab="backup" onclick="tab('backup',this)">💾 النسخ والإعدادات</button>
+<button data-tab="logs" onclick="tab('logs',this)">📜 سجل العمليات</button>
+</div><hr style="border:0;border-top:1px solid var(--line);margin:13px 0"><a class="btn soft" href="diagnosis.html">العودة للتشخيص</a></aside>
+<main>
+<section id="overview" class="section active">
+<div class="stats">
+<div class="stat"><small>الأقسام المفتوحة</small><strong id="openCount">—</strong></div>
+<div class="stat"><small>الأقسام المغلقة</small><strong id="closedCount">—</strong></div>
+<div class="stat"><small>حالة النظام</small><strong id="systemState" style="font-size:18px">—</strong></div>
+<div class="stat"><small>اتصال قاعدة البيانات</small><strong id="dbState" style="font-size:18px">جارٍ الفحص</strong></div>
+</div>
+<div class="card"><h2>ملخص حالة المشروع</h2><div id="overviewText" class="notice">جاري تحميل إعدادات النظام من Firebase...</div><div class="row"><button class="blue" onclick="refreshStatus()">تحديث الحالة</button><button class="soft" onclick="tab('diagnostics')">تشغيل فحص النظام</button><button class="soft" onclick="tab('departments')">إدارة الأقسام</button></div></div>
+<div class="card"><h2>اختصارات المسؤول</h2><div class="grid3"><a class="btn soft" href="diagnosis.html">التشخيص والاستقبال</a><a class="btn soft" href="quick_maintenance.html">الصيانة السريعة</a><a class="btn soft" href="wash.html">المغسلة</a><a class="btn soft" href="painting.html">السمكرة والدهان</a><a class="btn soft" href="brakes_suspension.html">الفرامل والعفشة</a><a class="btn soft" href="electricity.html">الكهرباء والبرمجة</a><a class="btn soft" href="upholstery.html">السروجي والتنجيد</a></div></div>
+</section>
+<section id="departments" class="section">
+<div class="card"><h2>فتح وإغلاق الأقسام</h2><p class="muted">التغيير يُحفظ في Firebase ويُطبق مباشرة على الصفحات المتصلة بنفس المشروع.</p><div id="departmentList" class="grid2" style="margin-top:12px"></div><div class="row" style="margin-top:12px"><button class="green" onclick="setAllDepartments(true)">فتح كل الأقسام</button><button class="red" onclick="setAllDepartments(false)">إغلاق كل الأقسام</button></div></div>
+</section>
+<section id="system" class="section">
+<div class="card"><h2>التحكم العام</h2><div class="dept"><div><b>إيقاف النظام بالكامل</b><span class="muted">يمنع دخول صفحات الأقسام عند تفعيله، وتظل لوحة المسؤول متاحة.</span></div><label class="switch"><input id="systemLocked" type="checkbox" onchange="toggleSystemLock(this.checked)"><span class="slider"></span></label></div>
+<div class="dept" style="margin-top:10px"><div><b>وضع الصيانة</b><span class="muted">يعرض تنبيه الصيانة ويوقف استخدام الأقسام مؤقتًا.</span></div><label class="switch"><input id="maintenanceMode" type="checkbox" onchange="toggleMaintenance(this.checked)"><span class="slider"></span></label></div>
+<div class="row" style="margin-top:14px"><button class="blue" onclick="saveSettings()">حفظ الإعدادات</button><button class="soft" onclick="resetSettings()">استعادة إعدادات التشغيل الافتراضية</button></div></div>
+<div class="card"><h2>قفل لوحة المسؤول</h2><div class="row"><div><label>رمز جديد</label><input id="newPin" type="password" maxlength="12" inputmode="numeric" placeholder="من 4 إلى 12 رقمًا"></div><div><label>تأكيد الرمز</label><input id="confirmPin" type="password" maxlength="12" inputmode="numeric" placeholder="أعد كتابة الرمز"></div></div><button class="orange" style="margin-top:10px" onclick="changePin()">تغيير رمز اللوحة</button><p class="muted" style="margin-top:8px">ملاحظة أمنية: قفل الواجهة ورمزها حماية تشغيلية على هذا المتصفح، وليس بديلًا عن Firebase Authentication وقواعد Firestore.</p></div>
+<div class="dangerbox"><b>تنبيه:</b> لا تستخدم إغلاق كل الأقسام إلا عند الحاجة؛ السيارات الموجودة داخل الأقسام ستظل بياناتها محفوظة في قاعدة البيانات.</div>
+</section>
+<section id="diagnostics" class="section">
+<div class="card"><h2>الفحص الذاتي</h2><p class="muted">يفحص اتصال الإنترنت وFirebase وقراءة إعدادات التحكم. لا يغيّر بيانات السيارات.</p><div class="row" style="margin:12px 0"><button class="blue" onclick="runDiagnostics()">تشغيل الفحص</button><button class="green" onclick="repairSettings()">إصلاح إعدادات التحكم</button></div><div id="diagnosticResults" class="notice">اضغط تشغيل الفحص لعرض النتائج.</div></div>
+<div class="card"><h2>مركز الأعطال</h2><div id="issueList" class="muted">لم يتم تسجيل أعطال بعد.</div></div>
+</section>
+<section id="assistant" class="section">
+<div class="card"><h2>مساعد مصمم المشروع</h2><div class="notice">المساعد هنا يجهز طلبات تطوير دقيقة مبنية على مشروع NON ويرسلها إلى ChatGPT لاقتراح كود أو إصلاح. لا يوجد مفتاح API مدمج داخل ملفات HTML حفاظًا على أمانه.</div>
+<label>نوع المساعدة</label><select id="aiTask"><option>إضافة ميزة جديدة</option><option>إصلاح خطأ برمجي</option><option>تطوير واجهة وتصميم</option><option>ربط قسم بقاعدة البيانات</option><option>تحسين الأداء والسرعة</option><option>مراجعة الأمان والصلاحيات</option><option>إنشاء تقرير أو لوحة إحصائيات</option></select>
+<label>اسم الصفحة أو القسم</label><input id="aiPage" placeholder="مثال: قسم التشخيص أو المخزن أو الحسابات">
+<label>اشرح المطلوب أو المشكلة</label><textarea id="aiRequest" placeholder="اكتب ما تريد إضافته أو رسالة الخطأ التي تظهر لك..."></textarea>
+<label>ملاحظات إضافية (اختياري)</label><textarea id="aiNotes" placeholder="مثال: حافظ على Firebase والوظائف الحالية، واجعل التصميم عربي RTL..."></textarea>
+<div class="row" style="margin-top:10px"><button class="orange" onclick="openAI()">فتح المساعد في ChatGPT</button><button class="soft" onclick="copyAIPrompt()">نسخ طلب التطوير</button></div><textarea id="aiPrompt" readonly placeholder="سيظهر هنا طلب التطوير الجاهز..." style="margin-top:10px"></textarea></div>
+</section>
+<section id="backup" class="section">
+<div class="card"><h2>نسخ إعدادات النظام</h2><p class="muted">هذه النسخة تشمل إعدادات لوحة التحكم والأقسام والسجل، ولا تشمل ملفات السيارات أو الصور.</p><div class="row" style="margin-top:10px"><button class="blue" onclick="exportBackup()">تصدير نسخة JSON</button><button class="soft" onclick="document.getElementById('backupFile').click()">استيراد نسخة إعدادات</button><input id="backupFile" type="file" accept=".json,application/json" hidden onchange="importBackup(this)"></div></div>
+<div class="card"><h2>إعدادات متقدمة للمصمم</h2><label>اسم النظام</label><input id="systemName" value="مركز أوتو نون NON"><label>ملاحظات إصدار المشروع</label><textarea id="releaseNotes" placeholder="سجل رقم الإصدار والتعديلات التي أجريتها..."></textarea><button class="green" style="margin-top:10px" onclick="saveProjectMeta()">حفظ بيانات الإصدار</button></div>
+</section>
+<section id="logs" class="section"><div class="card"><h2>سجل عمليات المسؤول</h2><div id="logsList" class="muted">لا توجد عمليات بعد.</div><button class="soft" style="margin-top:10px" onclick="clearLogs()">مسح السجل المحلي</button></div></section>
+</main></div><div id="toast"></div>
+<script>
+const firebaseConfig={apiKey:"AIzaSyAo4cdiLNInZoVPA6kDUl1tWaxcLVtKk",authDomain:"auto-non-b841f.firebaseapp.com",projectId:"auto-non-b841f",storageBucket:"auto-non-b841f.firebasestorage.app",messagingSenderId:"512423300329",appId:"1:512423300329:web:190310e1c4b80c9921b478",measurementId:"G-ZG5RQBB3GL"};
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore(),controlRef=db.collection("system_control").doc("main");
+const DEPTS=[
+{id:"diagnosis",name:"الاستقبال والتشخيص",file:"diagnosis.html",icon:"🩺"},
+{id:"quick_maintenance",name:"الصيانة السريعة",file:"quick_maintenance.html",icon:"⚡"},
+{id:"brakes_suspension",name:"الفرامل والعفشة",file:"brakes_suspension.html",icon:"🛑"},
+{id:"painting",name:"السمكرة والدهان",file:"painting.html",icon:"🚗"},
+{id:"upholstery",name:"السروجي والتنجيد",file:"upholstery.html",icon:"💺"},
+{id:"electricity",name:"الكهرباء والبرمجة والتكييف",file:"electricity.html",icon:"🔌"},
+{id:"wash",name:"المغسلة والخدمات",file:"wash.html",icon:"🧽"},
+{id:"mechanics",name:"الميكانيكا",file:"mechanics.html",icon:"⚙️"},
+{id:"tires",name:"الكاوتش والترصيص",file:"tires.html",icon:"🛞"}
+];
+let state={systemLocked:false,maintenanceMode:false,sections:{},projectMeta:{},updatedAt:null},unsubscribe=null;
+function toast(s){const t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",2600)}
+function tab(id,btn){document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");else document.querySelector('[data-tab="'+id+'"]')?.classList.add("active")}
+function defaultState(){return {systemLocked:false,maintenanceMode:false,sections:Object.fromEntries(DEPTS.map(d=>[d.id,true])),projectMeta:{name:"مركز أوتو نون NON",releaseNotes:""},updatedAt:new Date().toISOString()}}
+function ensurePin(){if(!localStorage.getItem("non_admin_pin"))localStorage.setItem("non_admin_pin","246810")}
+function unlock(){ensurePin();if(document.getElementById("pinInput").value===localStorage.getItem("non_admin_pin")){sessionStorage.setItem("non_admin_unlocked","1");document.getElementById("lockScreen").style.display="none";log("فتح لوحة المسؤول");}else alert("رمز المسؤول غير صحيح.");}
+function lockPanel(){sessionStorage.removeItem("non_admin_unlocked");document.getElementById("lockScreen").style.display="flex";document.getElementById("pinInput").value=""}
+function changePin(){const a=document.getElementById("newPin").value,b=document.getElementById("confirmPin").value;if(!/^\d{4,12}$/.test(a)||a!==b)return alert("أدخل رمزًا من 4 إلى 12 رقمًا وتأكد من تطابقه.");localStorage.setItem("non_admin_pin",a);document.getElementById("newPin").value=document.getElementById("confirmPin").value="";log("تغيير رمز لوحة المسؤول");toast("تم تغيير الرمز على هذا المتصفح");}
+function toggleTheme(){document.body.classList.toggle("dark");localStorage.setItem("non_admin_dark",document.body.classList.contains("dark")?"1":"0")}
+function log(msg){let a=JSON.parse(localStorage.getItem("non_admin_logs")||"[]");a.unshift({msg,at:new Date().toLocaleString("ar-EG")});localStorage.setItem("non_admin_logs",JSON.stringify(a.slice(0,150)));renderLogs()}
+function renderLogs(){let a=JSON.parse(localStorage.getItem("non_admin_logs")||"[]");document.getElementById("logsList").innerHTML=a.length?a.map(x=>`<div class="log"><b>${escapeHtml(x.msg)}</b><div class="muted">${escapeHtml(x.at)}</div></div>`).join(""):"لا توجد عمليات بعد."}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){const box=document.getElementById("departmentList");box.innerHTML=DEPTS.map(d=>{const on=state.sections?.[d.id]!==false;return `<div class="dept"><div><b>${d.icon} ${d.name}</b><span class="muted">${d.file}</span><div style="margin-top:6px"><span class="pill ${on?"on":"off"}">${on?"مفتوح":"مغلق"}</span></div></div><label class="switch"><input type="checkbox" ${on?"checked":""} onchange="setDepartment('${d.id}',this.checked)"><span class="slider"></span></label></div>`}).join("");
+let vals=DEPTS.map(d=>state.sections?.[d.id]!==false);document.getElementById("openCount").textContent=vals.filter(Boolean).length;document.getElementById("closedCount").textContent=vals.filter(x=>!x).length;document.getElementById("systemState").textContent=state.systemLocked?"متوقف":state.maintenanceMode?"صيانة":"يعمل";document.getElementById("systemLocked").checked=!!state.systemLocked;document.getElementById("maintenanceMode").checked=!!state.maintenanceMode;document.getElementById("systemName").value=state.projectMeta?.name||"مركز أوتو نون NON";document.getElementById("releaseNotes").value=state.projectMeta?.releaseNotes||"";document.getElementById("overviewText").textContent=state.systemLocked?"النظام متوقف بالكامل حاليًا.":state.maintenanceMode?"وضع الصيانة مفعل.":`النظام يعمل. ${vals.filter(Boolean).length} أقسام مفتوحة من أصل ${DEPTS.length}.`;renderLogs()}
+async function saveSettings(){try{await controlRef.set({...state,updatedAt:new Date().toISOString()},{merge:true});log("حفظ إعدادات النظام");toast("تم حفظ الإعدادات");}catch(e){showIssue("تعذر حفظ الإعدادات: "+e.message);}}
+async function setDepartment(id,on){state.sections=state.sections||{};state.sections[id]=on;await saveSettings();render()}
+async function setAllDepartments(on){if(!confirm(on?"فتح جميع الأقسام؟":"إغلاق جميع الأقسام؟"))return;DEPTS.forEach(d=>state.sections[d.id]=on);await saveSettings();render();log(on?"فتح جميع الأقسام":"إغلاق جميع الأقسام")}
+async function toggleSystemLock(on){state.systemLocked=on;await saveSettings();render()}
+async function toggleMaintenance(on){state.maintenanceMode=on;await saveSettings();render()}
+async function resetSettings(){if(!confirm("استعادة إعدادات التشغيل الافتراضية وفتح الأقسام؟"))return;state=defaultState();await saveSettings();render();log("استعادة الإعدادات الافتراضية")}
+function refreshStatus(){if(unsubscribe){unsubscribe();unsubscribe=null}connect()}
+function connect(){document.getElementById("dbState").textContent="جارٍ الاتصال";unsubscribe=controlRef.onSnapshot(s=>{document.getElementById("dbState").textContent="متصل";if(s.exists)state={...defaultState(),...s.data(),sections:{...defaultState().sections,...(s.data().sections||{})}};else state=defaultState();render()},e=>{document.getElementById("dbState").textContent="خطأ";showIssue("Firebase: "+e.message)})}
+function showIssue(s){document.getElementById("issueList").innerHTML='<div style="color:#dc2626;padding:8px">'+escapeHtml(s)+'</div>';toast(s)}
+async function runDiagnostics(){const r=[];r.push(["الاتصال بالإنترنت",navigator.onLine?"متاح":"غير متاح"]);r.push(["Firebase SDK",window.firebase?"تم التحميل":"غير متاح"]);try{await controlRef.get();r.push(["قراءة إعدادات التحكم","ناجحة"]);r.push(["معرّف المشروع",firebase.app().options.projectId]);}catch(e){r.push(["قراءة إعدادات التحكم","فشلت: "+e.message]);}document.getElementById("diagnosticResults").innerHTML=r.map(x=>`<div style="padding:6px;border-bottom:1px solid var(--line)"><b>${escapeHtml(x[0])}:</b> ${escapeHtml(x[1])}</div>`).join("");document.getElementById("issueList").textContent=r.filter(x=>String(x[1]).includes("فشل")||String(x[1]).includes("غير")).map(x=>x.join(": ")).join(" | ")||"لا توجد مشكلة مكتشفة في الفحوص الأساسية.";log("تشغيل الفحص الذاتي")}
+async function repairSettings(){if(!confirm("سيتم إصلاح وثيقة إعدادات التحكم فقط دون لمس بيانات السيارات. متابعة؟"))return;try{const snap=await controlRef.get();const cur=snap.exists?snap.data():{};await controlRef.set({...defaultState(),...cur,sections:{...defaultState().sections,...(cur.sections||{})},updatedAt:new Date().toISOString()},{merge:true});toast("تم إصلاح/إنشاء إعدادات التحكم");log("إصلاح إعدادات التحكم");}catch(e){showIssue("فشل الإصلاح: "+e.message)}}
+function buildPrompt(){const task=document.getElementById("aiTask").value,page=document.getElementById("aiPage").value,req=document.getElementById("aiRequest").value,notes=document.getElementById("aiNotes").value;return `أنت مساعد برمجي خبير في تطوير نظام مركز صيانة سيارات اسمه Auto NON.\nالمشروع يستخدم HTML/CSS/JavaScript وFirebase Firestore وStorage، والواجهات عربية RTL.\nنوع المهمة: ${task}\nالصفحة/القسم: ${page||"غير محدد"}\nالمطلوب: ${req||"يرجى مساعدتي في تحديد الحل"}\nملاحظات: ${notes||"حافظ على الوظائف الحالية والبيانات والربط مع Firebase."}\nقبل تعديل الكود: حلل الملفات ذات الصلة، لا تحذف أي وظيفة قائمة، اشرح الملفات التي ستتغير، ثم أعطني الملفات كاملة بعد التعديل مع اختبار أخطاء JavaScript وتوضيح أي إعدادات Firebase لازمة. لا تضع مفاتيح سرية داخل الواجهة الأمامية.`}
+function copyAIPrompt(){const p=buildPrompt();document.getElementById("aiPrompt").value=p;navigator.clipboard?.writeText(p).then(()=>toast("تم نسخ طلب التطوير")).catch(()=>toast("تم تجهيز الطلب للنسخ يدويًا"))}
+function openAI(){const p=buildPrompt();document.getElementById("aiPrompt").value=p;window.open("https://chatgpt.com/?q="+encodeURIComponent(p),"_blank")}
+function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="NON_system_settings_backup.json";a.click();URL.revokeObjectURL(a.href);log("تصدير نسخة إعدادات")}
+function importBackup(input){const f=input.files?.[0];if(!f)return;const rd=new FileReader();rd.onload=async()=>{try{const x=JSON.parse(rd.result);if(!x.sections)throw Error("ملف الإعدادات غير صالح");state={...defaultState(),...x};await saveSettings();render();log("استيراد نسخة إعدادات")}catch(e){alert("تعذر الاستيراد: "+e.message)}};rd.readAsText(f)}
+async function saveProjectMeta(){state.projectMeta={name:document.getElementById("systemName").value,releaseNotes:document.getElementById("releaseNotes").value};await saveSettings();log("تحديث بيانات إصدار المشروع")}
+function clearLogs(){if(confirm("مسح سجل العمليات من هذا المتصفح؟")){localStorage.removeItem("non_admin_logs");renderLogs()}}
+document.addEventListener("DOMContentLoaded",()=>{ensurePin();if(localStorage.getItem("non_admin_dark")==="1")document.body.classList.add("dark");if(sessionStorage.getItem("non_admin_unlocked")==="1")document.getElementById("lockScreen").style.display="none";document.getElementById("pinInput").addEventListener("keydown",e=>{if(e.key==="Enter")unlock()});connect();});
+</script></body></html>
