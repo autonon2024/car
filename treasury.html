@@ -306,9 +306,9 @@
       <div class="stat-title" id="lblStatValue">رصيد المخزن (إجمالي القيمة)</div>
       <div class="stat-value" id="statStoreValue">0 ج.م</div>
     </div>
-    <div class="stat-card green" id="statCardNetProfit" onclick="toggleWarehouseNetProfit()">
+    <div class="stat-card green" id="statCardNetProfit" onclick="revealWarehouseNetProfit()" title="اضغط لإظهار إجمالي صافي الربح بكلمة مرور">
       <div class="stat-title">إجمالي صافي ربح المخزن</div>
-      <div class="stat-value" id="statNetProfit">••••••••</div>
+      <div class="stat-value" id="statNetProfit">0 ج.م</div>
     </div>
     <div class="stat-card red" onclick="openGeneralLogModal('التالف', 'تالف وهوالك')" id="statCardDamaged">
       <div class="stat-title" id="lblStatDamaged">إجمالي التالف (عرض وسجل)</div>
@@ -387,7 +387,7 @@
                     <button type="button" class="btn-action-sm btn-blue" onclick="generateRandomBarcode()">توليد</button>
                   </div>
                 </div>
-                <div class="form-field"><label>الرصيد السابق (الافتتاحي):</label><input type="number" id="itemQty" required min="0" step="1" value="0" placeholder="0"></div>
+                <div class="form-field"><label>الكمية الافتتاحية:</label><input type="number" id="itemQty" required min="0" step="1" value="0" placeholder="0"></div>
                 <div class="form-field"><label>تنبيه النقص عند وصول الكمية إلى:</label><input type="number" id="itemMinQty" required min="0" step="1" value="2" placeholder="2"><small style="color:#64748b;">مثال: 2 يعني يظهر تنبيه عندما يصبح الرصيد 2 أو أقل.</small></div>
                 
                 <div class="form-field">
@@ -506,7 +506,7 @@
       </div>
       <div class="card-box" id="tableInventoryCard">
         <div class="card-title">
-          <span><i class="fa-solid fa-boxes-stacked"></i> المخازن والأصناف (الأرصدة والمبيع)</span>
+          <span><i class="fa-solid fa-boxes-stacked"></i> المخازن والأصناف (عدد عمليات السحب)</span>
           <div style="display:flex; gap:5px; flex-wrap:wrap;">
             <label class="btn-action-sm btn-excel" style="cursor:pointer;"><i class="fa-solid fa-file-excel"></i> استيراد إكسل <input type="file" id="excelImportInput" accept=".xlsx, .xls, .csv" style="display:none;" onchange="importInventoryFromExcel(event)"></label>
             <button class="btn-action-sm btn-danger global-delete-btn" id="btnDeleteInv" onclick="deleteSelectedItemsGeneric('inventory')"><i class="fa-solid fa-trash"></i> حذف المحدد</button>
@@ -524,7 +524,7 @@
 <button type="button" class="btn-action-sm btn-blue" onclick="printProductsBySearch()"><i class="fa-solid fa-print"></i> طباعة نتائج البحث</button></div>
         <div style="overflow-x: auto;">
           <table id="inventoryTable">
-            <thead><tr><th style="width:30px;"><input type="checkbox" onclick="toggleSelectAllGeneric(this, 'inventory-checkbox')"></th><th>المخزن</th><th>القسم</th><th>الصنف</th><th>الشركة</th><th>المورد</th><th>الباركود</th><th>الرصيد السابق</th><th>الرصيد الحالي</th><th>إجمالي سعر المنتج</th><th>حد التنبيه</th><th>شراء</th><th>بيع</th><th>إجمالي ربح المبيع</th><th>مصنعية</th><th>صلاحية كم</th><th>المبيع (كمية)</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <thead><tr><th style="width:30px;"><input type="checkbox" onclick="toggleSelectAllGeneric(this, 'inventory-checkbox')"></th><th>المخزن</th><th>القسم</th><th>الصنف</th><th>الشركة</th><th>المورد</th><th>الباركود</th><th>الرصيد السابق</th><th>الرصيد الحالي</th><th>إجمالي سعر المنتج</th><th>حد التنبيه</th><th>شراء</th><th>بيع</th><th>ربح الصنف</th><th>مصنعية</th><th>صلاحية كم</th><th>المبيع</th><th>الحالة</th><th>إجراء</th></tr></thead>
             <tbody id="inventoryTbody"><tr><td colspan="19" style="text-align:center;">جاري التحميل...</td></tr></tbody>
           </table>
         </div>
@@ -850,15 +850,13 @@
       <div class="form-field"><label>اسم الصنف:</label><input type="text" id="editItemName"></div>
       <div class="form-field"><label>اسم الشركة / العلامة التجارية:</label><input type="text" id="editItemBrand"></div>
       <div class="form-field"><label>تاريخ الصلاحية:</label><input type="date" id="editItemExpiryDate"></div>
-      <div class="form-field"><label>الرصيد السابق:</label><input type="number" id="editItemPreviousBalance" min="0" step="1"></div>
-       <div class="form-field"><label>الرصيد الحالي (محسوب):</label><input type="number" id="editItemQty" min="0" step="1" readonly></div>
-       <div class="form-field"><label>المبيع بالكمية:</label><input type="number" id="editItemSoldQty" min="0" step="1" readonly></div>
+      <div class="form-field"><label>الكمية:</label><input type="number" id="editItemQty" min="0" step="1"></div>
       <div class="form-field"><label>تنبيه النقص عند:</label><input type="number" id="editItemMinQty" min="0" step="1"></div>
       <div class="form-field"><label>سعر الشراء:</label><input type="number" id="editItemBuy" step="any"></div>
       <div class="form-field"><label>سعر البيع:</label><input type="number" id="editItemSell" step="any"></div>
       <div class="form-field"><label>مصنعية:</label><input type="number" id="editItemInstallFee" step="any" placeholder="0"></div>
       <div class="form-field"><label>صلاحية المنتج بالكيلومتر (لفلاتر وزيوت / فرامل):</label><input type="number" id="editItemKmValidity" min="0" step="1" placeholder="0"></div>
-      <div class="form-field"><label>إجمالي مرات تسجيل الحركة:</label><input type="text" id="editItemWithdrawCount" readonly style="background:#f1f5f9; font-weight:bold;"></div>
+      <div class="form-field"><label>عدد عمليات السحب:</label><input type="text" id="editItemWithdrawCount" readonly style="background:#f1f5f9; font-weight:bold;"></div>
       </div><div style="display:flex; gap:6px; margin-top:10px;">
         <button onclick="updateInventoryItemSave()" class="btn-action-sm btn-success" style="flex:1;">حفظ التعديلات</button>
         <button onclick="closeEditModal()" class="btn-action-sm btn-danger">إغلاق</button>
@@ -1893,18 +1891,15 @@
       for(let reqItem of currentActiveClientGroup.items) {
         let targetInventoryItem = cachedInventory.find(inv => inv.name.toLowerCase().includes(reqItem.itemName.toLowerCase()) || reqItem.itemName.toLowerCase().includes(inv.name.toLowerCase()));
         if(targetInventoryItem) {
-          let soldNow = Math.max(0, Number(reqItem.qty) || 0);
-          let newQty = Math.max(0, inventoryCurrentBalance(targetInventoryItem) - soldNow);
-          let newSoldQty = inventorySoldQty(targetInventoryItem) + soldNow;
-          let previousBalance = Math.max(inventoryPreviousBalance(targetInventoryItem), newQty + newSoldQty);
+          let newQty = Math.max(0, (targetInventoryItem.qty || 0) - reqItem.qty);
           let newWithdrawCount = (targetInventoryItem.withdrawCount || 0) + 1;
 
           if (useLocalFallback || targetInventoryItem.id.startsWith('local_')) {
             let list = JSON.parse(localStorage.getItem('inventory') || '[]');
-            list = list.map(i => i.id === targetInventoryItem.id ? { ...i, qty: newQty, previousBalance, soldQty: newSoldQty, withdrawCount: newWithdrawCount } : i);
+            list = list.map(i => i.id === targetInventoryItem.id ? { ...i, qty: newQty, previousQty: Math.max(Number(i.previousQty ?? i.qty) || 0, Number(i.qty)||0), soldQty: (Number(i.soldQty)||0) + ((Number(targetInventoryItem.qty)||0) - newQty), withdrawCount: newWithdrawCount } : i);
             localStorage.setItem('inventory', JSON.stringify(list));
           } else {
-            await db.collection("inventory").doc(targetInventoryItem.id).update({ qty: newQty, previousBalance, soldQty: newSoldQty, withdrawCount: newWithdrawCount });
+            await db.collection("inventory").doc(targetInventoryItem.id).update({ qty: newQty, previousQty: Math.max(Number(targetInventoryItem.previousQty ?? targetInventoryItem.qty)||0, Number(targetInventoryItem.qty)||0), soldQty: (Number(targetInventoryItem.soldQty)||0) + Math.max(0, (Number(targetInventoryItem.qty)||0)-newQty), withdrawCount: newWithdrawCount });
           }
         }
       }
@@ -2153,29 +2148,6 @@ function toggleKmValidityField() {
       if (field) { field.required = required; if (!required) field.value = ''; }
     }
 
-    // حقول الرصيد والمبيع الجديدة مع دعم السجلات القديمة
-    function inventorySoldQty(item) { return Math.max(0, Number(item.soldQty || 0)); }
-    function inventoryPreviousBalance(item) {
-      const current = Math.max(0, Number(item.qty || 0));
-      return Math.max(current, Number.isFinite(Number(item.previousBalance)) ? Number(item.previousBalance) : current + inventorySoldQty(item));
-    }
-    function inventoryCurrentBalance(item) { return Math.max(0, Number(item.qty || 0)); }
-    let warehouseProfitVisible = false;
-    function toggleWarehouseNetProfit() {
-      if (!warehouseProfitVisible) {
-        const pass = prompt('أدخل كلمة المرور لإظهار إجمالي صافي ربح المخزن:');
-        if (pass !== '123') { alert('كلمة المرور غير صحيحة.'); return; }
-        warehouseProfitVisible = true;
-      } else {
-        warehouseProfitVisible = false;
-      }
-      loadInventoryData();
-    }
-    function renderWarehouseProfit(value) {
-      const el = document.getElementById('statNetProfit');
-      if (el) el.innerText = warehouseProfitVisible ? Number(value || 0).toFixed(2) + ' ج.م' : '••••••••';
-    }
-
     async function saveInventoryItem(e) {
       e.preventDefault();
       const storeName = document.getElementById('itemStoreName').value;
@@ -2220,7 +2192,7 @@ function toggleKmValidityField() {
       }
 
       await addData("inventory", {
-        storeName, category, name, barcode, qty, previousBalance: qty, soldQty: 0, buyPrice, sellPrice, installationFee, kmValidity, expiryDate, brand, origin, supplierId, supplierName, withdrawCount: 0
+        storeName, category, name, barcode, qty, previousQty: qty, soldQty: 0, buyPrice, sellPrice, installationFee, kmValidity, expiryDate, brand, origin, supplierId, supplierName, withdrawCount: 0
       });
 
       alert("تم حفظ الصنف بنجاح!");
@@ -2250,7 +2222,8 @@ function toggleKmValidityField() {
       if(cachedInventory.length === 0) {
         tbody.innerHTML = '<tr><td colspan="19" style="text-align:center;">لا توجد أصناف مسجلة في المخزن.</td></tr>';
         document.getElementById('statStoreValue').innerText = "0 ج.م";
-        renderWarehouseProfit(0);
+        document.getElementById('statNetProfit').innerText = '••••••';
+        document.getElementById('statNetProfit').dataset.actual = '0.00 ج.م';
         document.getElementById('shortageBadgeCount').innerText = "0";
         return;
       }
@@ -2260,13 +2233,16 @@ function toggleKmValidityField() {
       let shortageCount = 0;
 
       cachedInventory.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'', 'ar')).forEach(item => {
-        let q = inventoryCurrentBalance(item);
-        let previousBalance = inventoryPreviousBalance(item);
-        let soldQty = inventorySoldQty(item);
+        let q = Math.max(0, Number(item.qty) || 0);
+        let previousQty = Math.max(q, Number(item.previousQty ?? q) || 0);
+        let soldQty = Math.max(0, Number(item.soldQty) || 0);
         let bp = parseFloat(item.buyPrice) || 0;
+        const totalProductPrice = previousQty * bp;
         totalValue += (q * bp);
         const sp = parseFloat(item.sellPrice) || 0;
-        const itemProfit = soldQty > 0 ? (sp - bp) * soldQty : 0;
+        // صافي الربح = (فرق سعر البيع والشراء + المصنعية) × الكمية المباعة
+        const installationFee = Math.max(0, Number(item.installationFee) || 0);
+        const itemProfit = soldQty > 0 ? ((sp - bp) + installationFee) * soldQty : 0;
         totalNetProfit += itemProfit;
 
         let statusBadge = `<span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:700;">متوفر</span>`;
@@ -2288,18 +2264,19 @@ function toggleKmValidityField() {
             <td>${item.brand || '—'}</td>
             <td>${item.supplierName || '—'}</td>
             <td><code>${item.barcode || '---'}</code></td>
-            <td style="font-weight:bold;">${previousBalance}</td>
-            <td style="font-weight:bold;color:#0f766e;">${q}</td>
-            <td style="font-weight:bold;">${(q * bp).toFixed(2)} ج.م</td>
+            <td style="font-weight:bold;">${previousQty}</td>
+            <td style="font-weight:bold;">${q}</td>
+            <td>${totalProductPrice.toFixed(2)} ج.م</td>
             <td>${minQty}</td>
             <td>${bp} ج.م</td>
             <td>${item.sellPrice || 0} ج.م</td>
             <td style="font-weight:bold;color:${itemProfit >= 0 ? '#15803d' : '#b91c1c'};">${itemProfit.toFixed(2)} ج.م</td>
             <td>${item.installationFee || 0} ج.م</td>
             <td>${item.kmValidity ? Number(item.kmValidity).toLocaleString('en-US') + ' كم' : '---'}</td>
-            <td style="font-weight:bold; color:var(--btn-blue);">${soldQty}</td>
+            <td style="font-weight:bold; color:var(--btn-blue);">${soldQty} قطعة</td>
             <td>${statusBadge}</td>
             <td style="display:flex; gap:4px;">
+              <button class="btn-action-sm btn-blue" style="padding:2px 6px;" onclick="adjustPreviousStock('${item.id}')">تعديل السابق</button>
               ${editBtnHtml}
               ${deleteBtnHtml}
             </td>
@@ -2308,7 +2285,8 @@ function toggleKmValidityField() {
       });
 
       document.getElementById('statStoreValue').innerText = totalValue.toFixed(2) + " ج.م";
-      renderWarehouseProfit(totalNetProfit);
+      document.getElementById('statNetProfit').innerText = '••••••';
+      document.getElementById('statNetProfit').dataset.actual = totalNetProfit.toFixed(2) + ' ج.م';
       document.getElementById('shortageBadgeCount').innerText = shortageCount;
       applySettingsToUI();
     }
@@ -2319,9 +2297,7 @@ function toggleKmValidityField() {
       const existing = (cachedInventory || []).find(x => x.id === id) || {};
       document.getElementById('editItemBrand').value = existing.brand || '';
       document.getElementById('editItemExpiryDate').value = existing.expiryDate || '';
-      document.getElementById('editItemPreviousBalance').value = inventoryPreviousBalance(existing);
-      document.getElementById('editItemSoldQty').value = inventorySoldQty(existing);
-      document.getElementById('editItemQty').value = inventoryCurrentBalance(existing);
+      document.getElementById('editItemQty').value = qty;
       document.getElementById('editItemMinQty').value = Number.isFinite(Number(existing.minQty)) ? Number(existing.minQty) : 2;
       document.getElementById('editItemBuy').value = buy;
       document.getElementById('editItemSell').value = sell;
@@ -2344,17 +2320,7 @@ function toggleKmValidityField() {
       let name = document.getElementById('editItemName').value.trim();
       let brand = document.getElementById('editItemBrand').value.trim();
       let expiryDate = document.getElementById('editItemExpiryDate').value || '';
-      let existingItem = (cachedInventory || []).find(x => x.id === id) || {};
-      let oldPreviousBalance = inventoryPreviousBalance(existingItem);
-      let soldQty = inventorySoldQty(existingItem);
-      let previousBalance = Math.max(0, parseInt(document.getElementById('editItemPreviousBalance').value, 10) || 0);
-      if (previousBalance < oldPreviousBalance) {
-        const pass = prompt('تقليل الرصيد السابق يتطلب كلمة المرور:');
-        if (pass !== '123') { alert('كلمة المرور غير صحيحة. لم يتم تقليل الرصيد السابق.'); return; }
-      }
-      if (previousBalance < soldQty) { alert('الرصيد السابق لا يمكن أن يكون أقل من إجمالي المبيع.'); return; }
-      let qty = Math.max(0, previousBalance - soldQty);
-      document.getElementById('editItemQty').value = qty;
+      let qty = Math.max(0, parseInt(document.getElementById('editItemQty').value, 10) || 0);
       let minQty = Math.max(0, parseInt(document.getElementById('editItemMinQty').value, 10) || 0);
       let buyPrice = parseFloat(document.getElementById('editItemBuy').value) || 0;
       let sellPrice = parseFloat(document.getElementById('editItemSell').value) || 0;
@@ -2363,11 +2329,11 @@ function toggleKmValidityField() {
 
       if(useLocalFallback || id.startsWith('local_')) {
         let list = JSON.parse(localStorage.getItem('inventory') || '[]');
-        list = list.map(i => i.id === id ? { ...i, storeName, category, name, brand, expiryDate, qty, previousBalance, soldQty, minQty, buyPrice, sellPrice, installationFee, kmValidity } : i);
+        list = list.map(i => i.id === id ? { ...i, storeName, category, name, brand, expiryDate, qty, minQty, buyPrice, sellPrice, installationFee, kmValidity } : i);
         localStorage.setItem('inventory', JSON.stringify(list));
       } else {
         await db.collection("inventory").doc(id).update({
-          storeName, category, name, brand, expiryDate, qty, previousBalance, soldQty, minQty, buyPrice, sellPrice, installationFee, kmValidity
+          storeName, category, name, brand, expiryDate, qty, minQty, buyPrice, sellPrice, installationFee, kmValidity
         });
       }
 
@@ -2401,12 +2367,10 @@ function toggleKmValidityField() {
       if(!tbody) return;
       tbody.innerHTML = '';
       list.forEach(item => {
-        let q = inventoryCurrentBalance(item);
-        let previousBalance = inventoryPreviousBalance(item);
-        let soldQty = inventorySoldQty(item);
+        let q = parseInt(item.qty) || 0;
         let bp = parseFloat(item.buyPrice) || 0;
         const minQty = Number.isFinite(Number(item.minQty)) ? Math.max(0, Number(item.minQty)) : 2;
-        const itemProfit = soldQty > 0 ? ((parseFloat(item.sellPrice) || 0) - bp) * soldQty : 0;
+        const itemProfit = ((parseFloat(item.sellPrice) || 0) - bp) * q;
         let statusBadge = `<span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:700;">متوفر</span>`;
         if(q <= 2) {
           statusBadge = `<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:700;">نقص حاد</span>`;
@@ -2424,18 +2388,18 @@ function toggleKmValidityField() {
             <td>${item.brand || '—'}</td>
             <td>${item.supplierName || '—'}</td>
             <td><code>${item.barcode || '---'}</code></td>
-            <td style="font-weight:bold;">${previousBalance}</td>
-            <td style="font-weight:bold;color:#0f766e;">${q}</td>
-            <td style="font-weight:bold;">${(q * bp).toFixed(2)} ج.م</td>
-            <td>${minQty}</td>
+            <td style="font-weight:bold;">${Math.max(q, Number(item.previousQty ?? q) || 0)}</td>
+            <td style="font-weight:bold;">${q}</td>
+            <td>${(Math.max(q, Number(item.previousQty ?? q) || 0) * bp).toFixed(2)} ج.م</td>
             <td>${bp} ج.م</td>
             <td>${item.sellPrice || 0} ج.م</td>
             <td style="font-weight:bold;color:${itemProfit >= 0 ? '#15803d' : '#b91c1c'};">${itemProfit.toFixed(2)} ج.م</td>
             <td>${item.installationFee || 0} ج.م</td>
             <td>${item.kmValidity ? Number(item.kmValidity).toLocaleString('en-US') + ' كم' : '---'}</td>
-            <td style="font-weight:bold; color:var(--btn-blue);">${soldQty}</td>
+            <td style="font-weight:bold; color:var(--btn-blue);">${soldQty} قطعة</td>
             <td>${statusBadge}</td>
             <td style="display:flex; gap:4px;">
+              <button class="btn-action-sm btn-blue" style="padding:2px 6px;" onclick="adjustPreviousStock('${item.id}')">تعديل السابق</button>
               ${editBtnHtml}
               ${deleteBtnHtml}
             </td>
@@ -2482,7 +2446,7 @@ function supplierEnterNav(e){if(e.key!=='Enter')return;e.preventDefault();let id
 function addSupplyLine(){let sid=document.getElementById('supplySupplier').value,sup=supplierRead('suppliers_list').find(x=>x.id===sid),q=document.getElementById('supplyItem').value.trim(),it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase()),qty=Number(supplyQty.value),price=Number(supplyPrice.value);if(!sup||!q||qty<1||price<0){alert('اختر المورد وابحث عن الصنف وأدخل الكمية والسعر');return;}if(!it){openNewSupplyItem();return;}let barcode=it.barcode||it.code||'';supplierDraftLines.push({supplierId:sid,supplierName:sup.name,itemId:it.id,code:barcode,name:it.name,barcode,qty,price,total:qty*price});document.getElementById('supplyItem').value='';document.getElementById('supplyItemName').value='';document.getElementById('supplyBarcode').value='';supplyQty.value='';supplyPrice.value='';renderSupplyDraft();document.getElementById('supplyItem').focus();}
 function renderSupplyDraft(){document.getElementById('supplyDraftList').innerHTML='<table><thead><tr><th>الكود</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+supplierDraftLines.map((x,i)=>`<tr><td>${escSupplier(x.code)}</td><td>${escSupplier(x.name)}</td><td>${x.qty}</td><td>${x.price}</td><td>${x.total.toFixed(2)}</td><td><button type="button" class="btn-action-sm btn-danger" onclick="removeSupplyLine(${i})">حذف</button></td></tr>`).join('')+'</tbody></table><b>إجمالي التوريد: '+supplierDraftLines.reduce((n,x)=>n+x.total,0).toFixed(2)+' ج.م</b>';}
 function removeSupplyLine(i){supplierDraftLines.splice(i,1);renderSupplyDraft();}
-async function persistInventoryQty(item,qty,price,supplier){let data={...item,qty:Number(item.qty||0)+qty,previousBalance:inventoryPreviousBalance(item)+Number(qty||0),soldQty:inventorySoldQty(item),buyPrice:price,supplierId:supplier.id,supplierName:supplier.name};if(!useLocalFallback&&db&&item.id&&!String(item.id).startsWith('local_')){let id=data.id;delete data.id;await db.collection('inventory').doc(id).update(data);data.id=id;}else{let arr=supplierRead('inventory'),idx=arr.findIndex(x=>x.id===item.id);if(idx>=0)arr[idx]=data;else arr.push(data);supplierWrite('inventory',arr);}return data;}
+async function persistInventoryQty(item,qty,price,supplier){let data={...item,qty:Number(item.qty||0)+qty,buyPrice:price,supplierId:supplier.id,supplierName:supplier.name};if(!useLocalFallback&&db&&item.id&&!String(item.id).startsWith('local_')){let id=data.id;delete data.id;await db.collection('inventory').doc(id).update(data);data.id=id;}else{let arr=supplierRead('inventory'),idx=arr.findIndex(x=>x.id===item.id);if(idx>=0)arr[idx]=data;else arr.push(data);supplierWrite('inventory',arr);}return data;}
 async function createSupplierIssueOrder(){if(!supplierDraftLines.length){alert('أضف أصنافاً مسجلة إلى التوريد أولاً');return;}let sid=document.getElementById('supplySupplier').value,lines=supplierDraftLines.filter(x=>x.supplierId===sid);if(!lines.length){alert('كل إذن توريد لمورد واحد فقط');return;}let sup=supplierRead('suppliers_list').find(x=>x.id===sid);if(!sup)return;let id='SUP-'+Date.now(),total=lines.reduce((n,x)=>n+x.total,0),o={id,orderNo:id,supplierId:sid,supplierName:sup.name,lines:lines.map(x=>({...x})),total,paid:0,remaining:total,date:new Date().toISOString(),type:'توريد'};let orders=supplierRead('supplier_issue_orders');orders.push(o);supplierWrite('supplier_issue_orders',orders);try{for(const l of lines){let it=(cachedInventory||[]).find(x=>x.id===l.itemId);if(!it)continue;let updated=await persistInventoryQty(it,l.qty,l.price,sup);let idx=cachedInventory.findIndex(x=>x.id===updated.id);if(idx>=0)cachedInventory[idx]=updated;}}catch(err){alert('تم حفظ الإذن، لكن تعذر تحديث المخزن بالكامل: '+err.message);}let ledger=supplierRead('supplier_ledger');lines.forEach(l=>ledger.push({id:'LED-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),supplierId:sid,supplierName:sup.name,orderNo:id,type:'توريد',itemCode:l.code,itemName:l.name,qty:l.qty,value:l.total,date:o.date,notes:'إذن توريد'}));supplierWrite('supplier_ledger',ledger);supplierDraftLines=[];renderSupplyDraft();renderSupplierOrders();renderSupplierRecords();await loadInventoryData();printSupplierOrder(id);}
 function renderSupplierOrders(){let tb=document.getElementById('supplierOrderRows');if(!tb)return;let q=(document.getElementById('issueSearch')?.value||'').toLowerCase(),a=supplierRead('supplier_issue_orders');tb.innerHTML=a.filter(x=>(x.orderNo+' '+x.supplierName).toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${x.orderNo}</td><td>${escSupplier(x.supplierName)}</td><td>${new Date(x.date).toLocaleDateString('ar-EG')}</td><td>${x.lines.map(l=>escSupplier(l.code)+' '+escSupplier(l.name)+' × '+l.qty).join('، ')}</td><td>${Number(x.total||0).toFixed(2)}</td><td>${Number(x.paid||0).toFixed(2)}</td><td>${Number(x.remaining||0).toFixed(2)}</td><td><button class="btn-action-sm btn-primary" onclick="printSupplierOrder('${x.id}')">طباعة</button></td></tr>`).join('')||'<tr><td colspan="8">لا توجد أذونات</td></tr>';}
 function supplierOrderPayment(id){let a=supplierRead('supplier_issue_orders'),x=a.find(y=>y.id===id);if(!x)return;let v=Number(prompt('قيمة الدفعة (المتبقي '+x.remaining+')',x.remaining));if(!Number.isFinite(v)||v<=0||v>x.remaining){alert('قيمة الدفع غير صحيحة');return;}x.paid=(x.paid||0)+v;x.remaining=Math.max(0,x.total-x.paid);supplierWrite('supplier_issue_orders',a);let ledger=supplierRead('supplier_ledger');ledger.push({id:'PAY-'+Date.now(),supplierId:x.supplierId,supplierName:x.supplierName,orderNo:x.orderNo,type:'سداد',value:v,date:new Date().toISOString(),notes:'دفعة على إذن التوريد'});supplierWrite('supplier_ledger',ledger);renderSupplierOrders();renderSupplierRecords();}
@@ -2497,7 +2461,7 @@ let currentWarehouseReport='stock';
 async function renderWarehouseReport(type='stock'){
  currentWarehouseReport=type;const inv=cachedInventory||await getData('inventory');let rows=[],title='';
  const fmt=n=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
- if(type==='stock'){title='تقرير المخزن والأرصدة';rows=inv.map(x=>({المخزن:x.storeName||'مخزن المحل الرئيسي',القسم:x.category||'',الصنف:x.name||'',الباركود:x.barcode||x.code||'','الرصيد السابق':inventoryPreviousBalance(x),'الرصيد الحالي':Number(x.qty||0),'المبيع':inventorySoldQty(x),'سعر الشراء':Number(x.buyPrice||0),'سعر البيع':Number(x.sellPrice||0),'إجمالي قيمة الرصيد الحالي':Number(x.qty||0)*Number(x.buyPrice||0),'إجمالي ربح المبيع':inventorySoldQty(x)*(Number(x.sellPrice||0)-Number(x.buyPrice||0))}));}
+ if(type==='stock'){title='تقرير المخزن والأرصدة';rows=inv.map(x=>({المخزن:x.storeName||'مخزن المحل الرئيسي',القسم:x.category||'',الصنف:x.name||'',الباركود:x.barcode||x.code||'',الكمية:Number(x.qty||0),'سعر الشراء':Number(x.buyPrice||0),'سعر البيع':Number(x.sellPrice||0),'إجمالي الشراء':Number(x.qty||0)*Number(x.buyPrice||0),'إجمالي البيع':Number(x.qty||0)*Number(x.sellPrice||0)}));}
  else if(type==='best'){title='الأصناف الأكثر مبيعًا';let orders=await getData('issue_orders'),tot={};orders.forEach(o=>(o.items||o.lines||o.products||[]).forEach(i=>{let k=i.itemName||i.name||i.productName||i.barcode||'صنف غير محدد';tot[k]=(tot[k]||0)+Number(i.qty||i.quantity||0)}));rows=Object.entries(tot).map(([name,qty])=>({'الصنف':name,'الكمية المباعة':qty})).sort((a,b)=>b['الكمية المباعة']-a['الكمية المباعة']);}
  else if(type==='moves'){title='سجل حركات المخزن';let moves=await getData('inventory_movements');if(!moves.length)moves=await getData('returns_log');rows=moves.map(x=>({التاريخ:x.dateStr||x.date||'',النوع:x.type||x.action||'',المخزن:x.storeName||'مخزن المحل الرئيسي',الصنف:x.itemName||x.name||'',الكمية:Number(x.qty||x.quantity||0),البيان:x.notes||x.reason||''}));}
  else {title='أذونات الصرف';let orders=await getData('issue_orders');rows=orders.map(x=>({'رقم الإذن':x.orderNo||x.id||'',العميل:x.clientName||'',الهاتف:x.clientPhone||'',السيارة:x.carInfo||'',القسم:x.department||'',التاريخ:x.dateStr||x.date||'',الإجمالي:Number(x.total||0)}));}
@@ -2508,7 +2472,32 @@ async function renderWarehouseReport(type='stock'){
 }
 function printWarehouseReport(){const title=document.getElementById('warehouseReportTable')?.querySelector('h3')?.textContent||'تقرير المخزن';const body=(document.getElementById('warehouseReportSummary')?.innerHTML||'')+(document.getElementById('warehouseReportTable')?.innerHTML||'');if(!body.trim()){renderWarehouseReport(currentWarehouseReport);setTimeout(printWarehouseReport,250);return;}printHtmlReport(title,body);}
 
-async function saveInventoryMovement(event){event.preventDefault();const storeName=document.getElementById('movStoreName').value||'مخزن المحل الرئيسي',type=document.getElementById('movType').value,q=document.getElementById('movItemQuery').value.trim(),qty=Number(document.getElementById('movQty').value),notes=document.getElementById('movNotes').value.trim();if(!q||!Number.isFinite(qty)||qty<=0){alert('راجع اسم الصنف والكمية.');return;}const item=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase());if(!item){alert('الصنف غير موجود. أدخل الاسم أو الباركود المسجل.');return;}if((item.storeName||'مخزن المحل الرئيسي')!==storeName){alert('الصنف المحدد ليس تابعًا للمخزن المختار.');return;}let newQty=Number(item.qty||0), previousBalance=inventoryPreviousBalance(item), soldQty=inventorySoldQty(item);if(type==='صرف'){newQty-=qty;soldQty+=qty;}else if(type==='تالف')newQty-=qty;else if(type==='إضافة'){newQty+=qty;previousBalance+=qty;}else if(type==='جرد'){const target=qty;newQty=target;previousBalance=Math.max(previousBalance,target+soldQty);}if(newQty<0){alert('الكمية المتاحة لا تكفي لهذه الحركة.');return;}try{if(!useLocalFallback&&db&&item.id&&!String(item.id).startsWith('local_'))await db.collection('inventory').doc(item.id).update({qty:newQty,previousBalance,soldQty});else{let all=supplierRead('inventory'),ix=all.findIndex(x=>x.id===item.id);if(ix>=0){all[ix].qty=newQty;all[ix].previousBalance=previousBalance;all[ix].soldQty=soldQty;supplierWrite('inventory',all);}}await addData('inventory_movements',{storeName,type,itemId:item.id,itemName:item.name,itemBarcode:item.barcode||item.code||'',qty,qtyBefore:Number(item.qty||0),qtyAfter:newQty,notes,date:new Date().toISOString(),dateStr:new Date().toLocaleString('ar-EG')});document.getElementById('movItemQuery').value='';document.getElementById('movQty').value='';document.getElementById('movNotes').value='';await loadInventoryData();alert('تم تسجيل الحركة وتحديث رصيد المخزن.');}catch(err){alert('تعذر حفظ الحركة: '+(err.message||err));}}
+async function saveInventoryMovement(event){event.preventDefault();const storeName=document.getElementById('movStoreName').value||'مخزن المحل الرئيسي',type=document.getElementById('movType').value,q=document.getElementById('movItemQuery').value.trim(),qty=Number(document.getElementById('movQty').value),notes=document.getElementById('movNotes').value.trim();if(!q||!Number.isFinite(qty)||qty<=0){alert('راجع اسم الصنف والكمية.');return;}const item=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase());if(!item){alert('الصنف غير موجود. أدخل الاسم أو الباركود المسجل.');return;}if((item.storeName||'مخزن المحل الرئيسي')!==storeName){alert('الصنف المحدد ليس تابعًا للمخزن المختار.');return;}let newQty=Number(item.qty||0);if(type==='صرف'||type==='تالف')newQty-=qty;else if(type==='إضافة')newQty+=qty;else if(type==='جرد'){const target=qty;newQty=target;}if(newQty<0){alert('الكمية المتاحة لا تكفي لهذه الحركة.');return;}try{if(!useLocalFallback&&db&&item.id&&!String(item.id).startsWith('local_'))await db.collection('inventory').doc(item.id).update(type==='إضافة'?{qty:newQty,previousQty:(Number(item.previousQty ?? item.qty)||0)+qty}:{qty:newQty});else{let all=supplierRead('inventory'),ix=all.findIndex(x=>x.id===item.id);if(ix>=0){all[ix].qty=newQty;if(type==='إضافة')all[ix].previousQty=(Number(all[ix].previousQty ?? item.qty)||0)+qty;supplierWrite('inventory',all);}}await addData('inventory_movements',{storeName,type,itemId:item.id,itemName:item.name,itemBarcode:item.barcode||item.code||'',qty,qtyBefore:Number(item.qty||0),qtyAfter:newQty,notes,date:new Date().toISOString(),dateStr:new Date().toLocaleString('ar-EG')});document.getElementById('movItemQuery').value='';document.getElementById('movQty').value='';document.getElementById('movNotes').value='';await loadInventoryData();alert('تم تسجيل الحركة وتحديث رصيد المخزن.');}catch(err){alert('تعذر حفظ الحركة: '+(err.message||err));}}
+
+
+async function adjustPreviousStock(itemId){
+  const item=(cachedInventory||[]).find(x=>x.id===itemId); if(!item)return;
+  const current=Math.max(0,Number(item.qty)||0), old=Math.max(current,Number(item.previousQty ?? item.qty)||0);
+  const raw=prompt('أدخل الرصيد السابق الجديد (لا يقل عن الرصيد الحالي):',String(old));
+  if(raw===null)return;
+  const next=Number(raw);
+  if(!Number.isInteger(next)||next<current){alert('الرصيد السابق يجب أن يكون عددًا صحيحًا ولا يقل عن الرصيد الحالي.');return;}
+  if(next<old){const pass=prompt('تقليل الرصيد السابق يتطلب كلمة المرور:');if(pass!=='123'){if(pass!==null)alert('كلمة المرور غير صحيحة.');return;}}
+  try{
+    if(!useLocalFallback&&db&&item.id&&!String(item.id).startsWith('local_')) await db.collection('inventory').doc(item.id).update({previousQty:next});
+    else{const a=supplierRead('inventory'),ix=a.findIndex(x=>x.id===item.id);if(ix>=0){a[ix].previousQty=next;supplierWrite('inventory',a);}}
+    await loadInventoryData();
+  }catch(err){alert('تعذر تحديث الرصيد السابق: '+(err.message||err));}
+}
+
+function revealWarehouseNetProfit(){
+  const el=document.getElementById('statNetProfit'); if(!el)return;
+  if(el.dataset.revealed==='1'){el.innerText='••••••';el.dataset.revealed='0';return;}
+  const pass=prompt('أدخل كلمة المرور لإظهار إجمالي صافي ربح المخزن:');
+  if(pass===null)return;
+  if(pass==='123'){el.innerText=el.dataset.actual||'0.00 ج.م';el.dataset.revealed='1';}
+  else alert('كلمة المرور غير صحيحة.');
+}
 </script>
 
 </body>
