@@ -778,7 +778,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     <div class="no-print">
       <div class="card-box">
         <div class="card-title">
-          <span><i class="fa-solid fa-chart-pie"></i> الملخص المالي للخزينة</span>
+          <span><i class="fa-solid fa-chart-pie"></i> الملخص المالي للخزينة</span><button id="hiddenTotalTransferBtn" class="btn-action btn-purple" style="opacity:.07;padding:3px 6px;font-size:11px" title="تحويل إجمالي مخفي" onclick="tcOpenTotalTransfer()">⋯</button>
           <span id="firebaseConnectionStatus" role="status" title="سيتم فحص اتصال قاعدة البيانات عند فتح الصفحة"
                 style="font-size:12px;padding:5px 9px;border-radius:8px;background:#e5e7eb;color:#374151;">
             جاري فحص اتصال قاعدة البيانات...
@@ -3312,6 +3312,18 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       setTimeout(()=>{ el.removeAttribute('id'); document.body.classList.remove('print-custom'); style.remove(); },500);
     }
 
+
+    async function updateTreasuryPaymentMethod(transactionId, method) {
+      const allowed = ['تحويل','نقدي','فيزا','بطاقة','ائتمان'];
+      if (!allowed.includes(method)) return;
+      try {
+        await db.collection('treasury_transactions').doc(transactionId).update({
+          method, paymentMethod:method, paymentMethodUpdatedAt:new Date().toISOString()
+        });
+        alert('تم تحديث نوع العملية في كشف الحساب.');
+        loadFinancialStats();
+      } catch (e) { alert('تعذر تعديل نوع العملية: ' + e.message); }
+    }
     async function showTreasuryStatement(treasuryId, treasuryName) {
       document.getElementById('treasuryStatementTitle').textContent = `كشف حساب الخزينة: ${treasuryName}`;
       document.getElementById('treasuryStatementModal').style.display = 'flex';
@@ -3354,10 +3366,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         seen.add(key);
         const isOutgoing = outgoing && !incoming;
         const isIncoming = incoming && !outgoing;
-        rows.push({sort:dateSort(d), date:dateOf(d), type:typeText, method:String(d.method || d.paymentMethod || ''),
-          source, docId:String(d.id || fallbackId || ''),
+        rows.push({sort:dateSort(d), date:dateOf(d), type:typeText,
           amount:(isOutgoing ? -amount : isIncoming ? amount : (transfer && String(d.fromTreasuryId||'')===String(treasuryId) ? -amount : amount)),
-          details:[d.supplierName || d.workerName || d.employeeName || d.department || d.sectionName || d.clientName || d.customerName || d.title || d.description || '', d.notes || '', d.method && d.type ? 'طريقة الدفع: '+d.method : ''].filter(Boolean).join(' — '),
+          details:[d.supplierName || d.workerName || d.employeeName || d.department || d.sectionName || d.clientName || d.customerName || d.title || d.description || '', d.notes || ''].filter(Boolean).join(' — '),
+          method:String(d.method || d.paymentMethod || 'نقدي'), docId:source==='treasury_transactions' ? String(d.id || fallbackId || '') : '', source,
           ref:d.invoiceSerial || d.paymentId || d.orderNo || d.reference || fallbackId || ''});
       };
       try {
@@ -3403,19 +3415,8 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           if (r.amount >= 0) totalIn += r.amount; else totalOut += Math.abs(r.amount);
           const signed = r.amount >= 0 ? '+' + money(r.amount) : '-' + money(Math.abs(r.amount));
           const color = r.amount >= 0 ? 'var(--btn-green)' : 'var(--danger-red)';
-          const methodOptions=['تحويل','نقدي','فيزا','بطاقة','ائتمان'];
-          const currentMethod=methodOptions.find(m=>m===r.method)|| ( /تحويل|انستا/i.test(r.method)?'تحويل':/فيزا|visa/i.test(r.method)?'فيزا':/بطاق/i.test(r.method)?'بطاقة':/ائتمان|آجل|credit/i.test(r.method)?'ائتمان':/نقد|كاش|cash/i.test(r.method)?'نقدي':'');
-          const methodSelect=r.source==='supplier_payment_archive'?`<span>—</span>`:`<select class="treasury-method-select" data-source="${safe(r.source)}" data-doc-id="${safe(r.docId)}" style="min-width:95px;padding:5px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#111">${methodOptions.map(m=>`<option value="${m}" ${m===currentMethod?'selected':''}>${m}</option>`).join('')}</select>`;
-          return `<tr><td>${safe(r.date || '—')}</td><td>${safe(r.type)}<br><small>طريقة الدفع: ${methodSelect}</small></td><td style="color:${color};font-weight:bold;">${signed} ج.م</td><td>${safe(r.ref || '')}${r.details ? '<br>'+safe(r.details) : ''}</td></tr>`;
+          return `<tr><td>${safe(r.date || '—')}</td><td>${safe(r.type)}</td><td style="color:${color};font-weight:bold;">${signed} ج.م</td><td>${safe(r.ref || '')}${r.details ? '<br>'+safe(r.details) : ''}${r.docId ? `<br><label style="font-size:11px">نوع الدفع: <select onchange="updateTreasuryPaymentMethod('${safe(r.docId)}',this.value)" style="padding:4px;border:1px solid #cbd5e1;border-radius:5px"><option ${/نقد|كاش/i.test(r.method)?'selected':''}>نقدي</option><option ${/تحويل/i.test(r.method)?'selected':''}>تحويل</option><option ${/فيزا|visa/i.test(r.method)?'selected':''}>فيزا</option><option ${/بطاق/i.test(r.method)?'selected':''}>بطاقة</option><option ${/ائتمان|credit/i.test(r.method)?'selected':''}>ائتمان</option></select></label>` : ''}</td></tr>`;
         }).join('') + `<tr style="font-weight:900;background:#f1f5f9"><td colspan="2">الإجمالي</td><td colspan="2">إجمالي الوارد: ${money(totalIn)} ج.م — إجمالي المنصرف: ${money(totalOut)} ج.م — صافي الحركة: ${money(totalIn-totalOut)} ج.م</td></tr>`;
-        tbody.querySelectorAll('.treasury-method-select').forEach(sel=>sel.addEventListener('change',async function(){
-          const source=this.dataset.source,docId=this.dataset.docId,value=this.value;
-          if(!source||!docId){alert('لا يمكن تعديل طريقة الدفع لهذا السجل لأنه لا يحتوي على مرجع محفوظ.');return;}
-          try{
-            await db.collection(source).doc(docId).update({method:value,paymentMethod:value,methodUpdatedAt:new Date().toISOString()});
-            alert('تم تحديث نوع العملية في كشف الحساب.');
-          }catch(err){alert('تعذر تحديث نوع العملية: '+(err.message||err));}
-        }));
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">خطأ في تحميل كشف الخزينة: ${safe(e.message || e)}</td></tr>`;
       }
@@ -3686,7 +3687,153 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     const el=document.getElementById(id); if(!el){alert('❌ لم يتم العثور على بيانات الطباعة');return;}
     const clone=el.cloneNode(true); clone.classList.add('professional-print'); hideEmptyBlocks(clone);
     const w=window.open('','_blank','width=900,height=700'); if(!w){window.print();return;}
-    w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>'+esc(title||'طباعة')+'</title><style>@page{size:A4 portrait;margin:8mm}body{font-family:Arial,sans-serif;direction:rtl;margin:0;color:#111}.professional-print{background:#fff;padding:0}.professional-print table{width:100%;border-collapse:collapse;font-size:9px}.professional-print th,.professional-print td{border:1px solid #cbd5e1;padding:4px;text-align:right}.professional-print th{background:#f1f5f9;font-weight:900}.professional-print .print-only-empty-hide{display:none!important}.professional-print .no-print{display:none!important}.professional-print .summary-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #cbd5e1}.professional-print .card-box{margin:5px 0;padding:6px;border:1px solid #cbd5e1;border-radius:4px}.professional-print h3,.professional-print h4{margin:0 0 6px}.print-head{border-bottom:2px solid #111;margin-bottom:8px;padding-bottom:5px;font-weight:900;font-size:15px}</style></head><body><div class="print-head">'+esc(title||'تقرير')+'</div>'+clone.outerHTML+'</body></html>');
+    w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>'+esc(title||'طباعة')+'</title><style>@page{size:A4 portrait;margin:8mm}body{font-family:Arial,sans-serif;direction:rtl;margin:0;color:#111}.professional-print{background:#fff;padding:0}.professional-print table{width:100%;border-collapse:collapse;font-size:9px}.professional-print th,.professional-print td{border:1px solid #cbd5e1;padding:4px;text-align:right}.professional-print th{background:#f1f5f9;font-weight:900}.professional-print .print-only-empty-hide{display:none!important}.professional-print .no-print{display:none!important}.professional-print .summary-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #cbd5e1}.professional-print .card-box{margin:5px 0;padding:6px;border:1px solid #cbd5e1;border-radius:4px}.professional-print h3,.professional-print h4{margin:0 0 6px}.print-head{border-bottom:2px solid #111;margin-bottom:8px;padding-bottom:5px;font-weight:900;font-size:15px}</style></head><body><div class="print-head">'+esc(title||'تقرير')+'</div>'+clone.outerHTML+'
+<script id="accounts-profits-management-v2">
+(function(){
+ const $=id=>document.getElementById(id), n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+ const f=v=>n(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' ج.م';
+ const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+ const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let dayDocId=null, dailyValues={gross:0,expenses:0,net:0};
+ async function refreshDaily(){
+   const date=today(), invoices=window.accountsProfitCache?.invoices||[];
+   const exp=window.accountsProfitCache?.expenses||[];
+   const invRows=invoices.filter(x=>String(x.dateStr||x.date||x.createdAt||'').slice(0,10)===date);
+   const expRows=exp.filter(x=>String(x.dateStr||x.date||x.createdAt||'').slice(0,10)===date);
+   const gross=invRows.reduce((a,x)=>a+(window.accountsProfitCalculateInvoiceProfit?window.accountsProfitCalculateInvoiceProfit(x).gross:0),0);
+   const expenses=expRows.reduce((a,x)=>a+n(x.amount??x.value),0);
+   dailyValues={gross,expenses,net:gross-expenses};
+   $('apTodayGross').textContent=f(gross);$('apTodayExpenses').textContent=f(expenses);$('apTodayNet').textContent=f(gross-expenses);$('apTodayDate').textContent=date;
+   dayDocId=null;
+   try{
+     const snap=await db.collection('daily_profit_closings').where('date','==',date).limit(1).get();
+     if(!snap.empty){dayDocId=snap.docs[0].id;const d=snap.docs[0].data();dailyValues={gross:n(d.gross),expenses:n(d.expenses),net:n(d.net)};$('apTodayGross').textContent=f(dailyValues.gross);$('apTodayExpenses').textContent=f(dailyValues.expenses);$('apTodayNet').textContent=f(dailyValues.net);}
+   }catch(e){}
+   $('apDailyStatus').textContent=dayDocId?'يوجد تقفيل محفوظ لهذا اليوم. يمكنك تعديله أو حذفه.':'القيم محسوبة تلقائيًا من فواتير ومصروفات اليوم؛ استخدم تقفيل إجمالي الربح لحفظها.';
+ }
+ window.editCurrentProfitDay=async function(){
+   const gross=prompt('تعديل إجمالي الربح لليوم:',dailyValues.gross);if(gross===null)return;
+   const expenses=prompt('تعديل إجمالي المصروفات لليوم:',dailyValues.expenses);if(expenses===null)return;
+   if(!Number.isFinite(Number(gross))||!Number.isFinite(Number(expenses))){alert('أدخل أرقامًا صحيحة.');return;}
+   const d={date:today(),gross:n(gross),expenses:n(expenses),net:n(gross)-n(expenses),updatedAt:new Date().toISOString(),source:'manual_edit'};
+   try{if(dayDocId)await db.collection('daily_profit_closings').doc(dayDocId).set(d,{merge:true});else{const r=await db.collection('daily_profit_closings').add({...d,createdAt:new Date().toISOString()});dayDocId=r.id;}dailyValues=d;$('apTodayGross').textContent=f(d.gross);$('apTodayExpenses').textContent=f(d.expenses);$('apTodayNet').textContent=f(d.net);$('apDailyStatus').textContent='تم حفظ التعديل.';}catch(e){alert('تعذر حفظ التعديل: '+e.message);}
+ };
+ window.deleteCurrentProfitDay=async function(){
+   if(!dayDocId){alert('لا يوجد تقفيل محفوظ لليوم لحذفه.');return;}if(!confirm('تأكيد حذف تقفيل أرباح اليوم؟'))return;
+   try{await db.collection('daily_profit_closings').doc(dayDocId).delete();dayDocId=null;await refreshDaily();}catch(e){alert('تعذر الحذف: '+e.message);}
+ };
+ window.closeTotalProfit=async function(){
+   const allGross=n(parseFloat(($('apAllGross').textContent||'').replace(/[^0-9.-]/g,''))||0);
+   const allExpenses=n(parseFloat(($('apAllExpenses').textContent||'').replace(/[^0-9.-]/g,''))||0);
+   if(!confirm('تأكيد حفظ تقفيل إجمالي الربح من بداية البرنامج حتى الآن؟'))return;
+   try{await db.collection('profit_total_closings').add({date:today(),gross:allGross,expenses:allExpenses,net:allGross-allExpenses,createdAt:new Date().toISOString()});alert('تم حفظ تقفيل إجمالي الربح.');}catch(e){alert('تعذر حفظ التقفيل: '+e.message);}
+ };
+ window.printBranchProfitsReport=function(){
+   const inv=window.accountsProfitCache?.invoices||[], groups={};
+   inv.forEach(x=>{const branch=x.branchName||x.branch||x.storeName||x.departmentName||'غير محدد';groups[branch]=(groups[branch]||0)+(window.accountsProfitCalculateInvoiceProfit?window.accountsProfitCalculateInvoiceProfit(x).gross:0);});
+   const rows=Object.entries(groups).map(([k,v])=>`<tr><td>${safe(k)}</td><td>${f(v)}</td></tr>`).join('');
+   const w=window.open('','_blank','width=850,height=650');if(!w)return;
+   w.document.write(`<html dir="rtl"><meta charset="utf-8"><title>أرباح الفروع</title><h2>تقرير أرباح الفروع</h2><table border="1" cellpadding="8" cellspacing="0" width="100%"><tr><th>الفرع</th><th>إجمالي الربح</th></tr>${rows||'<tr><td colspan="2">لا توجد بيانات فروع مسجلة بالفواتير</td></tr>'}</table><script>onload=()=>print()<\/script></html>`);w.document.close();
+ };
+ window.calculateSellerAccounts=function(){
+   const from=$('apSellerFrom').value,to=$('apSellerTo').value,inv=window.accountsProfitCache?.invoices||[],g={};
+   inv.filter(x=>{const d=String(x.dateStr||x.date||x.createdAt||'').slice(0,10);return(!from||d>=from)&&(!to||d<=to);}).forEach(x=>{const who=x.sellerName||x.salesPerson||x.cashierName||x.cashier||x.createdBy||'غير محدد';const z=g[who]||(g[who]={count:0,sales:0,profit:0});z.count++;z.sales+=n(x.totalAmount??x.grandTotal);z.profit+=window.accountsProfitCalculateInvoiceProfit?window.accountsProfitCalculateInvoiceProfit(x).gross:0;});
+   $('apSellerResults').innerHTML='<table style="width:100%;border-collapse:collapse"><tr><th>البائع</th><th>عدد الفواتير</th><th>إجمالي المبيعات</th><th>إجمالي الربح</th></tr>'+Object.entries(g).map(([k,v])=>`<tr><td>${safe(k)}</td><td>${v.count}</td><td>${f(v.sales)}</td><td>${f(v.profit)}</td></tr>`).join('')+'</table>';
+ };
+ const oldOpen=window.openAccountsProfits;
+ window.openAccountsProfits=async function(){await oldOpen();await refreshDaily();await loadExtraStats();};
+ async function loadExtraStats(){
+   try{
+     const [tx,clients,suppliers]=await Promise.all([db.collection('treasury_transactions').get(),db.collection('client_accounts').get(),db.collection('supplier_issue_orders').get()]);
+     let deposits=0,withdrawals=0;
+     tx.forEach(doc=>{const d=doc.data()||{},amt=n(d.amount??d.paidAmount??d.paymentAmount??d.expenseAmount);const s=String(d.direction||d.type||'');if(/out|صرف|مصروف|سداد|دفع/i.test(s))withdrawals+=amt;else deposits+=amt;});
+     $('apDepositsTotal').textContent=f(deposits);$('apWithdrawalsTotal').textContent=f(withdrawals);
+     const treasuryTotal=(window.accountsProfitCache?.treasuries||[]).reduce((a,x)=>a+n(x.balance),0);$('apCurrentTreasuries').textContent=f(treasuryTotal);
+     let clientDebt=0;clients.forEach(doc=>{const d=doc.data()||{};clientDebt+=n(d.remainingAmount??(n(d.totalAmount??d.grandTotal)-n(d.paidAmount)));});
+     $('apClientCredit').textContent=f(clientDebt);
+     let supplierDebt=0;suppliers.forEach(doc=>{const d=doc.data()||{};supplierDebt+=Math.max(0,n(d.total??d.totalAmount??d.grandTotal)-n(d.paid??d.paidAmount));});
+     $('apSupplierDebit').textContent=f(supplierDebt);$('apNetDebitCredit').textContent=f(clientDebt-supplierDebt);
+     const stock=JSON.parse(localStorage.getItem('inventory')||'[]');const stockValue=stock.reduce((a,x)=>a+n(x.qty??x.quantity??x.stock)*n(x.buyPrice??x.purchasePrice??x.costPrice),0);$('apAllStockValue').textContent=f(stockValue);
+   }catch(e){console.warn('تعذر تحميل بعض مؤشرات الحسابات:',e);}
+ }
+})();
+</script>
+
+<style id="treasury-center-v2-style">
+#treasuryCenterModal{display:none;position:fixed;inset:0;z-index:12000;background:rgba(4,15,28,.76);align-items:center;justify-content:center;padding:12px}
+#treasuryCenterModal .tc-window{background:var(--card-bg);color:var(--text-main);width:min(1450px,98vw);height:min(94vh,1000px);overflow:auto;border-radius:16px;padding:16px;border:2px solid var(--btn-blue);box-shadow:0 20px 60px #0005}
+#treasuryCenterModal .tc-grid{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:9px;margin:12px 0}
+#treasuryCenterModal .tc-stat{padding:11px;border-radius:10px;background:var(--bg-color);border:1px solid var(--border-color);text-align:center}
+#treasuryCenterModal .tc-stat b{display:block;color:var(--treasury-purple);font-size:1.05rem;margin-top:5px}
+#treasuryCenterModal input,#treasuryCenterModal select{width:100%;padding:8px;border:1px solid var(--border-color);border-radius:7px;background:var(--input-bg);color:var(--text-main)}
+#treasuryCenterModal .tc-filters{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:8px;margin:10px 0}
+#treasuryCenterModal .tc-actions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+#treasuryCenterModal table{min-width:850px}
+#treasuryCenterModal .tc-table-wrap{overflow:auto;max-height:42vh;border:1px solid var(--border-color);border-radius:9px}
+#treasuryCenterModal .tc-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#hiddenTotalTransferBtn{opacity:.07;font-size:11px;padding:3px 6px;transition:opacity .2s}#hiddenTotalTransferBtn:hover{opacity:.9}
+@media(max-width:800px){#treasuryCenterModal .tc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#treasuryCenterModal .tc-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<div id="treasuryCenterModal" aria-modal="true" role="dialog">
+ <div class="tc-window">
+  <div class="tc-head"><h2 style="margin:0;color:var(--btn-blue)"><i class="fa-solid fa-vault"></i> إدارة الخزن والحركات</h2><button class="btn-action btn-danger" onclick="closeTreasuryCenter()">إغلاق ✕</button></div>
+  <div class="tc-grid">
+   <div class="tc-stat">إجمالي الإيداعات<b id="tcDeposits">0.00</b></div><div class="tc-stat">إجمالي الصرف<b id="tcWithdrawals">0.00</b></div><div class="tc-stat">إجمالي الرصيد<b id="tcBalance">0.00</b></div><div class="tc-stat">صافي الحركة<b id="tcNet">0.00</b></div>
+  </div>
+  <div class="card-box" style="margin:8px 0;padding:12px">
+   <div class="tc-head"><b>إدارة الخزائن</b><button class="btn-action btn-blue" onclick="tcAddTreasury()"><i class="fa fa-plus"></i> إضافة خزينة</button></div>
+   <div class="tc-filters" style="grid-template-columns:2fr 1fr 1fr"><div><label>اختيار الخزينة لعرض إجماليها</label><select id="tcTreasurySelect" onchange="tcRender()"><option value="all">كل الخزائن</option></select></div><div><label>اسم الخزينة</label><input id="tcNewTreasuryName" placeholder="اسم الخزينة"></div><div><label>الرصيد الافتتاحي</label><input id="tcNewTreasuryBalance" type="number" min="0" step="0.01" placeholder="0"></div></div>
+   <div class="tc-actions"><button class="btn-action btn-purple" onclick="tcEditTreasury()">تعديل الخزينة المحددة</button><button class="btn-action btn-danger" onclick="tcDeleteTreasury()">حذف الخزينة المحددة</button><button class="btn-action btn-green" onclick="tcOpenMovement()">حركة خزينة / إضافة حركة</button><button class="btn-action btn-blue" onclick="tcLoad()">تحديث</button></div>
+   <div class="tc-table-wrap"><table><thead><tr><th>اسم الخزينة</th><th>إجمالي إيداع</th><th>إجمالي صرف</th><th>إجمالي رصيد</th><th>تاريخ التحديث</th><th>إجراءات</th></tr></thead><tbody id="tcTreasuryRows"><tr><td colspan="6">جاري التحميل...</td></tr></tbody></table></div>
+  </div>
+  <div class="card-box" style="padding:12px;margin:8px 0">
+   <div class="tc-head"><b>البحث في حركات الخزينة</b><div class="tc-actions"><button class="btn-action btn-green" onclick="tcOpenMovement()">إضافة حركة</button><button class="btn-action btn-blue" onclick="tcExport()">تصدير Excel</button><button class="btn-action btn-purple" onclick="tcPrint()">طباعة</button></div></div>
+   <div class="tc-filters">
+    <div><label>من تاريخ</label><input id="tcDateFrom" type="date" onchange="tcRender()"></div><div><label>إلى تاريخ</label><input id="tcDateTo" type="date" onchange="tcRender()"></div>
+    <div><label>الخزينة</label><select id="tcFilterTreasury" onchange="tcRender()"><option value="all">كل الخزائن</option></select></div>
+    <div><label>نوع الحركة</label><select id="tcFilterDirection" onchange="tcRender()"><option value="all">الكل</option><option value="in">إيداع</option><option value="out">صرف</option></select></div>
+    <div><label>بحث بالبيان</label><input id="tcSearchText" placeholder="اكتب البيان..." oninput="tcRender()"></div>
+   </div>
+   <div class="tc-grid"><div class="tc-stat">إجمالي الإيداعات بعد البحث<b id="tcFilteredIn">0.00</b></div><div class="tc-stat">إجمالي الصرف بعد البحث<b id="tcFilteredOut">0.00</b></div><div class="tc-stat">إجمالي الرصيد بعد البحث<b id="tcFilteredNet">0.00</b></div><div class="tc-stat">عدد الحركات<b id="tcFilteredCount">0</b></div></div>
+   <div class="tc-table-wrap" id="tcMovementPrintArea"><table><thead><tr><th>التاريخ</th><th>الخزينة</th><th>نوع الحركة</th><th>المبلغ</th><th>البيان</th><th>إجراءات</th></tr></thead><tbody id="tcMovementRows"><tr><td colspan="6">جاري التحميل...</td></tr></tbody></table></div>
+   <div class="tc-actions" style="justify-content:space-between"><button class="btn-action btn-blue" onclick="tcNavigate(-1)">السابق</button><span id="tcMovementPosition" style="align-self:center;font-weight:bold">0 / 0</span><button class="btn-action btn-blue" onclick="tcNavigate(1)">التالي</button></div>
+  </div>
+ </div>
+</div>
+<div id="tcMovementEditor" style="display:none;position:fixed;inset:0;z-index:12010;background:#0009;align-items:center;justify-content:center;padding:12px"><div class="card-box" style="width:min(550px,96vw);padding:18px"><h3 id="tcEditorTitle">إضافة حركة خزينة</h3><div class="form-grid"><div class="form-field"><label>التاريخ</label><input id="tcMoveDate" type="datetime-local"></div><div class="form-field"><label>الخزينة</label><select id="tcMoveTreasury"></select></div><div class="form-field"><label>المبلغ</label><input id="tcMoveAmount" type="number" min="0.01" step="0.01"></div><div class="form-field"><label>نوع الحركة</label><select id="tcMoveDirection"><option value="in">إيداع</option><option value="out">صرف</option></select></div><div class="form-field" style="grid-column:1/-1"><label>البيان</label><input id="tcMoveNotes" placeholder="بيان الحركة"></div></div><div class="tc-actions"><button class="btn-action btn-green" onclick="tcSaveMovement()">حفظ الحركة</button><button class="btn-action btn-danger" onclick="tcCloseEditor()">إلغاء</button></div></div></div>
+<div id="tcTotalTransferModal" style="display:none;position:fixed;inset:0;z-index:12020;background:#0009;align-items:center;justify-content:center;padding:12px"><div class="card-box" style="width:min(520px,96vw);padding:18px"><h3>تحويل من إجمالي إلى إجمالي</h3><p style="margin:8px 0;color:#64748b">يتم التحويل بين رصيد خزينة مصدر ورصيد خزينة مستقبلة.</p><div class="form-field"><label>من إجمالي خزينة</label><select id="tcTransferFrom"></select></div><div class="form-field" style="margin-top:8px"><label>إلى إجمالي خزينة</label><select id="tcTransferTo"></select></div><div class="form-field" style="margin-top:8px"><label>المبلغ</label><input id="tcTransferAmount" type="number" min="0.01" step="0.01"></div><div class="form-field" style="margin-top:8px"><label>البيان</label><input id="tcTransferNote"></div><div class="tc-actions"><button class="btn-action btn-purple" onclick="tcDoTotalTransfer()">تنفيذ التحويل</button><button class="btn-action btn-danger" onclick="document.getElementById('tcTotalTransferModal').style.display='none'">إغلاق</button></div></div></div>
+<script id="treasury-center-v2-script">
+(function(){
+ const $=id=>document.getElementById(id), n=v=>Number(v)||0, fmt=v=>n(v).toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2}), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let ts=[], moves=[], filtered=[], page=0, editId=null;
+ const pass=()=>prompt('أدخل كلمة المرور (123):')==='123';
+ window.closeTreasuryCenter=()=>{$('treasuryCenterModal').style.display='none'};
+ window.openTreasuryManagementModal=async()=>{$('treasuryCenterModal').style.display='flex';await tcLoad()};
+ window.tcLoad=async function(){try{const [a,b]=await Promise.all([db.collection('treasuries').get(),db.collection('treasury_transactions').get()]);ts=[];moves=[];a.forEach(d=>ts.push({id:d.id,...d.data()}));b.forEach(d=>{const x=d.data()||{};if(x.manualTreasuryMovement||x.manualTotalTransfer)moves.push({id:d.id,...x})});moves.sort((x,y)=>new Date(y.dateStr||0)-new Date(x.dateStr||0));tcFillSelects();tcRender();}catch(e){alert('تعذر تحميل الخزائن والحركات: '+e.message)}};
+ function tcFillSelects(){const opts='<option value="all">كل الخزائن</option>'+ts.map(t=>`<option value="${esc(t.id)}">${esc(t.name||'خزينة')}</option>`).join('');['tcTreasurySelect','tcFilterTreasury'].forEach(id=>{const old=$(id).value;$(id).innerHTML=opts;$(id).value=ts.some(t=>t.id===old)?old:'all'});['tcMoveTreasury','tcTransferFrom','tcTransferTo'].forEach(id=>{$(id).innerHTML=ts.map(t=>`<option value="${esc(t.id)}">${esc(t.name)} — ${fmt(t.balance)}</option>`).join('')});}
+ window.tcRender=function(){const selected=$('tcTreasurySelect').value;let dep=0,out=0;const rows=ts.filter(t=>selected==='all'||t.id===selected).map(t=>{const m=moves.filter(x=>x.treasuryId===t.id);const i=m.filter(x=>x.direction==='in').reduce((s,x)=>s+n(x.amount),0),o=m.filter(x=>x.direction==='out').reduce((s,x)=>s+n(x.amount),0);dep+=i;out+=o;return `<tr><td><b>${esc(t.name)}</b></td><td>${fmt(i)}</td><td>${fmt(o)}</td><td><b>${fmt(t.balance)}</b></td><td>${esc(t.updatedAt?new Date(t.updatedAt).toLocaleString('ar-EG'):'—')}</td><td><button class="btn-action btn-blue" onclick="tcSelectTreasury('${esc(t.id)}')">اختيار</button></td></tr>`});$('tcTreasuryRows').innerHTML=rows.join('')||'<tr><td colspan="6">لا توجد خزائن</td></tr>';$('tcDeposits').textContent=fmt(dep);$('tcWithdrawals').textContent=fmt(out);const bal=ts.filter(t=>selected==='all'||t.id===selected).reduce((s,t)=>s+n(t.balance),0);$('tcBalance').textContent=fmt(bal);$('tcNet').textContent=fmt(dep-out);
+ const from=$('tcDateFrom').value,to=$('tcDateTo').value,tid=$('tcFilterTreasury').value,dir=$('tcFilterDirection').value,q=$('tcSearchText').value.trim().toLowerCase();filtered=moves.filter(x=>{const day=String(x.dateStr||'').slice(0,10);return(!from||day>=from)&&(!to||day<=to)&&(tid==='all'||x.treasuryId===tid)&&(dir==='all'||x.direction===dir)&&(!q||String(x.notes||x.description||'').toLowerCase().includes(q))});const fi=filtered.filter(x=>x.direction==='in').reduce((s,x)=>s+n(x.amount),0),fo=filtered.filter(x=>x.direction==='out').reduce((s,x)=>s+n(x.amount),0);$('tcFilteredIn').textContent=fmt(fi);$('tcFilteredOut').textContent=fmt(fo);$('tcFilteredNet').textContent=fmt(fi-fo);$('tcFilteredCount').textContent=filtered.length;page=Math.min(page,Math.max(0,filtered.length-1));const x=filtered[page];$('tcMovementRows').innerHTML=x?`<tr><td>${esc(new Date(x.dateStr).toLocaleString('ar-EG'))}</td><td>${esc(x.treasuryName)}</td><td>${x.direction==='in'?'إيداع':'صرف'}</td><td style="font-weight:bold;color:${x.direction==='in'?'#059669':'#dc2626'}">${fmt(x.amount)}</td><td>${esc(x.notes)}</td><td><button class="btn-action btn-blue" onclick="tcEditDate('${esc(x.id)}')">تعديل التاريخ</button> <button class="btn-action btn-danger" onclick="tcDeleteMovement('${esc(x.id)}')">حذف</button></td></tr>`:'<tr><td colspan="6">لا توجد حركات مطابقة للبحث</td></tr>';$('tcMovementPosition').textContent=filtered.length?`${page+1} / ${filtered.length}`:'0 / 0';};
+ window.tcSelectTreasury=id=>{$('tcTreasurySelect').value=id;$('tcFilterTreasury').value=id;tcRender()};
+ window.tcAddTreasury=async()=>{const name=$('tcNewTreasuryName').value.trim(),balance=n($('tcNewTreasuryBalance').value);if(!name)return alert('اكتب اسم الخزينة');try{await db.collection('treasuries').add({name,balance,updatedAt:new Date().toISOString()});$('tcNewTreasuryName').value='';$('tcNewTreasuryBalance').value='';await tcLoad()}catch(e){alert(e.message)}};
+ window.tcEditTreasury=async()=>{const id=$('tcTreasurySelect').value,t=ts.find(x=>x.id===id);if(!t)return alert('اختر خزينة محددة');if(!pass())return alert('كلمة المرور غير صحيحة');const name=prompt('اسم الخزينة الجديد:',t.name);if(name===null)return;const bal=prompt('الرصيد الحالي الجديد:',t.balance||0);if(bal===null||!Number.isFinite(Number(bal)))return;try{await db.collection('treasuries').doc(id).update({name:name.trim()||t.name,balance:Number(bal),updatedAt:new Date().toISOString()});await tcLoad()}catch(e){alert(e.message)}};
+ window.tcDeleteTreasury=async()=>{const id=$('tcTreasurySelect').value,t=ts.find(x=>x.id===id);if(!t)return alert('اختر خزينة محددة');if(!pass())return alert('كلمة المرور غير صحيحة');if(n(t.balance)!==0)return alert('لا يمكن حذف خزينة رصيدها غير صفر. صفّر الرصيد أو حوّله أولاً.');if(!confirm('تأكيد حذف الخزينة '+t.name+'؟'))return;try{await db.collection('treasuries').doc(id).delete();await tcLoad()}catch(e){alert(e.message)}};
+ window.tcOpenMovement=()=>{if(!ts.length)return alert('أضف خزينة أولاً');editId=null;$('tcEditorTitle').textContent='إضافة حركة خزينة';$('tcMoveDate').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);$('tcMoveTreasury').value=$('tcTreasurySelect').value!=='all'&&$('tcTreasurySelect').value? $('tcTreasurySelect').value:ts[0].id;$('tcMoveAmount').value='';$('tcMoveNotes').value='';$('tcMovementEditor').style.display='flex'};
+ window.tcCloseEditor=()=>{$('tcMovementEditor').style.display='none'};
+ window.tcSaveMovement=async()=>{const id=$('tcMoveTreasury').value,t=ts.find(x=>x.id===id),amount=n($('tcMoveAmount').value),direction=$('tcMoveDirection').value,notes=$('tcMoveNotes').value.trim(),date=new Date($('tcMoveDate').value);if(!t||amount<=0||!notes||!Number.isFinite(date.getTime()))return alert('أكمل التاريخ والخزينة والمبلغ والبيان بشكل صحيح');if(direction==='out'&&n(t.balance)<amount)return alert('رصيد الخزينة لا يكفي');try{const next=n(t.balance)+(direction==='in'?amount:-amount);await db.collection('treasuries').doc(id).update({balance:next,updatedAt:new Date().toISOString()});await db.collection('treasury_transactions').add({manualTreasuryMovement:true,treasuryId:id,treasuryName:t.name,amount,direction,paidAmount:direction==='in'?amount:0,expenseAmount:direction==='out'?amount:0,type:direction==='in'?'إيداع يدوي':'صرف يدوي',notes,dateStr:date.toISOString(),dateFormatted:date.toLocaleString('ar-EG'),cashier:typeof loggedUser!=='undefined'?loggedUser:''});tcCloseEditor();await tcLoad();if(typeof loadFinancialStats==='function')await loadFinancialStats();}catch(e){alert('تعذر حفظ الحركة: '+e.message)}};
+ window.tcEditDate=async id=>{if(!pass())return alert('كلمة المرور غير صحيحة');const x=moves.find(y=>y.id===id);if(!x)return;const value=prompt('أدخل التاريخ الجديد بصيغة YYYY-MM-DD أو تاريخ ووقت ISO:',x.dateStr);if(!value)return;const d=new Date(value);if(!Number.isFinite(d.getTime()))return alert('التاريخ غير صحيح');try{await db.collection('treasury_transactions').doc(id).update({dateStr:d.toISOString(),dateFormatted:d.toLocaleString('ar-EG'),updatedAt:new Date().toISOString()});await tcLoad()}catch(e){alert(e.message)}};
+ window.tcDeleteMovement=async id=>{if(!pass())return alert('كلمة المرور غير صحيحة');const x=moves.find(y=>y.id===id);if(!x||!confirm('تأكيد حذف الحركة وإرجاع تأثيرها على رصيد الخزينة؟'))return;try{const t=ts.find(y=>y.id===x.treasuryId);if(t){const next=n(t.balance)+(x.direction==='in'?-n(x.amount):n(x.amount));await db.collection('treasuries').doc(t.id).update({balance:next,updatedAt:new Date().toISOString()})}await db.collection('treasury_transactions').doc(id).delete();await tcLoad();if(typeof loadFinancialStats==='function')await loadFinancialStats()}catch(e){alert('تعذر حذف الحركة: '+e.message)}};
+ window.tcNavigate=d=>{if(!filtered.length)return;page=Math.max(0,Math.min(filtered.length-1,page+d));tcRender()};
+ window.tcExport=()=>{const rows=[['التاريخ','الخزينة','نوع الحركة','المبلغ','البيان'],...filtered.map(x=>[new Date(x.dateStr).toLocaleString('ar-EG'),x.treasuryName,x.direction==='in'?'إيداع':'صرف',x.amount,x.notes])];const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'application/vnd.ms-excel;charset=utf-8;'}));a.download='treasury_movements.xls';a.click();URL.revokeObjectURL(a.href)};
+ window.tcPrint=()=>{const el=$('tcMovementPrintArea'),w=window.open('','_blank');if(!w)return;w.document.write('<html dir="rtl"><meta charset="utf-8"><title>حركات الخزينة</title><style>body{font-family:Tahoma;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #777;padding:8px;text-align:right}</style>'+el.innerHTML+'</html>');w.document.close();w.print()};
+ window.tcOpenTotalTransfer=()=>{if(!pass())return alert('كلمة المرور غير صحيحة');if(ts.length<2)return alert('يجب وجود خزانتين على الأقل');tcFillSelects();$('tcTotalTransferModal').style.display='flex'};
+ window.tcDoTotalTransfer=async()=>{const from=ts.find(x=>x.id===$('tcTransferFrom').value),to=ts.find(x=>x.id===$('tcTransferTo').value),amount=n($('tcTransferAmount').value),note=$('tcTransferNote').value.trim()||'تحويل إجمالي بين الخزن';if(!from||!to||from.id===to.id||amount<=0)return alert('حدد خزانتين مختلفتين ومبلغاً صحيحاً');if(n(from.balance)<amount)return alert('رصيد الخزينة المصدر غير كاف');if(!confirm(`تحويل ${fmt(amount)} من ${from.name} إلى ${to.name}؟`))return;try{await db.runTransaction(async tr=>{const fr=db.collection('treasuries').doc(from.id),toRef=db.collection('treasuries').doc(to.id),[fs,tsnap]=await Promise.all([tr.get(fr),tr.get(toRef)]);const fb=n(fs.data()?.balance),tb=n(tsnap.data()?.balance);if(fb<amount)throw new Error('الرصيد غير كاف');tr.update(fr,{balance:fb-amount,updatedAt:new Date().toISOString()});tr.update(toRef,{balance:tb+amount,updatedAt:new Date().toISOString()})});await db.collection('treasury_transactions').add({manualTotalTransfer:true,manualTreasuryMovement:true,treasuryId:from.id,treasuryName:from.name,amount,direction:'out',type:'تحويل إجمالي صادر',notes:note+' — إلى '+to.name,dateStr:new Date().toISOString(),dateFormatted:new Date().toLocaleString('ar-EG')});await db.collection('treasury_transactions').add({manualTotalTransfer:true,manualTreasuryMovement:true,treasuryId:to.id,treasuryName:to.name,amount,direction:'in',type:'تحويل إجمالي وارد',notes:note+' — من '+from.name,dateStr:new Date().toISOString(),dateFormatted:new Date().toLocaleString('ar-EG')});$('tcTotalTransferModal').style.display='none';await tcLoad();if(typeof loadFinancialStats==='function')await loadFinancialStats();alert('تم التحويل بنجاح')}catch(e){alert('تعذر التحويل: '+e.message)}};
+ // زر مخفي نسبيًا في عنوان الملخص المالي للخزينة.
+ document.addEventListener('DOMContentLoaded',()=>{const title=document.querySelector('.main-grid .card-box .card-title');if(title&&!$('hiddenTotalTransferBtn')){const b=document.createElement('button');b.id='hiddenTotalTransferBtn';b.className='btn-action btn-purple';b.textContent='⋯';b.title='تحويل إجمالي (مخفي)';b.onclick=tcOpenTotalTransfer;title.appendChild(b)}});
+ window.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='t'){e.preventDefault();tcOpenTotalTransfer()}});
+})();
+</script>
+
+</body></html>');
     w.document.close(); w.focus(); setTimeout(()=>{w.print();setTimeout(()=>w.close(),400)},250);
   }
   window.printElement=function(id){
@@ -4523,98 +4670,104 @@ function printClientLifeStatement(){const content=document.getElementById('clien
 
 
 <div id="accountsProfitsModal" class="non-service-overlay no-print" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.72);align-items:center;justify-content:center;padding:12px">
- <div style="width:min(1180px,98vw);max-height:94vh;overflow:auto;background:var(--card-bg,#fff);border-radius:12px;border:2px solid #8b83ff;box-shadow:0 18px 55px #0005">
+ <div style="width:min(1100px,98vw);max-height:94vh;overflow:auto;background:var(--card-bg,#fff);border-radius:12px;border:2px solid #8b83ff;box-shadow:0 18px 55px #0005">
   <div style="position:sticky;top:0;z-index:2;background:#dcd9ff;color:#211b55;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-   <h2 style="margin:0;font-size:20px"><i class="fa-solid fa-chart-line"></i> حسابات وأرباح</h2>
+   <h2 style="margin:0;font-size:20px"><i class="fa-solid fa-chart-line"></i> ملخص الحسابات والأرباح</h2>
    <button class="btn-action btn-danger" onclick="closeAccountsProfits()">إغلاق ✕</button>
   </div>
   <div style="padding:14px;display:grid;gap:12px">
-   <section style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px">
-    <h3 style="margin:0 0 10px;font-size:16px">حساب أرباح اليوم</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px">
-     <div class="card-box" style="margin:0;text-align:center"><b>التاريخ</b><input id="apDailyDate" type="date" style="display:block;width:100%;margin-top:6px;padding:8px;border:1px solid #aaa;border-radius:5px"></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي الربح</b><div id="apDailyGross" style="font-size:21px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي المصروفات</b><div id="apDailyExpenses" style="font-size:21px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>صافي الربح</b><div id="apDailyNet" style="font-size:21px;font-weight:900">0</div></div>
-    </div>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
-     <button class="btn-action btn-blue" onclick="editCurrentDailyProfit()">تعديل الحالي</button>
-     <button class="btn-action btn-danger" onclick="deleteCurrentDailyProfit()">حذف الحالي</button>
-     <button class="btn-action btn-green" onclick="printAccountsProfits()">تقرير أرباح</button>
-     <button class="btn-action btn-purple" onclick="showBranchProfits()">أرباح الفروع</button>
-     <button class="btn-action btn-orange" onclick="closeDailyProfit()">تقفيل إجمالي الربح</button>
-    </div>
-    <div id="apDailyStatus" style="margin-top:8px;color:#475569;font-size:13px"></div>
-   </section>
-
    <section style="background:#fff4e8;border:1px solid #f3c99e;border-radius:8px;padding:12px">
     <h3 style="margin:0 0 10px;font-size:16px">إجمالي الأرباح من بداية البرنامج حتى الآن</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي الأرباح</b><div id="apAllGross" style="font-size:22px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي أرباح  </b><div id="apAllGross" style="font-size:22px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>إجمالي المصروفات</b><div id="apAllExpenses" style="font-size:22px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>صافي الربح</b><div id="apAllNet" style="font-size:22px;font-weight:900">0</div></div>
     </div>
     <div id="apAllWarning" style="margin-top:8px;color:#9a3412;font-size:13px"></div>
    </section>
-
    <section style="background:#f0fdfa;border:1px solid #99e4d7;border-radius:8px;padding:12px">
     <h3 style="margin:0 0 10px;font-size:16px">حساب الأرباح خلال فترة</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;align-items:end">
      <label>من تاريخ<input id="apFrom" type="date" style="display:block;width:100%;padding:8px;border:1px solid #aaa;border-radius:5px"></label>
      <label>إلى تاريخ<input id="apTo" type="date" style="display:block;width:100%;padding:8px;border:1px solid #aaa;border-radius:5px"></label>
-     <button class="btn-action btn-green" onclick="calculateAccountsProfits()">احسب</button>
-     <button class="btn-action btn-blue" onclick="printAccountsProfits()">تقرير الأرباح</button>
+     <button class="btn-action btn-green" onclick="calculateAccountsProfits()">احسب الأرباح</button>
+     <button class="btn-action btn-blue" onclick="printAccountsProfits()"><i class="fa-solid fa-print"></i> طباعة</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:9px;margin-top:12px">
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي الربح</b><div id="apRangeGross" style="font-size:20px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي المصروفات</b><div id="apRangeExpenses" style="font-size:20px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>صافي الربح</b><div id="apRangeNet" style="font-size:20px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>إجمالي المبيعات</b><div id="apRangeSales" style="font-size:20px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>تكلفة المشتريات</b><div id="apRangeCost" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>شـــراء</b><div id="apRangeCost" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>ربـــح</b><div id="apRangeGross" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>المصروفات</b><div id="apRangeExpenses" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>صافي الربح</b><div id="apRangeNet" style="font-size:20px;font-weight:900">0</div></div>
     </div>
     <div id="apRangeWarning" style="margin-top:8px;color:#9a3412;font-size:13px"></div>
    </section>
-
    <section style="background:#fff1f2;border:1px solid #f5b7bf;border-radius:8px;padding:12px">
-    <h3 style="margin:0 0 10px;font-size:16px">إجمالي المبيعات خلال الفترة</h3>
+    <h3 style="margin:0 0 10px;font-size:16px">إجمالي المبيعات خلال فترة</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;align-items:end;margin-bottom:10px">
      <label>من تاريخ<input id="apSalesFrom" type="date" style="display:block;width:100%;padding:8px;border:1px solid #aaa;border-radius:5px"></label>
      <label>إلى تاريخ<input id="apSalesTo" type="date" style="display:block;width:100%;padding:8px;border:1px solid #aaa;border-radius:5px"></label>
      <button class="btn-action btn-green" onclick="calculateAccountsSalesPeriod()">احسب إجمالي المبيعات</button>
-     <button class="btn-action btn-purple" onclick="showSellerAccounts()">محاسبة البائع</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
      <div class="card-box" style="margin:0;text-align:center"><b>عدد الفواتير</b><div id="apInvoiceCount" style="font-size:20px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>إجمالي المبيعات</b><div id="apSalesTotal" style="font-size:20px;font-weight:900">0</div></div>
     </div>
    </section>
-
    <section style="background:#fffee0;border:1px solid #e7df91;border-radius:8px;padding:12px">
     <h3 style="margin:0 0 10px;font-size:16px">اختيار المخزن</h3>
     <select id="apWarehouse" onchange="renderAccountsProfitStock()" style="width:100%;max-width:400px;padding:9px;border:1px solid #aaa;border-radius:5px"><option value="">كل المخازن</option></select>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:10px">
      <div class="card-box" style="margin:0;text-align:center"><b>عدد الأصناف</b><div id="apStockCount" style="font-size:20px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي قيمة المخزن بسعر الشراء</b><div id="apStockValue" style="font-size:20px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي قيمة البضاعة بسعر البيع</b><div id="apStockSaleValue" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي قيمة المخزون بسعر الشراء</b><div id="apStockValue" style="font-size:20px;font-weight:900">0</div></div>
     </div>
     <div id="apStockWarning" style="margin-top:7px;color:#9a3412;font-size:13px"></div>
    </section>
-
    <section style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:12px">
-    <h3 style="margin:0 0 10px;font-size:16px">ملخص الخزائن والعملاء والموردين</h3>
+    <h3 style="margin:0 0 10px;font-size:16px">أرصدة الخزائن</h3>
+    <div style="overflow:auto"><table style="width:100%;min-width:450px;border-collapse:collapse"><thead><tr><th style="padding:7px;border:1px solid #aaa">الخزينة</th><th style="padding:7px;border:1px solid #aaa">الرصيد الحالي</th></tr></thead><tbody id="apTreasuryRows"><tr><td colspan="2">جاري التحميل...</td></tr></tbody></table></div>
+    <div style="text-align:left;font-weight:900;margin-top:8px">إجمالي أرصدة الخزائن: <span id="apTreasuryTotal">0</span> ج.م</div>
+   </section>
+
+   <section style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px">
+    <h3 style="margin:0 0 10px;font-size:16px">ملخص أرباح اليوم وإدارة التقفيل</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي إيداعات الخزائن</b><div id="apDeposits" style="font-size:19px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي صرف الخزائن</b><div id="apWithdrawals" style="font-size:19px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>الرصيد الحالي للخزائن</b><div id="apTreasuryTotal" style="font-size:19px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي أجل العملاء</b><div id="apCustomerCredit" style="font-size:19px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي مدين الموردين</b><div id="apSupplierDebit" style="font-size:19px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>صافي دائن ومدين</b><div id="apNetCreditDebit" style="font-size:19px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي الربح</b><div id="apTodayGross" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي المصروفات</b><div id="apTodayExpenses" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>صافي الربح</b><div id="apTodayNet" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>التاريخ</b><div id="apTodayDate" style="font-weight:900">---</div></div>
     </div>
-    <div style="overflow:auto;margin-top:10px"><table style="width:100%;min-width:450px;border-collapse:collapse"><thead><tr><th style="padding:7px;border:1px solid #aaa">الخزينة</th><th style="padding:7px;border:1px solid #aaa">الرصيد الحالي</th></tr></thead><tbody id="apTreasuryRows"><tr><td colspan="2">جاري التحميل...</td></tr></tbody></table></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
+     <button class="btn-action btn-blue" onclick="editCurrentProfitDay()">تعديل الحالي</button>
+     <button class="btn-action btn-danger" onclick="deleteCurrentProfitDay()">حذف الحالي</button>
+     <button class="btn-action btn-green" onclick="printAccountsProfits()">تقرير أرباح</button>
+     <button class="btn-action btn-purple" onclick="printBranchProfitsReport()">أرباح الفروع</button>
+     <button class="btn-action btn-orange" onclick="closeTotalProfit()">تقفيل إجمالي الربح</button>
+    </div>
+    <div id="apDailyStatus" style="font-size:12px;color:#64748b;margin-top:7px"></div>
    </section>
-   <section id="apReportsPanel" style="display:none;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px">
-    <h3 id="apReportsTitle" style="margin:0 0 10px">التقرير</h3><div id="apReportsContent"></div>
+   <section style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px">
+    <h3 style="margin:0 0 10px;font-size:16px">إجماليات الحسابات والخزائن والمخزون</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px">
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي إيداعات الخزائن</b><div id="apDepositsTotal">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي صرف الخزائن</b><div id="apWithdrawalsTotal">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>رصيد حالي الخزائن</b><div id="apCurrentTreasuries">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي آجل العملاء</b><div id="apClientCredit">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي مدين الموردين</b><div id="apSupplierDebit">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>صافي دائن ومدين</b><div id="apNetDebitCredit">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي قيمة البضاعة في المخازن</b><div id="apAllStockValue">0</div></div>
+    </div>
    </section>
+   <section style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:12px">
+    <h3 style="margin:0 0 10px;font-size:16px">محاسبة البائع</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;align-items:end">
+     <label>من تاريخ<input id="apSellerFrom" type="date" style="display:block;width:100%;padding:8px;border:1px solid #aaa;border-radius:5px"></label>
+     <label>إلى تاريخ<input id="apSellerTo" type="date" style="display:block;width:100%;padding:8px;border:1px solid #aaa;border-radius:5px"></label>
+     <button class="btn-action btn-green" onclick="calculateSellerAccounts()">احسب محاسبة البائع</button>
+    </div>
+    <div id="apSellerResults" style="margin-top:9px;overflow:auto"></div>
+   </section>
+
    <div id="apStatus" role="status" style="font-size:13px;color:#475569"></div>
   </div>
  </div>
@@ -4640,11 +4793,7 @@ function printClientLifeStatement(){const content=document.getElementById('clien
    return null;
  }
  window.accountsProfitFindBuyPrice=findBuyPrice;
- let cached={invoices:[],expenses:[],treasuries:[],transactions:[],clients:[],closings:[]};
- const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
- const safe=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
- const dailyRange=()=>{const d=$('apDailyDate').value||today();return sumRange(d,d)};
- const closingId=d=>'profit_'+String(d).replace(/[^0-9-]/g,'');
+ let cached={invoices:[],expenses:[],treasuries:[]};
  function invoiceProfit(inv){
    const parts=Array.isArray(inv.requiredParts)?inv.requiredParts:[];
    let revenue=0,cost=0,unknown=0;
@@ -4703,117 +4852,40 @@ function printClientLifeStatement(){const content=document.getElementById('clien
    const chosen=$('apWarehouse').value;
    const all=inventory(),items=chosen?all.filter(x=>String(x.warehouseId??x.storeId??x.warehouseName??x.warehouse??x.storeName??'')===chosen):all;
    const value=items.reduce((a,x)=>{const qty=num(x.quantity??x.qty??x.stock??x.balance??x.currentQty);const cost=num(x.buyPrice??x.purchasePrice??x.costPrice??x.averageCost??x.lastBuyPrice??x.unitCost);return a+qty*cost;},0);
-   const saleValue=items.reduce((a,x)=>{const qty=num(x.quantity??x.qty??x.stock??x.balance??x.currentQty);const price=num(x.sellPrice??x.salePrice??x.sellingPrice??x.price);return a+qty*price;},0);
-   $('apStockCount').textContent=items.length;$('apStockValue').textContent=fmt(value);$('apStockSaleValue').textContent=fmt(saleValue);
+   $('apStockCount').textContent=items.length;$('apStockValue').textContent=fmt(value);
    const missing=items.filter(x=>!Number.isFinite(Number(x.buyPrice??x.purchasePrice??x.costPrice??x.averageCost??x.lastBuyPrice??x.unitCost))||num(x.quantity??x.qty??x.stock??x.balance??x.currentQty)===0).length;
    $('apStockWarning').textContent=items.length?`القيمة محسوبة من الكمية × سعر الشراء المتاح في بيانات المخزن.${missing?' بعض الأصناف ينقصها سعر شراء أو كمية مسجلة.':''}`:'لا توجد بيانات مخزون محفوظة محليًا في هذا المتصفح.';
  };
  async function load(){
    $('apStatus').textContent='جاري تحميل الفواتير والمصروفات والخزائن...';
-   const [inv,exp,tr,tx,clients,closings]=await Promise.all([
+   const [inv,exp,tr]=await Promise.all([
      db.collection('invoices_archive').get(),
      db.collection('expenses').get(),
-     db.collection('treasuries').get(),
-     db.collection('treasury_transactions').get(),
-     db.collection('client_accounts').get(),
-     db.collection('profit_daily_closings').get().catch(()=>({forEach:()=>{}}))
+     db.collection('treasuries').get()
    ]);
    cached.invoices=[];inv.forEach(d=>cached.invoices.push({id:d.id,...(d.data()||{})}));
    cached.expenses=[];exp.forEach(d=>cached.expenses.push({id:d.id,...(d.data()||{})}));
    cached.treasuries=[];tr.forEach(d=>cached.treasuries.push({id:d.id,...(d.data()||{})}));
-   cached.transactions=[];tx.forEach(d=>cached.transactions.push({id:d.id,...(d.data()||{})}));
-   cached.clients=[];clients.forEach(d=>cached.clients.push({id:d.id,...(d.data()||{})}));
-   cached.closings=[];closings.forEach(d=>cached.closings.push({id:d.id,...(d.data()||{})}));
+   window.accountsProfitCache=cached;
    const all=sumRange('','');
    $('apAllGross').textContent=fmt(all.gross);$('apAllExpenses').textContent=fmt(all.expenseTotal);$('apAllNet').textContent=fmt(all.net);
    $('apAllWarning').textContent=all.unknown?`تنبيه: ${all.unknown} بند قطع غيار بدون سعر شراء؛ تم استبعاد تكلفتها من الحساب، لذلك الربح غير نهائي.`:'تم احتساب الربح من فرق سعر البيع والشراء ثم خصم المصروفات.';
-   const stockRows=inventory();
-   const names=[...new Set([
-     ...stockRows.map(x=>String(x.warehouseId??x.storeId??x.warehouseName??x.warehouse??x.storeName??'')),
-     ...read('stores').map(x=>String(x.name??x.storeName??x.id??'')),
-     ...read('warehouses').map(x=>String(x.name??x.warehouseName??x.id??''))
-   ].filter(Boolean))];
+   const names=[...new Set(inventory().map(x=>String(x.warehouseId??x.storeId??x.warehouseName??x.warehouse??x.storeName??'')).filter(Boolean))];
    $('apWarehouse').innerHTML='<option value="">كل المخازن</option>'+names.map(x=>`<option value="${String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}">${String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</option>`).join('');
    window.renderAccountsProfitStock();
    const total=cached.treasuries.reduce((a,x)=>a+num(x.balance),0);
    $('apTreasuryTotal').textContent=fmt(total);
-   $('apTreasuryRows').innerHTML=cached.treasuries.length?cached.treasuries.map(t=>`<tr><td style="padding:7px;border:1px solid #aaa">${safe(t.name||'خزينة')}</td><td style="padding:7px;border:1px solid #aaa;text-align:center">${fmt(t.balance)}</td></tr>`).join(''):'<tr><td colspan="2" style="padding:8px;text-align:center">لا توجد خزائن مسجلة</td></tr>';
-   const isOut=x=>String(x.direction||'').toLowerCase()==='out'||/صرف|مصروف|سداد|دفع|مورد|مرتبات|أجور|شراء|خصم|out/i.test(String(x.type||x.operationType||''));
-   const deposits=cached.transactions.reduce((a,x)=>a+(!isOut(x)?num(x.amount??x.paidAmount??x.paymentAmount):0),0);
-   const withdrawals=cached.transactions.reduce((a,x)=>a+(isOut(x)?Math.abs(num(x.amount??x.expenseAmount??x.paidAmount??x.paymentAmount)):0),0);
-   const customerCredit=cached.clients.reduce((a,x)=>a+Math.max(0,num(x.remainingAmount??x.remaining??(num(x.totalAmount??x.grandTotal)-num(x.paidAmount)))),0)
-     || cached.invoices.reduce((a,x)=>a+Math.max(0,num(x.remainingAmount??(num(x.totalAmount??x.grandTotal)-num(x.paidAmount??x.amountPaid)))),0);
-   const supplierOrders=read('supplier_issue_orders'),supplierLedger=read('supplier_ledger');
-   const supplierDebit=read('suppliers_list').reduce((a,s)=>{
-     const orders=supplierOrders.filter(o=>String(o.supplierId)===String(s.id));
-     const ledger=supplierLedger.filter(l=>String(l.supplierId)===String(s.id));
-     const totalOrders=orders.reduce((v,o)=>v+num(o.total),0);
-     const returns=read('supplier_returns').filter(r=>String(r.supplierId)===String(s.id)).reduce((v,r)=>v+(/مرتجع|تالف/.test(String(r.type||''))?num(r.value??(num(r.qty)*num(r.buyPrice??r.price))):0),0);
-     const paid=Math.max(orders.reduce((v,o)=>v+num(o.paid),0),ledger.filter(l=>/سداد|دفع|دفعة|payment/i.test(String(l.type||''))).reduce((v,l)=>v+num(l.value??l.amount),0));
-     return a+Math.max(0,totalOrders-returns-paid);
-   },0);
-   $('apDeposits').textContent=fmt(deposits);$('apWithdrawals').textContent=fmt(withdrawals);
-   $('apCustomerCredit').textContent=fmt(customerCredit);$('apSupplierDebit').textContent=fmt(supplierDebit);
-   $('apNetCreditDebit').textContent=(customerCredit-supplierDebit>=0?'صافي مدين للعملاء: ':'صافي دائن للموردين: ')+fmt(Math.abs(customerCredit-supplierDebit));
-   if(!$('apDailyDate').value)$('apDailyDate').value=today();
-   renderDailyProfit();
+   $('apTreasuryRows').innerHTML=cached.treasuries.length?cached.treasuries.map(t=>`<tr><td style="padding:7px;border:1px solid #aaa">${String(t.name||'خزينة').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}</td><td style="padding:7px;border:1px solid #aaa;text-align:center">${fmt(t.balance)}</td></tr>`).join(''):'<tr><td colspan="2" style="padding:8px;text-align:center">لا توجد خزائن مسجلة</td></tr>';
    calculateAccountsProfits();
    if(!$('apSalesFrom').value)$('apSalesFrom').value=$('apFrom').value;
    if(!$('apSalesTo').value)$('apSalesTo').value=$('apTo').value;
    calculateAccountsSalesPeriod();
    $('apStatus').textContent=`تم تحميل ${cached.invoices.length} فاتورة و${cached.expenses.length} مصروف و${cached.treasuries.length} خزينة.`;
  }
-
- function renderDailyProfit(){
-   const date=$('apDailyDate').value||today(),r=sumRange(date,date);
-   $('apDailyGross').textContent=fmt(r.gross);$('apDailyExpenses').textContent=fmt(r.expenseTotal);$('apDailyNet').textContent=fmt(r.net);
-   const closed=cached.closings.find(x=>String(x.date||'')===date);
-   if(closed){$('apDailyGross').textContent=fmt(closed.gross);$('apDailyExpenses').textContent=fmt(closed.expenses);$('apDailyNet').textContent=fmt(closed.net);}
-   $('apDailyStatus').textContent=closed?`تم تقفيل اليوم في ${closed.closedAt?new Date(closed.closedAt).toLocaleString('ar-EG'):'تاريخ سابق'} — القيم المقفلة: ربح ${fmt(closed.gross)}، مصروفات ${fmt(closed.expenses)}، صافي ${fmt(closed.net)}.`:'الأرقام المعروضة محسوبة مباشرة من الفواتير والمصروفات المسجلة لهذا اليوم.';
- }
- window.editCurrentDailyProfit=async function(){
-   const date=$('apDailyDate').value||today(),r=sumRange(date,date),old=cached.closings.find(x=>String(x.date||'')===date);
-   const gross=prompt('تعديل إجمالي الربح لليوم '+date,old?old.gross:r.gross);if(gross===null)return;
-   const expenses=prompt('تعديل إجمالي المصروفات لليوم '+date,old?old.expenses:r.expenseTotal);if(expenses===null)return;
-   if(!Number.isFinite(Number(gross))||!Number.isFinite(Number(expenses))){alert('أدخل أرقامًا صحيحة.');return;}
-   try{
-     await db.collection('profit_daily_closings').doc(closingId(date)).set({date,gross:Number(gross),expenses:Number(expenses),net:Number(gross)-Number(expenses),editedAt:new Date().toISOString(),manualEdit:true},{merge:true});
-     await load();alert('تم تعديل حساب اليوم وحفظه.'); 
-   }catch(e){alert('تعذر تعديل حساب اليوم: '+e.message);}
- };
- window.deleteCurrentDailyProfit=async function(){
-   const date=$('apDailyDate').value||today(),ref=db.collection('profit_daily_closings').doc(closingId(date));
-   if(!confirm('حذف تقفيل/تعديل أرباح يوم '+date+'؟ لن يتم حذف الفواتير أو المصروفات الأصلية.'))return;
-   try{await ref.delete();cached.closings=cached.closings.filter(x=>String(x.date)!==date);renderDailyProfit();alert('تم حذف سجل التقفيل فقط، والبيانات الأصلية محفوظة.');}
-   catch(e){alert('تعذر الحذف: '+e.message);}
- };
- window.closeDailyProfit=async function(){
-   const date=$('apDailyDate').value||today(),r=sumRange(date,date);
-   if(!confirm(`تأكيد تقفيل أرباح ${date}؟\\nإجمالي الربح: ${fmt(r.gross)}\\nالمصروفات: ${fmt(r.expenseTotal)}\\nالصافي: ${fmt(r.net)}`))return;
-   try{await db.collection('profit_daily_closings').doc(closingId(date)).set({date,gross:r.gross,expenses:r.expenseTotal,net:r.net,closedAt:new Date().toISOString(),invoiceCount:r.invoices.length},{merge:true});await load();alert('تم تقفيل إجمالي ربح اليوم وحفظه.');}
-   catch(e){alert('تعذر تقفيل الأرباح: '+e.message);}
- };
- function renderGroupedReport(title,groups,label){
-   const host=$('apReportsPanel'),body=$('apReportsContent');$('apReportsTitle').textContent=title;
-   const entries=[...groups.entries()].sort((a,b)=>b[1]-a[1]);
-   body.innerHTML=entries.length?'<table style="width:100%;border-collapse:collapse"><thead><tr><th>الاسم</th><th>إجمالي '+label+'</th></tr></thead><tbody>'+entries.map(([k,v])=>`<tr><td>${safe(k)}</td><td>${fmt(v)}</td></tr>`).join('')+'</tbody></table>':'<p>لا توجد بيانات كافية لعرض التقرير.</p>';
-   host.style.display='block';host.scrollIntoView({behavior:'smooth',block:'nearest'});
- }
- window.showBranchProfits=function(){
-   const from=$('apFrom').value,to=$('apTo').value,groups=new Map();
-   cached.invoices.filter(x=>inRange(x,from,to)).forEach(x=>{const name=x.branchName||x.branch||x.storeName||x.warehouseName||x.department||'فرع غير محدد';groups.set(String(name), (groups.get(String(name))||0)+invoiceProfit(x).gross);});
-   renderGroupedReport('تقرير أرباح الفروع',groups,'الربح');
- };
- window.showSellerAccounts=function(){
-   const from=$('apSalesFrom').value,to=$('apSalesTo').value,groups=new Map();
-   cached.invoices.filter(x=>inRange(x,from,to)).forEach(x=>{const name=x.sellerName||x.seller||x.salesPerson||x.cashier||x.createdBy||x.employeeName||'بائع غير محدد';groups.set(String(name),(groups.get(String(name))||0)+num(x.totalAmount??x.grandTotal));});
-   renderGroupedReport('محاسبة البائعين — إجمالي المبيعات',groups,'المبيعات');
- };
  window.openAccountsProfits=async function(){
    const m=$('accountsProfitsModal');m.style.display='flex';m.setAttribute('aria-hidden','false');
    try{await load();}catch(e){$('apStatus').textContent='تعذر تحميل البيانات: '+e.message;}
  };
- $('apDailyDate').addEventListener('change',renderDailyProfit);
  window.closeAccountsProfits=function(){const m=$('accountsProfitsModal');m.style.display='none';m.setAttribute('aria-hidden','true');};
  window.printAccountsProfits=function(){
    const content=$('accountsProfitsModal').querySelector('div[style*="padding:14px"]');
