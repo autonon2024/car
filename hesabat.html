@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> قسم الحسابات والخزينة</title>
+  <title>مركز أوتو نون (NON) - قسم الحسابات والخزينة</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     :root {
@@ -867,6 +867,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         <div class="card-title no-print">
           <span><i class="fa-solid fa-calculator"></i> تفاصيل الحساب والفاتورة الشاملة</span>
           <span id="activeClientTitle" style="font-size:0.85rem; color:var(--btn-blue);">اختر عميلاً من القائمة أو صيانة سريعة</span>
+          <button type="button" class="btn-action btn-orange" onclick="toggleManagerInvoiceEdit()"><i class="fa-solid fa-pen-to-square"></i> تعديل الفاتورة (المدير)</button>
         </div>
 
         <div class="form-grid">
@@ -2601,7 +2602,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         }
         if (item.id) await db.collection('accounting_queue').doc(item.id).delete().catch(()=>{});
         alert(`✅ تم تسجيل التحصيل وإصدار الفاتورة رقم #${invoiceSerial}. رقم إذن استلام السيارة: ${carReceiptNo}. ${releasedLifts ? `تم تحرير الكوريك المرتبط بالسيارة (${releasedLifts}).` : 'لم يتم العثور على كوريك مرتبط بهذه السيارة لتحريره.'} السيارة عادت إلى التشخيص لحين التسليم.`);
-        window.window.printInvoiceBySize('A4');
+        if (typeof window.printInvoiceBySize === 'function') window.printInvoiceBySize('A4'); else window.print();
         if(clientPhone){let p=String(clientPhone).replace(/\D/g,'');if(p.startsWith('0'))p='2'+p;const msg=`مرحباً ${clientName}، تم تسجيل الدفع بمركز أوتو نون. رقم إذن استلام السيارة الخاص بك هو: ${carReceiptNo}. برجاء إبراز رقم الإذن عند استلام السيارة. رقم الفاتورة: ${invoiceSerial}.`;setTimeout(()=>window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`,'_blank'),500);}
         setTimeout(() => location.reload(), 1200);
       } catch (err) {
@@ -3004,9 +3005,23 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           }
         });
 
+        // تسويات التحويل بين بنود الملخص: تخصم من المصدر وتضاف إلى الوجهة.
+        const adjustments = {drawer:0, transfers:0, treasury:0, deferred:0};
+        const transfersSnap = await db.collection('financial_summary_transfers').get();
+        transfersSnap.forEach(doc => {
+          const tr = doc.data() || {};
+          const value = Number(tr.amount) || 0;
+          if (adjustments[tr.from] !== undefined) adjustments[tr.from] -= value;
+          if (adjustments[tr.to] !== undefined) adjustments[tr.to] += value;
+        });
+        drawerTotal += adjustments.drawer;
+        transfersTotal += adjustments.transfers;
+        treasuryBalanceTotal += adjustments.treasury;
+        deferredTotal += adjustments.deferred;
+
         if (drawerEl) drawerEl.textContent = formatFinancialAmount(drawerTotal);
         if (transfersEl) transfersEl.textContent = formatFinancialAmount(transfersTotal);
-        // إجمالي الخزينة يعرض الأرصدة الحالية من سجل الخزن، وليس مجموع المقبوضات التاريخية.
+        // إجمالي الخزينة = أرصدة الخزن الحالية بعد تسويات التحويل.
         if (treasuryEl) treasuryEl.textContent = formatFinancialAmount(treasuryBalanceTotal);
         if (deferredEl) deferredEl.textContent = formatFinancialAmount(deferredTotal);
       } catch (e) {
@@ -4013,8 +4028,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
  }
 })();
 <\\/script>
-
-</body></html>');
+\n</body></html>');
     w.document.close(); w.focus(); setTimeout(()=>{w.print();setTimeout(()=>w.close(),400)},250);
   }
   window.printElement=function(id){
@@ -4297,7 +4311,8 @@ window.showClientStatement=async function(clientName){
     const rows=docs.map((x,i)=>{const total=num(x.totalAmount||x.grandTotal),paid=num(x.paidAmount),rem=num(x.remainingAmount||(total-paid));return '<tr><td>'+(i+1)+'</td><td>'+esc(x.date||x.timestamp||x.createdAt||'')+'</td><td>'+esc(x.invoiceSerial||x.invoiceNumber||'')+'</td><td>'+esc(x.carInfo||'')+'</td><td>'+money(total)+'</td><td>'+money(paid)+'</td><td>'+money(rem)+'</td></tr>';}).join('');
     const total=docs.reduce((a,x)=>a+num(x.totalAmount||x.grandTotal),0),paid=docs.reduce((a,x)=>a+num(x.paidAmount),0),rem=docs.reduce((a,x)=>a+num(x.remainingAmount||(num(x.totalAmount||x.grandTotal)-num(x.paidAmount))),0);
     const w=window.open('','_blank','width=1000,height=750');if(!w)return;
-    w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>كشف حساب '+esc(clientName)+'</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;color:#111}.head{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:10px}.meta div{border:1px solid #cbd5e1;padding:6px}.bank{width:100%;border-collapse:collapse;font-size:10px}.bank th,.bank td{border:1px solid #cbd5e1;padding:5px}.bank th{background:#0f172a;color:#fff}.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.tot div{border:1px solid #cbd5e1;padding:7px;font-weight:900}</style></head><body><div class="head"><div><h2 style="margin:0">كشف حساب عميل</h2><div>حركة مالية تفصيلية</div></div><div>'+new Date().toLocaleDateString('en-US')+'</div></div><div class="meta"><div><b>العميل:</b> '+esc(clientName)+'</div><div><b>عدد الزيارات:</b> '+docs.length+'</div><div><b>الرصيد:</b> '+money(rem)+'</div></div><table class="bank"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>البيان / السيارة</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>'+rows+'</tbody></table><div class="tot"><div>إجمالي المدين<br>'+money(total)+'</div><div>إجمالي المدفوع<br>'+money(paid)+'</div><div>الرصيد المستحق<br>'+money(rem)+'</div></div></body></html>');
+    w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>كشف حساب '+esc(clientName)+'</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;color:#111}.head{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:10px}.meta div{border:1px solid #cbd5e1;padding:6px}.bank{width:100%;border-collapse:collapse;font-size:10px}.bank th,.bank td{border:1px solid #cbd5e1;padding:5px}.bank th{background:#0f172a;color:#fff}.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.tot div{border:1px solid #cbd5e1;padding:7px;font-weight:900}</style></head><body><div class="head"><div><h2 style="margin:0">كشف حساب عميل</h2><div>حركة مالية تفصيلية</div></div><div>'+new Date().toLocaleDateString('en-US')+'</div></div><div class="meta"><div><b>العميل:</b> '+esc(clientName)+'</div><div><b>عدد الزيارات:</b> '+docs.length+'</div><div><b>الرصيد:</b> '+money(rem)+'</div></div><table class="bank"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>البيان / السيارة</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>'+rows+'</tbody></table><div class="tot"><div>إجمالي المدين<br>'+money(total)+'</div><div>إجمالي المدفوع<br>'+money(paid)+'</div><div>الرصيد المستحق<br>'+money(rem)+'</div></div>
+\n</body></html>');
     w.document.close();setTimeout(()=>{w.print();setTimeout(()=>w.close(),500)},250);
   };
 })();
@@ -4820,7 +4835,8 @@ async function searchClientLifeStatement(){
   out.innerHTML=html;
  }catch(e){out.innerHTML='<p style="color:#b91c1c">تعذر تحميل كشف العميل: '+clientLifeEsc(e.message)+'</p>'}
 }
-function printClientLifeStatement(){const content=document.getElementById('clientLifeStatementContent');if(!content||!content.innerText.trim()){alert('اعرض بيانات العميل أولاً قبل الطباعة');return}const w=window.open('','_blank','width=1100,height=800');if(!w){alert('اسمح بفتح النوافذ المنبثقة حتى تتمكن من الطباعة');return}w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف العميل</title><style>body{font-family:Tahoma,Arial;padding:20px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #777;padding:6px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee}.card-box{border:1px solid #aaa;padding:10px;margin-bottom:12px}.table-responsive{overflow:visible}small{font-size:10px}@page{size:A4 landscape;margin:10mm}</style></head><body><h2>مركز أوتو نون — كشف العميل</h2>${content.innerHTML}</body></html>`);w.document.close();w.focus();}
+function printClientLifeStatement(){const content=document.getElementById('clientLifeStatementContent');if(!content||!content.innerText.trim()){alert('اعرض بيانات العميل أولاً قبل الطباعة');return}const w=window.open('','_blank','width=1100,height=800');if(!w){alert('اسمح بفتح النوافذ المنبثقة حتى تتمكن من الطباعة');return}w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف العميل</title><style>body{font-family:Tahoma,Arial;padding:20px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #777;padding:6px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee}.card-box{border:1px solid #aaa;padding:10px;margin-bottom:12px}.table-responsive{overflow:visible}small{font-size:10px}@page{size:A4 landscape;margin:10mm}</style></head><body><h2>مركز أوتو نون — كشف العميل</h2>${content.innerHTML}
+\n</body></html>`);w.document.close();w.focus();}
 </script>
 
 
@@ -5076,7 +5092,8 @@ function printClientLifeStatement(){const content=document.getElementById('clien
    clone.querySelectorAll('section').forEach(el=>el.classList.add('report-section'));
    const w=window.open('','_blank','width=1100,height=850');if(!w){alert('اسمح بفتح النوافذ المنبثقة للطباعة.');return;}
    const css='<style>@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{font-family:Tahoma,Arial;color:#17243a;margin:0;font-size:11px;line-height:1.55}.head{border-bottom:3px solid #173753;padding:0 0 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:end}.head h1{font-size:21px;margin:0;color:#173753}.head p{margin:3px 0;color:#64748b}.report-section{border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin:0 0 11px;break-inside:avoid;page-break-inside:avoid;background:#fff!important}.report-section h3{font-size:13px;color:#173753;border-bottom:1px solid #dbe4ee;padding-bottom:6px;margin:0 0 9px}.card-box{box-shadow:none!important;border:1px solid #d5dee8!important;border-radius:6px!important;padding:8px!important;background:#f8fafc!important;color:#17243a!important}table{width:100%;border-collapse:collapse!important;font-size:10px}th{background:#e8eef5!important;color:#173753!important;font-weight:900}th,td{border:1px solid #cbd5e1!important;padding:6px!important;text-align:right}b,strong{color:#173753}.foot{border-top:2px solid #173753;padding-top:7px;margin-top:15px;text-align:center;color:#64748b;font-size:9px}</style>';
-   w.document.open();w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملخص الحسابات والأرباح</title>'+css+'</head><body><header class="head"><div><h1>مركز أوتو نون (NON)</h1><p>ملخص الحسابات والأرباح</p></div><b>تاريخ الطباعة: '+new Date().toLocaleString('ar-EG')+'</b></header>'+clone.innerHTML+'<footer class="foot">مركز أوتو نون لصيانة السيارات — تقرير داخلي للحسابات والأرباح</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\\/script></body></html>');w.document.close();
+   w.document.open();w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملخص الحسابات والأرباح</title>'+css+'</head><body><header class="head"><div><h1>مركز أوتو نون (NON)</h1><p>ملخص الحسابات والأرباح</p></div><b>تاريخ الطباعة: '+new Date().toLocaleString('ar-EG')+'</b></header>'+clone.innerHTML+'<footer class="foot">مركز أوتو نون لصيانة السيارات — تقرير داخلي للحسابات والأرباح</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\\/script>
+\n</body></html>');w.document.close();
   };
 })();
 </script>
@@ -5338,6 +5355,52 @@ function printClientLifeStatement(){const content=document.getElementById('clien
       try{window.db.collection(name).onSnapshot(scheduleRefresh,err=>console.warn('تعذر متابعة تحديث '+name,err));}catch(e){}
     });
   }
+})();
+</script>
+<script id="manager-invoice-edit-mode">
+(function(){
+  let editing = false;
+  window.toggleManagerInvoiceEdit = function(){
+    const area = document.getElementById('printableInvoiceArea');
+    if(!area){ alert('افتح الفاتورة أولاً ثم أعد المحاولة.'); return; }
+    if(!editing){
+      const pin = prompt('أدخل كلمة سر المدير لتعديل الفاتورة:');
+      if(pin === null) return;
+      if(pin !== '3311'){ alert('كلمة سر المدير غير صحيحة.'); return; }
+      area.querySelectorAll('input').forEach(el=>{
+        el.dataset.managerWasReadonly = el.readOnly ? '1' : '0';
+        el.readOnly = false; el.removeAttribute('readonly');
+        el.style.background = '#fffbe6'; el.style.color = '#111';
+      });
+      area.querySelectorAll('select, textarea').forEach(el=>{
+        el.dataset.managerWasDisabled = el.disabled ? '1' : '0'; el.disabled = false;
+      });
+      area.querySelectorAll('td, th, p, h2, label, .summary-row span, strong').forEach(el=>{
+        if(el.closest('.no-print')) return;
+        el.contentEditable = 'true'; el.dataset.managerEditable = '1';
+        el.style.outline = '1px dashed #f59e0b';
+      });
+      editing = true;
+      const btn = document.querySelector('[onclick="toggleManagerInvoiceEdit()"]');
+      if(btn) btn.innerHTML = '<i class="fa-solid fa-lock"></i> إنهاء تعديل الفاتورة';
+      alert('تم فتح تعديل الفاتورة. عدّل البيانات ثم اضغط إنهاء التعديل.');
+    } else {
+      area.querySelectorAll('input').forEach(el=>{
+        if(el.dataset.managerWasReadonly === '1') el.readOnly = true;
+        delete el.dataset.managerWasReadonly; el.style.background = ''; el.style.color = '';
+      });
+      area.querySelectorAll('select, textarea').forEach(el=>{
+        if(el.dataset.managerWasDisabled === '1') el.disabled = true;
+        delete el.dataset.managerWasDisabled;
+      });
+      area.querySelectorAll('[data-manager-editable="1"]').forEach(el=>{
+        el.contentEditable = 'false'; el.style.outline = ''; delete el.dataset.managerEditable;
+      });
+      editing = false;
+      const btn = document.querySelector('[onclick="toggleManagerInvoiceEdit()"]');
+      if(btn) btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> تعديل الفاتورة (المدير)';
+    }
+  };
 })();
 </script>
 
