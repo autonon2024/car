@@ -213,6 +213,14 @@
     .search-result-card:hover{border-color:var(--btn-blue);transform:translateY(-1px)}
     .search-result-card strong{color:var(--btn-blue)}
     .engineer-badge-header{cursor:default}
+ .incoming-shortcut{position:relative}.incoming-shortcut.has-unread{border:2px solid #ef4444;box-shadow:0 0 0 4px #ef44441c,0 10px 28px #ef444425;animation:incomingPulse 1.8s infinite}
+ .incoming-shortcut.has-unread .shortcut-icon{background:linear-gradient(135deg,#dc2626,#f97316)!important}
+ .incoming-notice-count{display:none;position:absolute;top:-9px;left:-8px;min-width:25px;height:25px;padding:0 6px;border-radius:30px;background:#dc2626;color:white;font-size:12px;font-weight:900;align-items:center;justify-content:center;border:2px solid white}
+ .incoming-shortcut.has-unread .incoming-notice-count{display:flex}
+ @keyframes incomingPulse{50%{box-shadow:0 0 0 8px #ef444410,0 10px 28px #ef444430}}
+ .parts-editor-list{display:grid;gap:8px;margin:12px 0}.parts-editor-row{display:grid;grid-template-columns:1.5fr .6fr .8fr auto;gap:8px;align-items:center;border:1px solid #e5eaf2;border-radius:10px;padding:9px;background:#f8fafc}.parts-editor-row button{white-space:nowrap}
+ .parts-editor-total{font-weight:900;color:#0f766e;text-align:left;margin:8px 0}
+ @media(max-width:620px){.parts-editor-row{grid-template-columns:1fr 1fr}.parts-editor-row .part-row-name{grid-column:1/-1}}
   </style>
 
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -331,7 +339,7 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
 </div>
 <div class="engineer-shortcuts">
  <button class="engineer-shortcut incoming-shortcut" type="button" onclick="openEngineerIncomingModal()">
-  <span class="shortcut-icon"><i class="fa-solid fa-inbox"></i></span><span><b>السيارات الواردة من الأقسام</b><small>عرض ومتابعة السيارات المحولة للمهندس</small></span><span class="shortcut-arrow"><i class="fa-solid fa-chevron-left"></i></span>
+  <span class="shortcut-icon"><i class="fa-solid fa-inbox"></i></span><span class="incoming-notice-count" id="engineerIncomingNoticeCount">0</span><span><b>السيارات الواردة من الأقسام</b><small>عرض ومتابعة السيارات المحولة للمهندس</small></span><span class="shortcut-arrow"><i class="fa-solid fa-chevron-left"></i></span>
  </button>
  <button class="engineer-shortcut archive-shortcut" type="button" onclick="openEngineerArchiveModal()">
   <span class="shortcut-icon"><i class="fa-solid fa-box-archive"></i></span><span><b>أرشيف العملاء السابقين</b><small>سجل العملاء والسيارات والتقارير السابقة</small></span><span class="shortcut-arrow"><i class="fa-solid fa-chevron-left"></i></span>
@@ -343,6 +351,17 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
   <header class="engineer-modal-head"><div><span class="modal-kicker">متابعة التحويلات</span><h2 id="incomingModalTitle">السيارات الواردة من الأقسام إلى المهندس</h2></div><button class="modal-close" onclick="closeEngineerModal('engineerIncomingModal')" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button></header>
   <div class="modal-toolbar"><span class="modal-hint">اختر السيارة لفتح تقريرها أو إعادة توجيهها</span><button class="btn-action-sm btn-primary" onclick="refreshEngineerIncoming()"><i class="fa-solid fa-rotate"></i> تحديث</button></div>
   <div class="modal-table-wrap"><table><thead><tr><th>العميل / السيارة</th><th>القسم المحوّل</th><th>الفني</th><th>الإجراءات</th></tr></thead><tbody id="engineerIncomingTbody"><tr><td colspan="4">جاري التحميل...</td></tr></tbody></table></div>
+ </section>
+</div>
+<div id="engineerPartsModal" class="engineer-modal" aria-hidden="true">
+ <div class="engineer-modal-backdrop" onclick="closeEngineerModal('engineerPartsModal')"></div>
+ <section class="engineer-modal-card transfer-modal-card" role="dialog" aria-modal="true" aria-labelledby="engineerPartsTitle">
+  <header class="engineer-modal-head"><div><span class="modal-kicker">إدارة قطع الغيار</span><h2 id="engineerPartsTitle">تعديل بضاعة السيارة</h2><p id="engineerPartsCarLabel" class="modal-hint"></p></div><button class="modal-close" onclick="closeEngineerModal('engineerPartsModal')"><i class="fa-solid fa-xmark"></i></button></header>
+  <div class="form-grid"><div class="form-field"><label>اختيار منتج من المخزن</label><select id="engineerPartProduct"></select></div><div class="form-field"><label>الكمية</label><input id="engineerPartQty" type="number" min="1" value="1"></div></div>
+  <div class="form-field"><label>سعر البيع للوحدة</label><input id="engineerPartPrice" type="number" min="0" step="0.01" placeholder="السعر"></div>
+  <button class="btn-action-sm btn-primary" onclick="engineerAddPartToCar()"><i class="fa-solid fa-plus"></i> إضافة المنتج للسيارة</button>
+  <h3 style="margin-top:18px;color:#233b5d">البضاعة المسجلة على السيارة</h3><div id="engineerPartsEditorList" class="parts-editor-list"></div><div id="engineerPartsEditorTotal" class="parts-editor-total"></div>
+  <footer class="transfer-actions"><button class="btn-action-sm btn-primary" onclick="saveEngineerCarParts()"><i class="fa-solid fa-floppy-disk"></i> حفظ التعديلات</button><button class="btn-action-sm btn-neutral" onclick="closeEngineerModal('engineerPartsModal')">إغلاق</button></footer>
  </section>
 </div>
 <div id="engineerArchiveModal" class="engineer-modal" aria-hidden="true">
@@ -1497,16 +1516,31 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
 let engineerIncomingCars=[];
 let engineerArchiveCars=[];
 let engineerTransferCarId=null;
+let engineerPartsCarId=null;
+let engineerPartsDraft=[];
+let engineerInventoryItems=[];
+let engineerIncomingUnseen=[];
 function openEngineerModal(id){const el=document.getElementById(id);if(!el)return;el.classList.add('is-open');el.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');}
 function closeEngineerModal(id){const el=document.getElementById(id);if(!el)return;el.classList.remove('is-open');el.setAttribute('aria-hidden','true');if(!document.querySelector('.engineer-modal.is-open'))document.body.classList.remove('modal-open');}
-function openEngineerIncomingModal(){openEngineerModal('engineerIncomingModal');refreshEngineerIncoming();}
+async function openEngineerIncomingModal(){
+ openEngineerModal('engineerIncomingModal');refreshEngineerIncoming();
+ const pending=[...engineerIncomingUnseen];
+ if(pending.length){const now=new Date().toISOString();try{const batch=db.batch();pending.forEach(c=>batch.set(db.collection('cars').doc(c.id),{engineerIncomingAckAt:now,engineerIncomingAckBy:getEngineerName()},{merge:true}));await batch.commit();}catch(e){console.warn('تعذر حفظ تأكيد استلام الإشعار:',e);}}
+}
+function engineerIncomingTimestamp(c){return Date.parse(c.returnedToEngineerAt||c.incomingEngineerAt||c.updatedAt||c.departmentTransferredAt||c.engineerReroutedAt||c.createdAt||0)||0;}
+function isEngineerIncoming(c){return c.status==='RETURNED_TO_ENGINEER'||c.status==='SENT_TO_TREASURY'||(c.targetDepartment==='diagnosis'&&c.repairDepartment&&c.status!=='COMPLETED'&&c.status!=='ARCHIVED');}
 function refreshEngineerIncoming(){
  const body=document.getElementById('engineerIncomingTbody');if(!body)return;
- const rows=allCarsLocalData.filter(c=>c.status==='RETURNED_TO_ENGINEER'||(c.targetDepartment==='diagnosis'&&c.repairDepartment));
+ const rows=allCarsLocalData.filter(isEngineerIncoming);
  engineerIncomingCars=rows;
- if(!rows.length){body.innerHTML='<tr><td colspan="4" class="empty-table">لا توجد سيارات واردة من الأقسام حالياً</td></tr>';return;}
- body.innerHTML=rows.map(c=>`<tr><td><b>${escapeHtml(c.clientName||c.name||'بدون اسم')}</b><br><small>${escapeHtml((c.brand||'')+' '+(c.model||''))} — ${escapeHtml(c.plate||'بدون لوحة')}</small></td><td>${escapeHtml(c.repairDepartmentName||getDepartmentArabicName(c.repairDepartment)||'قسم')}</td><td>${escapeHtml(c.repairCompletedBy||c.activeTechnician||'غير محدد')}</td><td class="table-actions"><button class="btn-action-sm btn-primary" onclick="openEngineerCarReport('${c.id}')">التقرير</button> <button class="btn-action-sm btn-lift" onclick="engineerRouteDepartment('${c.id}')">قسم آخر</button> <button class="btn-action-sm btn-dz" onclick="engineerSendAccounting('${c.id}')">حسابات</button> <button class="btn-action-sm btn-green" onclick="engineerRunTest('${c.id}')">اختبار</button></td></tr>`).join('');
+ engineerIncomingUnseen=rows.filter(c=>(Date.parse(c.engineerIncomingAckAt||0)||0)<engineerIncomingTimestamp(c));
+ const shortcut=document.querySelector('.incoming-shortcut');const count=document.getElementById('engineerIncomingNoticeCount');
+ if(shortcut){shortcut.classList.toggle('has-unread',engineerIncomingUnseen.length>0);shortcut.setAttribute('aria-label',engineerIncomingUnseen.length?`يوجد ${engineerIncomingUnseen.length} سيارة واردة جديدة`:'لا توجد إشعارات واردة جديدة');}
+ if(count)count.textContent=String(engineerIncomingUnseen.length);
+ if(!rows.length){body.innerHTML='<tr><td colspan="4" class="empty-table">لا توجد سيارات واردة من الأقسام أو الحسابات حالياً</td></tr>';return;}
+ body.innerHTML=rows.map(c=>{const fromAccounting=c.status==='SENT_TO_TREASURY';return `<tr><td><b>${escapeHtml(c.clientName||c.name||'بدون اسم')}</b><br><small>${escapeHtml((c.brand||'')+' '+(c.model||''))} — ${escapeHtml(c.plate||'بدون لوحة')}</small></td><td>${fromAccounting?'<b style="color:#0f766e">الحسابات</b>':escapeHtml(c.repairDepartmentName||getDepartmentArabicName(c.repairDepartment)||'قسم')}</td><td>${escapeHtml(c.repairCompletedBy||c.activeTechnician||c.assignedTechnician||'غير محدد')}</td><td class="table-actions"><button class="btn-action-sm btn-primary" onclick="openEngineerCarReport('${c.id}')">التقرير</button> <button class="btn-action-sm" style="background:#0f766e;color:white" onclick="openEngineerPartsEditor('${c.id}')">البضاعة</button> ${fromAccounting?`<button class="btn-action-sm btn-dz" onclick="returnCarFromAccountingToEngineer('${c.id}')">إرجاع للمهندس</button>`:`<button class="btn-action-sm btn-lift" onclick="engineerRouteDepartment('${c.id}')">قسم آخر</button> <button class="btn-action-sm btn-dz" onclick="engineerSendAccounting('${c.id}')">حسابات</button>`} <button class="btn-action-sm btn-green" onclick="engineerRunTest('${c.id}')">اختبار</button></td></tr>`}).join('');
 }
+
 function openEngineerArchiveModal(){
  openEngineerModal('engineerArchiveModal');
  const current=allCarsLocalData.filter(c=>c.diagnosisEngineer||c.diagnosisDetails||c.diagnosisReport||c.engineerReroutedAt||c.departmentTransferredAt);
@@ -1534,15 +1568,20 @@ function toggleEngineerTools(){
  if(panel.style.display==='block')panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function showEngineerRepairReport(id){openEngineerCarReport(id);}
-function openEngineerCarReport(id,providedCar){
+async function openEngineerCarReport(id,providedCar){
  const c=providedCar||allCarsLocalData.find(x=>x.id===id)||engineerArchiveCars.find(x=>x.id===id)||{};
  const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- const parts=(c.repairParts||c.requiredPartsList||[]).map(x=>(x.name||x.itemName||'صنف')+' × '+(x.quantityNeeded||x.qty||1)).join('، ')||'لا توجد بضاعة مسجلة';
- const services=(c.repairServices||c.installationServicesList||[]).map(x=>x.name||x.serviceName||'').join('، ')||'لا توجد إصلاحات/خدمات مسجلة';
+ const money=n=>(Number(n)||0).toLocaleString('ar-EG',{maximumFractionDigits:2})+' ج.م';
+ let stock=[];try{const snap=await db.collection('inventory').get();stock=snap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){try{stock=JSON.parse(localStorage.getItem('inventory')||'[]')}catch(_){stock=[]}}
+ const parts=(c.repairParts||c.requiredPartsList||[]).map(x=>{const match=stock.find(i=>i.id===(x.itemId||x.inventoryId||x.productId)||String(i.code||i.itemCode||i.barcode||'')===String(x.productCode||x.code||'')||engineerPartName(i)===engineerPartName(x));const price=Number(x.salePrice??x.sellPrice??x.price??x.unitPrice??(match?engineerPartPrice(match):0))||0;return {name:x.name||x.itemName||'صنف',qty:Number(x.quantityNeeded||x.qty||1),price}});
+ const services=(c.repairServices||c.installationServicesList||[]).map(x=>({name:x.name||x.serviceName||'خدمة',qty:Number(x.qty||x.quantity||1),price:Number(x.salePrice??x.price??x.unitPrice??x.servicePrice??0)}));
+ const partTotal=parts.reduce((a,x)=>a+x.qty*x.price,0),serviceTotal=services.reduce((a,x)=>a+x.qty*x.price,0);
+ const table=(arr)=>arr.length?arr.map(x=>`<tr><td>${esc(x.name)}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(x.qty*x.price)}</td></tr>`).join(''):'<tr><td colspan="4">لا توجد بيانات مسجلة</td></tr>';
  const w=window.open('','_blank');if(!w){alert('اسمح بفتح النوافذ المنبثقة لعرض التقرير');return;}
- w.document.write('<!doctype html><html dir="rtl" lang="ar"><meta charset="utf-8"><title>تقرير السيارة</title><style>body{font-family:Segoe UI,Tahoma;padding:24px;background:#f1f5f9;color:#0f172a}.card{background:white;border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin:12px 0}button{padding:12px 18px;border:0;border-radius:8px;background:#ea580c;color:white;font-weight:bold;cursor:pointer}</style><h2>تقرير السيارة والإصلاحات</h2><div class="card"><b>العميل:</b> '+esc(c.clientName||c.name)+'<br><b>السيارة:</b> '+esc((c.brand||'')+' '+(c.model||''))+'<br><b>اللوحة:</b> '+esc(c.plate)+'<br><b>السيريال:</b> '+esc(c.serialNo||c.serial||'')+'</div><div class="card"><h3>تقرير التشخيص والإصلاح</h3>'+esc(c.engineerTransferReport||c.repairReport||c.diagnosisReport||c.diagnosisDetails||'لا يوجد تقرير')+'</div><div class="card"><h3>البضاعة وقطع الغيار</h3>'+esc(parts)+'</div><div class="card"><h3>الخدمات والإصلاحات</h3>'+esc(services)+'</div><div class="card"><b>الفني:</b> '+esc(c.repairCompletedBy||c.activeTechnician||'غير محدد')+'</div></html>');
+ w.document.write(`<!doctype html><html dir="rtl" lang="ar"><meta charset="utf-8"><title>تقرير السيارة</title><style>body{font-family:Segoe UI,Tahoma;padding:24px;background:#f1f5f9;color:#0f172a}.card{background:white;border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin:12px 0}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:10px;border:1px solid #dbe3ed;text-align:right}th{background:#eaf0f7}.total{font-weight:bold;color:#0f766e;font-size:1.05rem}</style><h2>تقرير السيارة والإصلاحات</h2><div class="card"><b>العميل:</b> ${esc(c.clientName||c.name)}<br><b>السيارة:</b> ${esc((c.brand||'')+' '+(c.model||''))}<br><b>اللوحة:</b> ${esc(c.plate||c.carPlate)}<br><b>السيريال:</b> ${esc(c.serialNo||c.serial||'')}</div><div class="card"><h3>تقرير التشخيص والإصلاح</h3>${esc(c.engineerTransferReport||c.repairReport||c.diagnosisReport||c.diagnosisDetails||'لا يوجد تقرير')}</div><div class="card"><h3>البضاعة وقطع الغيار شامل السعر</h3><table><thead><tr><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>${table(parts)}</tbody></table><p class="total">إجمالي البضاعة: ${money(partTotal)}</p></div><div class="card"><h3>الخدمات والإصلاحات شامل السعر</h3><table><thead><tr><th>الخدمة</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>${table(services)}</tbody></table><p class="total">إجمالي الخدمات: ${money(serviceTotal)}</p></div><div class="card total">الإجمالي الكلي للبضاعة والخدمات: ${money(partTotal+serviceTotal)}</div><div class="card"><b>الفني:</b> ${esc(c.repairCompletedBy||c.activeTechnician||c.assignedTechnician||'غير محدد')}</div></html>`);
  w.document.close();
 }
+
 async function engineerLogNewFault(id){
  const c=allCarsLocalData.find(x=>x.id===id)||{};
  const fault=prompt('اكتب العطل الجديد أو الملاحظة المطلوب تسجيلها:');if(!fault)return;
@@ -1606,12 +1645,53 @@ async function saveEngineerDepartmentTransfer(){
   closeEngineerModal('engineerTransferModal');alert('تم تحويل السيارة إلى '+deptName+' وحفظ تقرير التحويل.');refreshEngineerIncoming();
  }catch(e){alert('تعذر تحويل السيارة: '+e.message);}
 }
+async function returnCarFromAccountingToEngineer(id){
+ const c=allCarsLocalData.find(x=>x.id===id)||{};if(!confirm('تأكيد إرجاع السيارة من الحسابات إلى المهندس؟'))return;
+ try{
+  const now=new Date().toISOString();
+  await db.collection('cars').doc(id).set({status:'RETURNED_TO_ENGINEER',targetDepartment:'diagnosis',statusLabel:'تم إرجاع السيارة من الحسابات إلى المهندس',returnedFromAccounting:true,returnedFromAccountingAt:now,returnedToEngineerAt:now,updatedAt:now,engineerIncomingAckAt:null},{merge:true});
+  const q=await db.collection('accounting_queue').doc(id).get();if(q.exists)await db.collection('accounting_queue').doc(id).delete();
+  alert('تم إرجاع السيارة إلى المهندس بنجاح.');refreshEngineerIncoming();
+ }catch(e){alert('تعذر إرجاع السيارة: '+e.message);}
+}
+function engineerPartName(x){return x.name||x.itemName||x.productName||x.title||'صنف';}
+function engineerPartPrice(x){return Number(x.salePrice??x.sellPrice??x.sellingPrice??x.price??x.unitPrice??0)||0;}
+async function loadEngineerInventory(){
+ try{const snap=await db.collection('inventory').get();engineerInventoryItems=snap.docs.map(d=>({id:d.id,...d.data()}));}
+ catch(e){try{engineerInventoryItems=JSON.parse(localStorage.getItem('inventory')||'[]');}catch(_){engineerInventoryItems=[];}}
+ const sel=document.getElementById('engineerPartProduct');if(sel)sel.innerHTML='<option value="">اختر منتج من المخزن</option>'+engineerInventoryItems.map(x=>`<option value="${x.id}">${escapeHtml(engineerPartName(x))} — ${engineerPartPrice(x).toLocaleString('ar-EG')} ج.م</option>`).join('');
+}
+async function openEngineerPartsEditor(id){
+ const c=allCarsLocalData.find(x=>x.id===id)||engineerIncomingCars.find(x=>x.id===id)||{};engineerPartsCarId=id;
+ engineerPartsDraft=JSON.parse(JSON.stringify(c.repairParts||c.requiredPartsList||[]));
+ document.getElementById('engineerPartsCarLabel').textContent=(c.clientName||c.name||'عميل')+' — '+(c.brand||'')+' '+(c.model||'')+' — '+(c.plate||'');
+ await loadEngineerInventory();renderEngineerPartsEditor();openEngineerModal('engineerPartsModal');
+}
+document.addEventListener('change',e=>{if(e.target?.id==='engineerPartProduct'){const x=engineerInventoryItems.find(i=>i.id===e.target.value);document.getElementById('engineerPartPrice').value=x?engineerPartPrice(x):'';}});
+function renderEngineerPartsEditor(){
+ const list=document.getElementById('engineerPartsEditorList');if(!list)return;
+ list.innerHTML=engineerPartsDraft.length?engineerPartsDraft.map((x,i)=>{const qty=Number(x.quantityNeeded||x.qty||1),price=Number(x.salePrice??x.sellPrice??x.price??x.unitPrice??0);return `<div class="parts-editor-row"><b class="part-row-name">${escapeHtml(engineerPartName(x))}</b><span>كمية: ${qty}</span><span>${(qty*price).toLocaleString('ar-EG')} ج.م</span><button class="btn-action-sm btn-danger" onclick="engineerRemovePart(${i})">إزالة</button><button class="btn-action-sm btn-lift" onclick="engineerReplacePart(${i})">استبدال</button></div>`}).join(''):'<div class="empty-table">لا توجد بضاعة مضافة للسيارة.</div>';
+ const total=engineerPartsDraft.reduce((a,x)=>a+Number(x.quantityNeeded||x.qty||1)*Number(x.salePrice??x.sellPrice??x.price??x.unitPrice??0),0);document.getElementById('engineerPartsEditorTotal').textContent='إجمالي البضاعة: '+total.toLocaleString('ar-EG')+' ج.م';
+}
+function engineerAddPartToCar(){
+ const id=document.getElementById('engineerPartProduct').value,x=engineerInventoryItems.find(i=>i.id===id);if(!x){alert('اختر منتجاً من المخزن');return;}
+ const qty=Math.max(1,Number(document.getElementById('engineerPartQty').value)||1),price=Math.max(0,Number(document.getElementById('engineerPartPrice').value)||0);
+ engineerPartsDraft.push({itemId:id,inventoryId:id,name:engineerPartName(x),itemName:engineerPartName(x),quantityNeeded:qty,qty,salePrice:price,unitPrice:price,productCode:x.code||x.itemCode||x.barcode||''});renderEngineerPartsEditor();
+}
+function engineerRemovePart(i){engineerPartsDraft.splice(i,1);renderEngineerPartsEditor();}
+function engineerReplacePart(i){const old=engineerPartsDraft[i];const id=document.getElementById('engineerPartProduct').value,x=engineerInventoryItems.find(a=>a.id===id);if(!x){alert('اختر المنتج البديل من قائمة المخزن أولاً');return;}const qty=Math.max(1,Number(document.getElementById('engineerPartQty').value)||Number(old.quantityNeeded||old.qty||1));const price=Math.max(0,Number(document.getElementById('engineerPartPrice').value)||engineerPartPrice(x));engineerPartsDraft[i]={itemId:id,inventoryId:id,name:engineerPartName(x),itemName:engineerPartName(x),quantityNeeded:qty,qty,salePrice:price,unitPrice:price,productCode:x.code||x.itemCode||x.barcode||''};renderEngineerPartsEditor();}
+async function saveEngineerCarParts(){
+ if(!engineerPartsCarId)return;try{const now=new Date().toISOString();await db.collection('cars').doc(engineerPartsCarId).set({repairParts:engineerPartsDraft,requiredPartsList:engineerPartsDraft,engineerPartsUpdatedAt:now,engineerPartsUpdatedBy:getEngineerName(),updatedAt:now},{merge:true});
+ const q=await db.collection('accounting_queue').doc(engineerPartsCarId).get();if(q.exists)await db.collection('accounting_queue').doc(engineerPartsCarId).set({requiredParts:engineerPartsDraft,updatedAt:now},{merge:true});
+ alert('تم حفظ تعديل البضاعة على السيارة.');closeEngineerModal('engineerPartsModal');refreshEngineerIncoming();}catch(e){alert('تعذر حفظ البضاعة: '+e.message);}
+}
+
 async function engineerSendAccounting(id){
  id=id||currentSelectedCarDocId;if(!id){alert('اختر سيارة أولاً');return;}
  const c=allCarsLocalData.find(x=>x.id===id)||{};
  if(!confirm('توجيه العميل للحسابات؟'))return;
  try{
-  await db.collection('accounting_queue').doc(id).set({carId:id,clientName:c.clientName||c.name||document.getElementById('diagClientName').value,phone:c.phone||c.clientPhone||document.getElementById('diagPhone').value,carInfo:(c.brand||'')+' '+(c.model||''),carPlate:c.plate||'',fromDepartment:'التشخيص / المهندس',originalDepartment:c.repairDepartment||'diagnosis',repairDetails:c.repairReport||c.diagnosisDetails||'',requiredParts:c.repairParts||c.requiredPartsList||[],status:'متوجه للحسابات للدفع',dateStr:new Date().toISOString()},{merge:true});
+  await db.collection('accounting_queue').doc(id).set({carId:id,clientName:c.clientName||c.name||document.getElementById('diagClientName').value,phone:c.phone||c.clientPhone||document.getElementById('diagPhone').value,carInfo:(c.brand||'')+' '+(c.model||''),carPlate:c.plate||'',fromDepartment:'التشخيص / المهندس',originalDepartment:c.repairDepartment||'diagnosis',repairDetails:c.repairReport||c.diagnosisDetails||'',requiredParts:c.repairParts||c.requiredPartsList||[],repairServices:c.repairServices||c.installationServicesList||[],status:'متوجه للحسابات للدفع',dateStr:new Date().toISOString()},{merge:true});
   const carRef=db.collection('cars').doc(id);
    await carRef.set({status:'SENT_TO_TREASURY',statusLabel:'انتهى العمل — في انتظار الدفع',targetDepartment:'hesabat',treasurySentAt:new Date().toISOString()},{merge:true});
    const liftId=c.assignedLiftId;
