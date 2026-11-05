@@ -775,6 +775,30 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
   #carDeliveryReceiptPrint .car-receipt-signatures{display:flex;justify-content:space-between;margin-top:30mm;font-size:12pt;font-weight:800}
 }
 </style>
+
+<style id="non-distinct-navigation-button-colors">
+/* ألوان مستقلة وواضحة لأزرار الشريط العلوي */
+.header-bar [data-quick="maintenance"]{background:#f59e0b!important;color:#172033!important}
+.header-bar [data-quick="treasury"]{background:#2563eb!important;color:#fff!important}
+.header-bar [data-quick="expenses"]{background:#dc6b22!important;color:#fff!important}
+.header-bar [data-quick="workers"]{background:#7c3aed!important;color:#fff!important}
+.header-bar [data-quick="clients"]{background:#0f9d8a!important;color:#fff!important}
+.header-bar [data-quick="advance-payment"]{background:#16a34a!important;color:#fff!important}
+.header-bar [onclick="openClientLifeStatement()"]{background:#0891b2!important;color:#fff!important}
+.header-bar [data-quick="collections"]{background:#059669!important;color:#fff!important}
+.header-bar [data-quick="archive"]{background:#475569!important;color:#fff!important}
+.header-bar [data-quick="suppliers"]{background:#b45309!important;color:#fff!important}
+.header-bar [data-quick="invoices"]{background:#1d4ed8!important;color:#fff!important}
+.header-bar #customizeQuickActionsBtn{background:#64748b!important;color:#fff!important}
+.header-bar [onclick="openSalesDaily()"]{background:#0e7490!important;color:#fff!important}
+.header-bar [onclick="closeDailyRoutine()"]{background:#be123c!important;color:#fff!important}
+.header-bar [onclick="openAccountsProfits()"]{background:#6d28d9!important;color:#fff!important}
+.header-bar [onclick="toggleDarkMode()"]{background:#334155!important;color:#fff!important}
+.header-bar [onclick="logout()"]{background:#991b1b!important;color:#fff!important}
+.header-bar .btn-action{border:1px solid rgba(255,255,255,.22)!important;box-shadow:0 3px 9px rgba(15,23,42,.13)}
+.header-bar .btn-action:hover{filter:brightness(1.1);transform:translateY(-2px)}
+</style>
+
 </head>
 <body id="pageBody">
 
@@ -789,6 +813,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       <button class="btn-action btn-green" data-quick="expenses" onclick="openExpensesModal()"><i class="fa-solid fa-money-bill-wave"></i> المصاريف</button>
       <button class="btn-action btn-purple" data-quick="workers" onclick="openWorkersModal()"><i class="fa-solid fa-users-gear"></i> العمال والأقسام</button>
       <button class="btn-action btn-green" data-quick="clients" onclick="openClientAccountsModal()"><i class="fa-solid fa-address-book"></i> كشف العملاء</button>
+      <button class="btn-action btn-purple" data-quick="advance-payment" onclick="openAdvancePaymentModal()"><i class="fa-solid fa-hand-holding-dollar"></i> دفعة مقدمة</button>
       <button class="btn-action btn-orange" onclick="openClientLifeStatement()"><i class="fa-solid fa-file-lines"></i> كشف العميل</button>
       <button class="btn-action btn-green" data-quick="collections" onclick="openCollectionsModal()"><i class="fa-solid fa-hand-holding-dollar"></i> التحصيلات</button>
       <button class="btn-action btn-blue" data-quick="archive" onclick="openArchiveModal()"><i class="fa-solid fa-box-archive"></i> الأرشيف</button>
@@ -885,7 +910,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           <h2 style="margin-bottom:4px;">مركز أوتو نون لصيانة السيارات</h2>
           <p style="font-size:0.85rem; margin-bottom:4px; font-weight:bold;">نحن نقدم خدمات صيانة متكاملة لجميع أنواع السيارات</p>
           <p style="font-size:0.78rem; margin-bottom:6px;">العنوان: الإسكندرية - المعمورة البلد - طريق أبو قير - بجوار مسجد السادات</p>
-          <p style="font-size:0.78rem; margin-bottom:10px;">أرضي: 035685586 | تليفون: 01500288828 | للشكاوى والمقترحات 📱: 01004042250</p>
+          <p style="font-size:0.78rem; margin-bottom:10px;">أرضي: 035685586 | تليفون المركز: 01556004991 | للشكاوى والمقترحات 📱: 01004042250</p>
           <div style="border-top: 1px solid #000; padding-top: 6px; font-weight: bold; font-size: 0.95rem;">
             فاتورة حسابية من مركز أوتو نون لصيانة السيارات
           </div>
@@ -1651,6 +1676,76 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           </tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+
+
+  <!-- نافذة تسجيل دفعة مقدمة لعميل ما زال في التشخيص -->
+  <div id="advancePaymentModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,.72);z-index:45000;align-items:center;justify-content:center;padding:16px;">
+    <div style="width:min(720px,96vw);max-height:90vh;overflow:auto;background:var(--card-bg);color:var(--text-main);border:2px solid var(--treasury-purple);border-radius:16px;padding:20px;box-shadow:0 20px 70px #0004">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
+        <h3 style="color:var(--treasury-purple)"><i class="fa-solid fa-hand-holding-dollar"></i> تسجيل دفعة مقدمة قبل تحويل السيارة للحسابات</h3>
+        <button class="btn-action btn-danger" type="button" onclick="closeAdvancePaymentModal()">إغلاق</button>
+      </div>
+      <p style="font-size:.84rem;color:#64748b;margin-bottom:12px">اختر عميلًا من السيارات الموجودة حاليًا في التشخيص. الدفعة لا تغيّر حالة السيارة ولا تحولها للحسابات.</p>
+      <div class="form-field" style="margin-bottom:8px">
+        <label for="advancePaymentClientSearch">بحث باسم العميل أو رقم التليفون:</label>
+        <input id="advancePaymentClientSearch" type="search" placeholder="اكتب اسم العميل أو رقم الهاتف للبحث..." oninput="filterAdvancePaymentClients()" autocomplete="off">
+      </div>
+      <div class="form-field" style="margin-bottom:12px">
+        <label>اختيار العميل الموجود في التشخيص:</label>
+        <select id="advancePaymentCarSelect" onchange="showAdvancePaymentCarInfo()">
+          <option value="">جاري تحميل عملاء التشخيص...</option>
+        </select>
+        <small id="advancePaymentSearchCount" style="color:#64748b">يمكنك البحث بالاسم أو الهاتف.</small>
+      </div>
+      <div id="advancePaymentCarInfo" style="display:none;background:rgba(147,51,234,.07);border:1px solid var(--border-color);border-radius:10px;padding:10px;margin-bottom:12px;font-size:.86rem;line-height:1.8"></div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>مبلغ الدفعة المقدمة:</label>
+          <input type="number" id="advancePaymentAmount" min="0.01" step="0.01" placeholder="اكتب المبلغ">
+        </div>
+        <div class="form-field">
+          <label>الخزينة المستلمة:</label>
+          <select id="advancePaymentTreasury"><option value="">اختر الخزينة...</option></select>
+        </div>
+        <div class="form-field">
+          <label>طريقة الدفع:</label>
+          <select id="advancePaymentMethod">
+            <option value="نقدي (كاش)">نقدي (كاش)</option>
+            <option value="انستا باي / تحويل">انستا باي / تحويل</option>
+            <option value="بطاقة ائتمان">بطاقة ائتمان</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>ملاحظات (اختياري):</label>
+          <input id="advancePaymentNotes" type="text" placeholder="ملاحظات الدفعة">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn-action btn-green" type="button" onclick="saveDiagnosisAdvancePayment()"><i class="fa-solid fa-check"></i> حفظ الدفعة المقدمة وطباعة الإيصال</button>
+        <button class="btn-action btn-blue" type="button" onclick="loadDiagnosisCarsForAdvance()"><i class="fa-solid fa-rotate"></i> تحديث أسماء العملاء</button>
+        <button id="advancePaymentWhatsAppBtn" class="btn-action btn-green" type="button" style="display:none;background:#16a34a" onclick="sendAdvancePaymentWhatsApp()"><i class="fa-brands fa-whatsapp"></i> إرسال إيصال واتساب</button>
+        <button id="advancePaymentPrintOtherBtn" class="btn-action btn-orange" type="button" style="display:none" onclick="chooseAdvancePaymentPrintSize()"><i class="fa-solid fa-print"></i> طباعة بمقاس آخر (1 / 2 / 3)</button>
+        <button id="advancePaymentArchiveBtn" class="btn-action btn-purple" type="button" onclick="openAdvancePaymentsArchive()"><i class="fa-solid fa-clock-rotate-left"></i> سجل الدفعات المدفوعة</button>
+      </div>
+      <div id="advancePaymentStatus" role="status" style="margin-top:10px;font-size:.82rem;color:#64748b"></div>
+    </div>
+  </div>
+
+  <!-- سجل الدفعات المقدمة -->
+  <div id="advancePaymentsArchiveModal" style="display:none;position:fixed;inset:0;background:rgba(2,6,23,.72);z-index:45001;align-items:center;justify-content:center;padding:14px;">
+    <div style="width:min(1100px,98vw);max-height:92vh;overflow:auto;background:var(--card-bg);color:var(--text-main);border:2px solid var(--treasury-purple);border-radius:16px;padding:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <h3 style="color:var(--treasury-purple)">سجل الدفعات المقدمة المدفوعة</h3>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn-action btn-blue" onclick="loadAdvancePaymentsArchive()">تحديث السجل</button>
+          <button class="btn-action btn-danger" onclick="closeAdvancePaymentsArchive()">إغلاق</button>
+        </div>
+      </div>
+      <input id="advancePaymentsArchiveSearch" type="search" placeholder="بحث باسم العميل أو الهاتف أو رقم الإيصال" oninput="filterAdvancePaymentsArchive()" style="width:100%;padding:10px;border:1px solid var(--border-color);border-radius:8px;margin-bottom:10px">
+      <div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>رقم الإيصال</th><th>التاريخ</th><th>العميل</th><th>الهاتف</th><th>السيارة</th><th>المبلغ</th><th>الخزينة</th><th>الإجراءات</th></tr></thead><tbody id="advancePaymentsArchiveBody"><tr><td colspan="8">جاري تحميل الدفعات...</td></tr></tbody></table></div>
     </div>
   </div>
 
@@ -3845,6 +3940,367 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       window.printInvoiceBySize(size);
     }
 
+
+
+    // الدفعات المقدمة لعملاء التشخيص قبل إنشاء إذن الحسابات.
+    let diagnosisCarsForAdvance = [];
+    const advancePaymentEsc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const advancePaymentMoney = value => (Number(value)||0).toLocaleString('en-US',{maximumFractionDigits:2});
+
+
+    let advancePaymentsArchiveCache = [];
+    function openAdvancePaymentsArchive(){
+      document.getElementById('advancePaymentsArchiveModal').style.display='flex';
+      loadAdvancePaymentsArchive();
+    }
+    function closeAdvancePaymentsArchive(){document.getElementById('advancePaymentsArchiveModal').style.display='none';}
+    async function loadAdvancePaymentsArchive(){
+      const body=document.getElementById('advancePaymentsArchiveBody');
+      body.innerHTML='<tr><td colspan="8" style="text-align:center">جاري تحميل الدفعات...</td></tr>';
+      try{
+        const snap=await db.collection('client_advance_payments').get();
+        advancePaymentsArchiveCache=[];
+        snap.forEach(d=>advancePaymentsArchiveCache.push({docId:d.id,...(d.data()||{})}));
+        advancePaymentsArchiveCache.sort((a,b)=>new Date(b.dateStr||0)-new Date(a.dateStr||0));
+        renderAdvancePaymentsArchive(advancePaymentsArchiveCache);
+      }catch(e){body.innerHTML=`<tr><td colspan="8" style="color:red">تعذر تحميل السجل: ${advancePaymentEsc(e.message||e)}</td></tr>`;}
+    }
+    function filterAdvancePaymentsArchive(){
+      const q=String(document.getElementById('advancePaymentsArchiveSearch').value||'').trim().toLowerCase();
+      renderAdvancePaymentsArchive(advancePaymentsArchiveCache.filter(p=>
+        [p.id,p.clientName,p.clientPhone,p.carInfo,p.carPlate].some(v=>String(v||'').toLowerCase().includes(q))
+      ));
+    }
+    function renderAdvancePaymentsArchive(rows){
+      const body=document.getElementById('advancePaymentsArchiveBody');
+      if(!rows.length){body.innerHTML='<tr><td colspan="8" style="text-align:center">لا توجد دفعات مسجلة.</td></tr>';return;}
+      body.innerHTML=rows.map(p=>`<tr>
+        <td>${advancePaymentEsc(p.id||p.docId)}</td>
+        <td>${advancePaymentEsc(p.dateStr?new Date(p.dateStr).toLocaleString('ar-EG'):'---')}</td>
+        <td>${advancePaymentEsc(p.clientName||'---')}</td>
+        <td>${advancePaymentEsc(p.clientPhone||'---')}</td>
+        <td>${advancePaymentEsc(p.carInfo||'')} ${advancePaymentEsc(p.carPlate||'')}</td>
+        <td><b>${advancePaymentMoney(p.amount)} ج</b></td>
+        <td>${advancePaymentEsc(p.treasuryName||'---')}</td>
+        <td style="white-space:nowrap">
+          <button class="btn-action btn-blue" onclick="editAdvancePayment('${advancePaymentEsc(p.docId)}')">تعديل</button>
+          <button class="btn-action btn-danger" onclick="deleteAdvancePayment('${advancePaymentEsc(p.docId)}')">حذف</button>
+          <button class="btn-action btn-orange" onclick="chooseArchivedAdvancePaymentPrintSize('${advancePaymentEsc(p.docId)}')">طباعة بمقاس</button>
+        </td></tr>`).join('');
+    }
+    function printArchivedAdvancePayment(docId,paper='A6'){
+      const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(!p)return;
+      lastAdvancePaymentReceipt=p;printLastAdvancePaymentReceipt(paper);
+    }
+    function chooseArchivedAdvancePaymentPrintSize(docId){
+      const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(!p)return;
+      chooseAdvancePaymentPrintSize(p);
+    }
+    async function editAdvancePayment(docId){
+      const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(!p)return;
+      const raw=prompt('اكتب قيمة الدفعة الجديدة بالجنيه:',String(p.amount||0));
+      if(raw===null)return;
+      const amount=Number(raw);
+      if(!Number.isFinite(amount)||amount<=0){alert('اكتب مبلغًا صحيحًا أكبر من صفر.');return;}
+      if(!confirm(`تأكيد تعديل الدفعة ${p.id} من ${advancePaymentMoney(p.amount)} إلى ${advancePaymentMoney(amount)} جنيه؟`))return;
+      try{
+        const paymentRef=db.collection('client_advance_payments').doc(docId);
+        const carRef=db.collection('cars').doc(p.carId);
+        const treasuryRef=db.collection('treasuries').doc(p.treasuryId);
+        const accountRef=db.collection('client_accounts').doc(p.clientAccountId||docId);
+        let txRef=p.treasuryTxId?db.collection('treasury_transactions').doc(p.treasuryTxId):null;
+        if(!txRef){const q=await db.collection('treasury_transactions').where('invoiceSerial','==',p.id).limit(1).get();if(!q.empty)txRef=q.docs[0].ref;}
+        await db.runTransaction(async tx=>{
+          const refs=[paymentRef,carRef,treasuryRef,accountRef];if(txRef)refs.push(txRef);
+          const snaps=await Promise.all(refs.map(r=>tx.get(r)));
+          const [paymentSnap,carSnap,treasurySnap,accountSnap,treasuryTxSnap]=snaps;
+          if(!paymentSnap.exists||!carSnap.exists||!treasurySnap.exists)throw new Error('تعذر العثور على سجل الدفعة أو السيارة أو الخزينة.');
+          const delta=amount-Number(p.amount||0),now=new Date().toISOString();
+          const car=carSnap.data()||{},treasury=treasurySnap.data()||{};
+          const oldTotal=Number(car.downPayment||car.advancePayment||car.bookingDeposit||0);
+          const arr=Array.isArray(car.advancePayments)?car.advancePayments.filter(x=>x&&x.id!==p.id):[];
+          const ix=arr.findIndex(x=>x&&x.id===p.id);
+          if(ix>=0)arr[ix]={...arr[ix],amount,updatedAt:now};else arr.push({...p,amount,updatedAt:now});
+          tx.update(treasuryRef,{balance:(Number(treasury.balance)||0)+delta,updatedAt:now});
+          tx.update(carRef,{downPayment:Math.max(0,oldTotal+delta),advancePayment:Math.max(0,oldTotal+delta),bookingDeposit:Math.max(0,oldTotal+delta),advancePayments:arr,updatedAt:now});
+          tx.update(paymentRef,{amount,updatedAt:now});
+          if(accountSnap&&accountSnap.exists)tx.update(accountRef,{totalAmount:amount,paidAmount:amount,updatedAt:now});
+          if(treasuryTxSnap&&treasuryTxSnap.exists)tx.update(txRef,{amount,paidAmount:amount,updatedAt:now});
+        });
+        alert('تم تعديل الدفعة وتحديث الخزينة وسجل السيارة.');
+        await loadAdvancePaymentsArchive();
+      }catch(e){alert('تعذر تعديل الدفعة: '+(e.message||e));}
+    }
+    async function deleteAdvancePayment(docId){
+      const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(!p)return;
+      if(!confirm(`تأكيد حذف الدفعة ${p.id} بقيمة ${advancePaymentMoney(p.amount)} جنيه؟ سيتم خصم قيمتها من رصيد الخزينة وإجمالي مقدم السيارة.`))return;
+      try{
+        const paymentRef=db.collection('client_advance_payments').doc(docId);
+        const carRef=db.collection('cars').doc(p.carId);
+        const treasuryRef=db.collection('treasuries').doc(p.treasuryId);
+        const accountRef=db.collection('client_accounts').doc(p.clientAccountId||docId);
+        let txRef=p.treasuryTxId?db.collection('treasury_transactions').doc(p.treasuryTxId):null;
+        if(!txRef){const q=await db.collection('treasury_transactions').where('invoiceSerial','==',p.id).limit(1).get();if(!q.empty)txRef=q.docs[0].ref;}
+        await db.runTransaction(async tx=>{
+          const refs=[paymentRef,carRef,treasuryRef,accountRef];if(txRef)refs.push(txRef);
+          const snaps=await Promise.all(refs.map(r=>tx.get(r)));
+          const [,carSnap,treasurySnap,accountSnap,treasuryTxSnap]=snaps;
+          if(!treasurySnap.exists)throw new Error('الخزينة المرتبطة بالدفعة غير موجودة.');
+          const now=new Date().toISOString(),delta=Number(p.amount)||0,treasury=treasurySnap.data()||{};
+          tx.update(treasuryRef,{balance:(Number(treasury.balance)||0)-delta,updatedAt:now});
+          if(carSnap.exists){
+            const car=carSnap.data()||{},oldTotal=Number(car.downPayment||car.advancePayment||car.bookingDeposit||0);
+            const arr=Array.isArray(car.advancePayments)?car.advancePayments.filter(x=>x&&x.id!==p.id):[];
+            const next=Math.max(0,oldTotal-delta);
+            tx.update(carRef,{downPayment:next,advancePayment:next,bookingDeposit:next,advancePayments:arr,updatedAt:now});
+          }
+          tx.delete(paymentRef);
+          if(accountSnap&&accountSnap.exists)tx.delete(accountRef);
+          if(treasuryTxSnap&&treasuryTxSnap.exists)tx.delete(txRef);
+        });
+        alert('تم حذف الدفعة وعكس قيمتها من الخزينة وحساب السيارة.');
+        await loadAdvancePaymentsArchive();
+      }catch(e){alert('تعذر حذف الدفعة: '+(e.message||e));}
+    }
+
+    async function openAdvancePaymentModal() {
+      const modal = document.getElementById('advancePaymentModal');
+      modal.style.display = 'flex';
+      document.getElementById('advancePaymentAmount').value = '';
+      document.getElementById('advancePaymentNotes').value = '';
+      document.getElementById('advancePaymentClientSearch').value = '';
+      document.getElementById('advancePaymentWhatsAppBtn').style.display='none';
+      document.getElementById('advancePaymentPrintOtherBtn').style.display='none';
+      document.getElementById('advancePaymentStatus').textContent = '';
+      // استخدام نفس قائمة الخزائن المحملة في الصفحة، مع تحديثها عند الحاجة.
+      const treasurySelect = document.getElementById('advancePaymentTreasury');
+      const currentTreasuryOptions = Array.from(document.getElementById('targetTreasurySelect')?.options || []);
+      if (currentTreasuryOptions.length > 1) {
+        treasurySelect.innerHTML = currentTreasuryOptions.map(o => `<option value="${advancePaymentEsc(o.value)}">${advancePaymentEsc(o.textContent)}</option>`).join('');
+      } else {
+        treasurySelect.innerHTML = '<option value="">جاري تحميل الخزائن...</option>';
+        try {
+          const snap = await db.collection('treasuries').get();
+          treasurySelect.innerHTML = '<option value="">اختر الخزينة...</option>';
+          snap.forEach(doc => {
+            const t = doc.data() || {};
+            treasurySelect.insertAdjacentHTML('beforeend', `<option value="${advancePaymentEsc(doc.id)}">${advancePaymentEsc(t.name || 'خزينة')}</option>`);
+          });
+        } catch (e) {
+          treasurySelect.innerHTML = '<option value="">تعذر تحميل الخزائن</option>';
+        }
+      }
+      await loadDiagnosisCarsForAdvance();
+    }
+
+    function closeAdvancePaymentModal() {
+      document.getElementById('advancePaymentModal').style.display = 'none';
+    }
+
+    async function loadDiagnosisCarsForAdvance() {
+      const select = document.getElementById('advancePaymentCarSelect');
+      const info = document.getElementById('advancePaymentCarInfo');
+      const statusBox = document.getElementById('advancePaymentStatus');
+      select.innerHTML = '<option value="">جاري تحميل عملاء التشخيص...</option>';
+      info.style.display = 'none';
+      try {
+        const snap = await db.collection('cars').get();
+        const excluded = new Set(['SENT_TO_TREASURY','PAID_AWAITING_DELIVERY','COMPLETED','ARCHIVED','DELIVERED']);
+        diagnosisCarsForAdvance = [];
+        snap.forEach(doc => {
+          const c = {id:doc.id,...(doc.data()||{})};
+          const state = String(c.status || '').toUpperCase();
+          const deptFields = [c.targetDepartment,c.currentDepartment,c.department,c.assignedDepartment].map(x=>String(x||'').toLowerCase());
+          const isDiagnosis = deptFields.includes('diagnosis') || state === 'IN_DIAGNOSIS';
+          if (isDiagnosis && !excluded.has(state) && !c.isPaid) diagnosisCarsForAdvance.push(c);
+        });
+        diagnosisCarsForAdvance.sort((a,b)=>String(a.clientName||a.name||'').localeCompare(String(b.clientName||b.name||''),'ar'));
+        filterAdvancePaymentClients();
+        statusBox.textContent = diagnosisCarsForAdvance.length
+          ? `تم تحميل ${diagnosisCarsForAdvance.length} عميل/سيارة من التشخيص.`
+          : 'لا توجد سيارات ظاهرة في التشخيص حاليًا. تأكد أن السيارة مسجلة بقسم التشخيص في ملف diagnosis.';
+      } catch (e) {
+        select.innerHTML = '<option value="">تعذر تحميل العملاء</option>';
+        statusBox.textContent = 'حدث خطأ أثناء تحميل عملاء التشخيص: ' + (e.message || e);
+      }
+    }
+
+    function filterAdvancePaymentClients() {
+      const q = String(document.getElementById('advancePaymentClientSearch')?.value || '').trim().toLocaleLowerCase('ar');
+      const select = document.getElementById('advancePaymentCarSelect');
+      const current = select.value;
+      const rows = diagnosisCarsForAdvance.filter(c => {
+        const name = String(c.clientName || c.name || '').toLocaleLowerCase('ar');
+        const phone = String(c.phone || c.clientPhone || c.mobile || '').replace(/\D/g,'');
+        const normalizedQ = q.replace(/\D/g,'');
+        return !q || name.includes(q) || (normalizedQ && phone.includes(normalizedQ));
+      });
+      select.innerHTML = '<option value="">اختر العميل...</option>';
+      rows.forEach(c => {
+        const name = c.clientName || c.name || 'عميل بدون اسم';
+        const phone = c.phone || c.clientPhone || c.mobile || '';
+        const car = [c.brand,c.model].filter(Boolean).join(' ');
+        const plate = c.plate || c.carPlate || '';
+        const label = `${name}${phone?' — '+phone:''}${car?' — '+car:''}${plate?' — '+plate:''}`;
+        select.insertAdjacentHTML('beforeend', `<option value="${advancePaymentEsc(c.id)}">${advancePaymentEsc(label)}</option>`);
+      });
+      if (rows.some(c=>c.id===current)) select.value=current;
+      document.getElementById('advancePaymentSearchCount').textContent = `نتائج البحث: ${rows.length} من ${diagnosisCarsForAdvance.length}`;
+      if (!select.value) { document.getElementById('advancePaymentCarInfo').style.display='none'; }
+    }
+
+    let lastAdvancePaymentReceipt = null;
+    function buildAdvancePaymentReceiptHtml(payment, paper = 'A6') {
+      const e = advancePaymentEsc;
+      const date = new Date(payment.dateStr || Date.now());
+      const dateText = date.toLocaleDateString('ar-EG');
+      const timeText = date.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+      const amount = advancePaymentMoney(payment.amount);
+      const amountWords = amount + ' جنيه';
+      return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إيصال دفعة مقدمة ${e(payment.id)}</title><style>
+      @page{size:${['A4','A5','A6'].includes(paper) ? paper : 'A6'} portrait;margin:${paper === 'A6' ? '4mm' : '8mm'}}*{box-sizing:border-box}body{margin:0;background:#fff;color:#10243a;font-family:Tahoma,Arial,sans-serif;direction:rtl}.receipt{width:100%;min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')};border:2px solid #173b67;border-radius:14px;padding:${paper === 'A6' ? '4mm' : '9mm'};position:relative;overflow:hidden;background:linear-gradient(135deg,#fff 65%,#f3f6fb)}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #f28c28;padding-bottom:7mm}.brand{font-size:${paper === 'A6' ? '15px' : '25px'};font-weight:900;color:#173b67}.brand small{display:block;font-size:11px;color:#e87919;margin-top:4px}.center{text-align:center}.center h1{font-size:${paper === 'A6' ? '17px' : '27px'};margin:0;color:#173b67}.center p{margin:5px 0 0;color:#52647b;font-weight:bold}.tag{background:#173b67;color:#fff;border-radius:8px;padding:${paper === 'A6' ? '5px 10px' : '10px 22px'};font-weight:bold;font-size:${paper === 'A6' ? '13px' : '20px'};margin:7mm auto;width:max-content}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:5mm 0}.meta div,.field{border:1px solid #b9c9dc;border-radius:8px;padding:10px;background:#fff}.meta b,.field b{display:block;color:#63758a;font-size:${paper === 'A6' ? '9px' : '12px'};margin-bottom:5px}.meta strong,.field strong{font-size:${paper === 'A6' ? '11px' : '16px'}}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.payment{margin-top:7mm;border:2px solid #f28c28;border-radius:10px;overflow:hidden}.payment h3{margin:0;background:#173b67;color:#fff;padding:10px 14px}.payment .amount{background:#fff4e8;color:#173b67;font-size:${paper === 'A6' ? '18px' : '27px'};font-weight:900;padding:14px;text-align:center}.bottom{display:flex;justify-content:space-between;align-items:end;margin-top:${paper === 'A6' ? '3mm' : '9mm'};border-top:1px solid #ccd6e2;padding-top:7mm}.thanks{font-size:${paper === 'A6' ? '14px' : '22px'};font-weight:900;color:#173b67}.stamp{border:2px solid #64748b;color:transparent;border-radius:50%;width:${paper === 'A6' ? '54px' : '105px'};height:${paper === 'A6' ? '54px' : '105px'};display:block;flex:0 0 auto;background:transparent;transform:none}.foot{position:absolute;bottom:0;left:0;right:0;background:#102b4d;color:#fff;padding:9px 15px;text-align:center;font-size:12px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.receipt{min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')}}}
+      </style></head><body><main class="receipt"><header class="top"><div class="brand">AUTO NON <small>CAR SERVICE CENTER • خدمة أفضل لسيارتك</small></div><div class="center"><h1>مركز أوتو نون</h1><p>صيانة - تشخيص - قطع غيار</p></div><div style="font-size:28px;color:#f28c28">⚙</div></header><div style="display:flex;justify-content:space-between;align-items:center;gap:${paper === 'A6' ? '5px' : '12px'};margin-top:${paper === 'A6' ? '2mm' : '5mm'}"><div class="tag" style="margin:0">إيصال دفعة مقدمة</div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div id="customerQr" title="QR يحتوي على بيانات العميل والإيصال" style="width:${paper === 'A6' ? '70px' : '120px'};height:${paper === 'A6' ? '70px' : '120px'};background:#fff;padding:4px;border:1px solid #64748b;border-radius:6px"></div><small style="font-size:${paper === 'A6' ? '8px' : '11px'};font-weight:bold;color:#173b67">QR بيانات العميل</small></div></div><section class="meta"><div><b>رقم الإيصال</b><strong>${e(payment.id)}</strong></div><div><b>التاريخ</b><strong>${e(dateText)}</strong></div><div><b>الوقت</b><strong>${e(timeText)}</strong></div></section><section class="grid"><div class="field"><b>اسم العميل</b><strong>${e(payment.clientName||'---')}</strong></div><div class="field"><b>رقم التليفون</b><strong>${e(payment.clientPhone||'---')}</strong></div><div class="field"><b>السيارة</b><strong>${e(payment.carInfo||'---')}</strong></div><div class="field"><b>رقم اللوحة</b><strong>${e(payment.carPlate||'---')}</strong></div><div class="field"><b>طريقة الدفع</b><strong>${e(payment.method||'---')}</strong></div><div class="field"><b>الخزينة المستلمة</b><strong>${e(payment.treasuryName||'---')}</strong></div></section><section class="payment"><h3>بيان الدفعة المقدمة</h3><div class="amount">${amount} جنيه مصري</div></section><div class="field" style="margin-top:7mm"><b>المبلغ بالحروف / ملاحظات</b><strong>${e(amountWords)}${payment.notes?' — '+e(payment.notes):''}</strong></div><section class="bottom"><div class="stamp" aria-label="مكان الختم فارغ"></div><div class="thanks">شكراً لثقتكم بنا<br><small style="font-size:13px">نتمنى لكم رحلة آمنة</small></div><div style="text-align:left;font-weight:bold">توقيع المستلم<br><br>........................</div></section><footer class="foot">مركز أوتو نون لصيانة السيارات　 |　 تليفون المركز: 01556004991　 |　 ${e(payment.clientPhone||'')}　 |　 إيصال دفعة مقدمة</footer></main><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>window.addEventListener('load',function(){var q=document.getElementById('customerQr');if(window.QRCode&&q){var data={center:'مركز أوتو نون',centerPhone:'01556004991',receipt:${JSON.stringify(payment.id)},client:${JSON.stringify(payment.clientName||'')},clientPhone:${JSON.stringify(payment.clientPhone||'')},car:${JSON.stringify(payment.carInfo||'')},plate:${JSON.stringify(payment.carPlate||'')},amount:${Number(payment.amount)||0},date:${JSON.stringify(payment.dateStr||'')}};new QRCode(q,{text:JSON.stringify(data),width:${paper === 'A6' ? '62' : '110'},height:${paper === 'A6' ? '62' : '110'},correctLevel:QRCode.CorrectLevel.M});}});<\/script></body></html>`;
+    }
+    function printLastAdvancePaymentReceipt(paper='A6'){ if(!lastAdvancePaymentReceipt)return; const size=['A4','A5','A6'].includes(paper)?paper:'A6'; const w=window.open('','_blank'); if(!w){alert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.');return;} w.document.open();w.document.write(buildAdvancePaymentReceiptHtml(lastAdvancePaymentReceipt,size));w.document.close();setTimeout(()=>{w.focus();w.print();},900); }
+    function chooseAdvancePaymentPrintSize(payment=lastAdvancePaymentReceipt){
+      if(!payment){alert('لا يوجد إيصال متاح للطباعة.');return;}
+      const answer=prompt('اختر مقاس الطباعة بكتابة رقم الاختيار:\n1 = A4 (ورق كبير)\n2 = A5 (نصف A4)\n3 = A6 (المقاس الافتراضي)','3');
+      if(answer===null)return;
+      const choices={'1':'A4','2':'A5','3':'A6'};
+      const size=choices[String(answer).trim()];
+      if(!size){alert('اختيار غير صحيح. اكتب 1 أو 2 أو 3.');return;}
+      lastAdvancePaymentReceipt=payment;
+      printLastAdvancePaymentReceipt(size);
+    }
+    function buildAdvancePaymentWhatsAppUrl(p){
+      let phone=String(p.clientPhone||'').replace(/\\D/g,'');
+      if(phone.startsWith('0')) phone='20'+phone.slice(1); else if(!phone.startsWith('20') && phone.length===10) phone='20'+phone;
+      if(!phone) return '';
+      const msg=`مركز أوتو نون لصيانة السيارات\\nتليفون المركز: 01556004991\\nإيصال دفعة مقدمة رقم: ${p.id}\\nالعميل: ${p.clientName}\\nالمبلغ: ${advancePaymentMoney(p.amount)} جنيه\\nطريقة الدفع: ${p.method}\\nالخزينة: ${p.treasuryName}\\nالتاريخ: ${new Date(p.dateStr).toLocaleString('ar-EG')}\\nشكراً لثقتكم بنا.`;
+      return 'https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+    }
+    function sendAdvancePaymentWhatsApp(){
+      const p=lastAdvancePaymentReceipt;if(!p)return;
+      const url=buildAdvancePaymentWhatsAppUrl(p);
+      if(!url){alert('رقم تليفون العميل غير مسجل.');return;}
+      window.open(url,'_blank','noopener');
+    }
+
+    function showAdvancePaymentCarInfo() {
+      const id = document.getElementById('advancePaymentCarSelect').value;
+      const box = document.getElementById('advancePaymentCarInfo');
+      const car = diagnosisCarsForAdvance.find(c=>c.id===id);
+      if (!car) { box.style.display='none'; box.innerHTML=''; return; }
+      const already = Number(car.downPayment || car.advancePayment || car.bookingDeposit || 0);
+      box.style.display='block';
+      box.innerHTML = `<b>العميل:</b> ${advancePaymentEsc(car.clientName||car.name||'---')}<br><b>السيارة:</b> ${advancePaymentEsc([car.brand,car.model].filter(Boolean).join(' ')||'---')}<br><b>رقم اللوحة:</b> ${advancePaymentEsc(car.plate||car.carPlate||'---')}<br><b>رقم الهاتف:</b> ${advancePaymentEsc(car.phone||car.clientPhone||'---')}<br><b>إجمالي المقدم المسجل سابقًا:</b> ${advancePaymentMoney(already)} جنيه`;
+    }
+
+    async function saveDiagnosisAdvancePayment() {
+      const carId = document.getElementById('advancePaymentCarSelect').value;
+      const amount = Number(document.getElementById('advancePaymentAmount').value);
+      const treasuryId = document.getElementById('advancePaymentTreasury').value;
+      const method = document.getElementById('advancePaymentMethod').value;
+      const notes = document.getElementById('advancePaymentNotes').value.trim();
+      const statusBox = document.getElementById('advancePaymentStatus');
+      const car = diagnosisCarsForAdvance.find(c=>c.id===carId);
+      if (!car) { alert('اختر عميلًا من قائمة التشخيص أولاً.'); return; }
+      if (!Number.isFinite(amount) || amount <= 0) { alert('اكتب مبلغ دفعة صحيح أكبر من صفر.'); return; }
+      if (!treasuryId) { alert('اختر الخزينة التي استلمت الدفعة.'); return; }
+      if (!confirm(`تأكيد استلام دفعة مقدمة بقيمة ${advancePaymentMoney(amount)} جنيه من العميل ${car.clientName||car.name||''}؟`)) return;
+      const receiptWindow = window.open('', '_blank');
+      const whatsappWindow = window.open('about:blank', '_blank');
+
+      const now = new Date().toISOString();
+      const paymentRef = db.collection('client_advance_payments').doc();
+      const treasuryTxRef = db.collection('treasury_transactions').doc();
+      const clientAccountRef = db.collection('client_accounts').doc(paymentRef.id);
+      const carRef = db.collection('cars').doc(carId);
+      const treasuryRef = db.collection('treasuries').doc(treasuryId);
+      const paymentId = 'ADV-' + Date.now();
+      // Keep the payment record in the outer scope: it is also needed after
+      // the Firestore transaction for printing, WhatsApp and local UI updates.
+      let payment = null;
+      try {
+        await db.runTransaction(async transaction => {
+          const [carSnap, treasurySnap] = await Promise.all([transaction.get(carRef),transaction.get(treasuryRef)]);
+          if (!carSnap.exists) throw new Error('ملف السيارة لم يعد موجودًا.');
+          if (!treasurySnap.exists) throw new Error('الخزينة المحددة غير موجودة.');
+          const freshCar = carSnap.data() || {};
+          const state = String(freshCar.status || '').toUpperCase();
+          const deptFields = [freshCar.targetDepartment,freshCar.currentDepartment,freshCar.department,freshCar.assignedDepartment].map(x=>String(x||'').toLowerCase());
+          if (state === 'SENT_TO_TREASURY' || state === 'PAID_AWAITING_DELIVERY' || state === 'COMPLETED' || state === 'ARCHIVED' || freshCar.isPaid || (!deptFields.includes('diagnosis') && state !== 'IN_DIAGNOSIS')) {
+            throw new Error('السيارة لم تعد ضمن عملاء التشخيص. حدّث القائمة واختر سيارة ما زالت في التشخيص.');
+          }
+          const treasury = treasurySnap.data() || {};
+          const previousAdvance = Number(freshCar.downPayment || freshCar.advancePayment || freshCar.bookingDeposit || 0);
+          const totalAdvance = previousAdvance + amount;
+          const treasuryName = treasury.name || 'الخزينة';
+          const clientName = freshCar.clientName || freshCar.name || 'عميل';
+          const clientPhone = freshCar.phone || freshCar.clientPhone || freshCar.mobile || '';
+          payment = {
+            id:paymentId, carId, clientName, clientPhone,
+            paymentDocId:paymentRef.id, treasuryTxId:treasuryTxRef.id, clientAccountId:clientAccountRef.id,
+            carInfo:[freshCar.brand,freshCar.model].filter(Boolean).join(' '),
+            carPlate:freshCar.plate || freshCar.carPlate || '',
+            amount, previousAdvance, totalAdvance, method, treasuryId, treasuryName,
+            notes, type:'دفعة مقدمة قبل تحويل السيارة للحسابات',
+            dateStr:now, dateFormatted:new Date(now).toLocaleString('en-US')
+          };
+          transaction.update(treasuryRef,{balance:(Number(treasury.balance)||0)+amount,updatedAt:now});
+          transaction.update(carRef,{
+            downPayment:totalAdvance,
+            advancePayment:totalAdvance,
+            bookingDeposit:totalAdvance,
+            advancePayments:firebase.firestore.FieldValue.arrayUnion(payment),
+            lastAdvancePaymentAt:now,
+            lastAdvancePaymentBy:loggedUser || 'الحسابات',
+            updatedAt:now
+          });
+          transaction.set(paymentRef,payment);
+          transaction.set(clientAccountRef,{
+            clientName, clientPhone, carInfo:payment.carInfo, carPlate:payment.carPlate,
+            carId, invoiceSerial:paymentId, recordType:'advance_payment',
+            type:'دفعة مقدمة قبل الفاتورة', totalAmount:amount, paidAmount:amount,
+            remainingAmount:0, paymentMethod:method, treasuryId, treasuryName,
+            dateStr:now, dateFormatted:payment.dateFormatted, notes
+          });
+          transaction.set(treasuryTxRef,{
+            ...payment, type:'دفعة مقدمة من عميل', direction:'in',
+            paidAmount:amount, amount, expenseAmount:0,
+            invoiceSerial:paymentId, source:'diagnosis_advance_payment'
+          });
+        });
+        if (!payment) throw new Error('لم يتم إنشاء بيانات الدفعة بعد الحفظ.');
+        // تحديث النسخة المحلية حتى يظهر المقدم المتراكم فورًا عند إعادة فتح النافذة.
+        const localCar = diagnosisCarsForAdvance.find(c=>c.id===carId);
+        if (localCar) {
+          const old = Number(localCar.downPayment || localCar.advancePayment || localCar.bookingDeposit || 0);
+          localCar.downPayment = localCar.advancePayment = localCar.bookingDeposit = old + amount;
+        }
+        showAdvancePaymentCarInfo();
+        document.getElementById('advancePaymentAmount').value = '';
+        document.getElementById('advancePaymentNotes').value = '';
+        lastAdvancePaymentReceipt = payment;
+        document.getElementById('advancePaymentWhatsAppBtn').style.display='inline-flex';
+        document.getElementById('advancePaymentPrintOtherBtn').style.display='inline-flex';
+        statusBox.textContent = `تم تسجيل الدفعة بنجاح: ${advancePaymentMoney(amount)} جنيه. تم فتح إيصال الطباعة، ويمكنك إرسال تفاصيله للعميل عبر واتساب.`;
+        if(receiptWindow && !receiptWindow.closed){receiptWindow.document.open();receiptWindow.document.write(buildAdvancePaymentReceiptHtml(payment,'A6'));receiptWindow.document.close();setTimeout(()=>{receiptWindow.focus();receiptWindow.print();},700);}
+        else { alert('تم حفظ الدفعة بنجاح، لكن المتصفح منع نافذة الطباعة. استخدم زر طباعة A4 أو نصف A4.'); }
+        const waUrl = buildAdvancePaymentWhatsAppUrl(payment);
+        if (whatsappWindow && !whatsappWindow.closed && waUrl) whatsappWindow.location.href = waUrl;
+        else if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
+        alert('تم تسجيل الدفعة بنجاح. تم فتح واتساب برسالة جاهزة؛ اضغط إرسال داخل واتساب.');
+      } catch (e) {
+        if(receiptWindow && !receiptWindow.closed) receiptWindow.close();
+        if(whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
+        console.error('Advance payment error:',e);
+        statusBox.textContent = 'تعذر تسجيل الدفعة: ' + (e.message || e);
+        alert('تعذر تسجيل الدفعة المقدمة: ' + (e.message || e));
+      }
+    }
+
+
     async function openClientAccountsModal() {
       document.getElementById('clientAccountsModal').style.display = 'flex';
       await loadClientAccountsData();
@@ -3863,7 +4319,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           if (!map[key]) {
             map[key] = { name: key, phone: d.clientPhone || '---', visits: 0, totalSpent: 0, totalPaid: 0, remaining: 0 };
           }
-          map[key].visits += 1;
+          if (d.recordType !== 'advance_payment') map[key].visits += 1;
           map[key].totalSpent += (parseFloat(d.totalAmount) || 0);
           map[key].totalPaid += (parseFloat(d.paidAmount) || 0);
           map[key].remaining += (parseFloat(d.remainingAmount) || 0);
