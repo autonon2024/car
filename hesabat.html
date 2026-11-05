@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مركز أوتو نون (NON) - قسم الحسابات والخزينة</title>
+  <title> قسم الحسابات والخزينة</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     :root {
@@ -743,6 +743,38 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 @media(max-width:600px){.header-bar .brand{font-size:.9rem}.header-bar .brand img{width:36px;height:36px}.header-bar .btn-action{font-size:.75rem;padding:8px 10px}.non-service-overlay{padding:4px}.non-service-window{border-radius:13px}.non-service-window-head{border-radius:12px 12px 0 0}}
 </style>
 
+<style id="invoice-car-receipt-print-fix">
+@media print{
+  body.print-a4 #printableInvoiceArea #printCarReceiptNo{display:block!important;color:#10243a!important;font-size:12pt!important;font-weight:900!important;padding:3mm 4mm!important;border:2px solid #10243a!important;background:#f1f5f9!important;text-align:center!important}
+  body.print-a4 #printableInvoiceArea .form-field:has(#printCarReceiptNo){display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:5mm!important;margin:3mm 0!important;padding:2mm 3mm!important;border:1px dashed #10243a!important}
+}
+</style>
+<style id="car-delivery-receipt-print-style">
+#carDeliveryReceiptPrint{display:none}
+@media print{
+  body.print-a4 #carDeliveryReceiptPrint,
+  body.print-a4 #carDeliveryReceiptPrint *{visibility:visible!important}
+  body.print-a4 #carDeliveryReceiptPrint{
+    display:block!important;position:relative!important;left:auto!important;top:auto!important;
+    width:192mm!important;min-height:260mm!important;margin:0 auto!important;padding:12mm!important;
+    box-sizing:border-box!important;background:#fff!important;color:#17283a!important;
+    border:2px solid #243653!important;page-break-before:always!important;break-before:page!important;
+    font-family:Arial,Tahoma,sans-serif!important;direction:rtl!important
+  }
+  #carDeliveryReceiptPrint .car-receipt-head{text-align:center;border-bottom:3px solid #243653;padding-bottom:8mm;margin-bottom:10mm}
+  #carDeliveryReceiptPrint .car-receipt-head h1{font-size:20pt;margin:0 0 5mm;color:#243653}
+  #carDeliveryReceiptPrint .car-receipt-head h2{font-size:25pt;margin:0 0 3mm;color:#243653}
+  #carDeliveryReceiptPrint .car-receipt-head p{font-size:11pt;margin:0}
+  #carDeliveryReceiptPrint .car-receipt-number{display:flex;justify-content:space-between;align-items:center;border:2px solid #243653;background:#f1f5f9;padding:7mm;margin:0 0 10mm;font-size:16pt;font-weight:900}
+  #carDeliveryReceiptPrint .car-receipt-number strong{font-size:22pt;color:#b45309}
+  #carDeliveryReceiptPrint .car-receipt-grid{display:grid;grid-template-columns:1fr 1fr;gap:7mm}
+  #carDeliveryReceiptPrint .car-receipt-grid>div{display:flex;flex-direction:column;gap:3mm;border-bottom:1px dashed #9aa9ba;padding:3mm 1mm;min-height:18mm}
+  #carDeliveryReceiptPrint .car-receipt-grid b{font-size:10pt;color:#243653}
+  #carDeliveryReceiptPrint .car-receipt-grid span{font-size:13pt;font-weight:800;color:#111}
+  #carDeliveryReceiptPrint .car-receipt-notes{margin-top:14mm;padding:7mm;border:1px solid #9aa9ba;font-size:11pt;line-height:1.8}
+  #carDeliveryReceiptPrint .car-receipt-signatures{display:flex;justify-content:space-between;margin-top:30mm;font-size:12pt;font-weight:800}
+}
+</style>
 </head>
 <body id="pageBody">
 
@@ -2629,9 +2661,9 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         let items = [];
         let total = 0;
 
-        if (type === 'treasury') {
-          // الملخص العام يعرض مجموع أرصدة الخزن الحالية؛ لذلك يعرض الكشف نفس الأرصدة خزنةً بخزنة.
-          titleEl.textContent = 'كشف تفصيلي: أرصدة الخزائن الحالية';
+        if (type === 'treasury' || type === 'drawer') {
+          // إجمالي الدرج والخزينة العامة موحدان ويعرض الكشف أرصدة جميع الخزائن.
+          titleEl.textContent = type === 'drawer' ? 'كشف تفصيلي: إجمالي الدرج (كاش) — جميع الخزائن' : 'كشف تفصيلي: أرصدة الخزائن الحالية';
           const snap = await db.collection('treasuries').get();
           snap.forEach(doc => {
             const d = doc.data() || {};
@@ -3014,15 +3046,15 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           if (adjustments[tr.from] !== undefined) adjustments[tr.from] -= value;
           if (adjustments[tr.to] !== undefined) adjustments[tr.to] += value;
         });
-        drawerTotal += adjustments.drawer;
         transfersTotal += adjustments.transfers;
         treasuryBalanceTotal += adjustments.treasury;
         deferredTotal += adjustments.deferred;
 
-        if (drawerEl) drawerEl.textContent = formatFinancialAmount(drawerTotal);
+        // إجمالي الدرج والخزينة العامة موحد: مجموع أرصدة كل الخزائن بعد التسويات.
+        const unifiedCashTotal = treasuryBalanceTotal + adjustments.drawer;
+        if (drawerEl) drawerEl.textContent = formatFinancialAmount(unifiedCashTotal);
         if (transfersEl) transfersEl.textContent = formatFinancialAmount(transfersTotal);
-        // إجمالي الخزينة = أرصدة الخزن الحالية بعد تسويات التحويل.
-        if (treasuryEl) treasuryEl.textContent = formatFinancialAmount(treasuryBalanceTotal);
+        if (treasuryEl) treasuryEl.textContent = formatFinancialAmount(unifiedCashTotal);
         if (deferredEl) deferredEl.textContent = formatFinancialAmount(deferredTotal);
       } catch (e) {
         console.error('تعذر تحميل الملخص المالي للخزينة:', e);
@@ -3882,11 +3914,12 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
   const esc=v=>String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
   function rowHasData(row){return row && [...row.cells].some(c=>{const t=(c.innerText||'').replace(/[-—–s0.]+/g,'');return t.length>0});}
   function hideEmptyBlocks(root){
+    if(!root) return;
     root.querySelectorAll('.card-box').forEach(box=>{
       if(box.classList.contains('no-print')) return;
       const tb=box.querySelector('tbody');
       if(tb){
-        const rows=[...tb.querySelectorAll('tr')].filter(rowHasData);
+        const rows=[...tb.querySelectorAll('tr')].filter(window.rowHasData);
         const meaningful=rows.filter(r=>!/(لا توجد|جاري التحميل|لا يوجد)/.test(r.innerText||''));
         if(!meaningful.length) box.classList.add('print-only-empty-hide');
       }
@@ -3896,11 +3929,21 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       if(value && !money(value.innerText.replace(/,/g,''))) r.classList.add('print-only-empty-hide');
     });
   }
+  // إتاحة الدوال للسكريبتات الأخرى التي تستخدمها أثناء طباعة الفاتورة.
+  window.hideEmptyBlocks = hideEmptyBlocks;
+  window.rowHasData = rowHasData;
+
   function printNode(id,title){
     const el=document.getElementById(id); if(!el){alert('❌ لم يتم العثور على بيانات الطباعة');return;}
     const clone=el.cloneNode(true); clone.classList.add('professional-print'); hideEmptyBlocks(clone);
     const w=window.open('','_blank','width=900,height=700'); if(!w){window.print();return;}
-    w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>'+esc(title||'طباعة')+'</title><style>@page{size:A4 portrait;margin:8mm}body{font-family:Arial,sans-serif;direction:rtl;margin:0;color:#111}.professional-print{background:#fff;padding:0}.professional-print table{width:100%;border-collapse:collapse;font-size:9px}.professional-print th,.professional-print td{border:1px solid #cbd5e1;padding:4px;text-align:right}.professional-print th{background:#f1f5f9;font-weight:900}.professional-print .print-only-empty-hide{display:none!important}.professional-print .no-print{display:none!important}.professional-print .summary-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #cbd5e1}.professional-print .card-box{margin:5px 0;padding:6px;border:1px solid #cbd5e1;border-radius:4px}.professional-print h3,.professional-print h4{margin:0 0 6px}.print-head{border-bottom:2px solid #111;margin-bottom:8px;padding-bottom:5px;font-weight:900;font-size:15px}</style></head><body><div class="print-head">'+esc(title||'تقرير')+'</div>'+clone.outerHTML+'
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title||'طباعة')}</title><style>@page{size:A4 portrait;margin:8mm}body{font-family:Arial,sans-serif;direction:rtl;margin:0;color:#111}.professional-print{background:#fff;padding:0}.professional-print table{width:100%;border-collapse:collapse;font-size:9px}.professional-print th,.professional-print td{border:1px solid #cbd5e1;padding:4px;text-align:right}.professional-print th{background:#f1f5f9;font-weight:900}.professional-print .print-only-empty-hide{display:none!important}.professional-print .no-print{display:none!important}.professional-print .summary-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #cbd5e1}.professional-print .card-box{margin:5px 0;padding:6px;border:1px solid #cbd5e1;border-radius:4px}.professional-print h3,.professional-print h4{margin:0 0 6px}.print-head{border-bottom:2px solid #111;margin-bottom:8px;padding-bottom:5px;font-weight:900;font-size:15px}</style></head><body><div class="print-head">${esc(title||'تقرير')}</div>${clone.outerHTML}</body></html>`);
+    w.document.close(); w.focus(); setTimeout(()=>{w.print();setTimeout(()=>w.close(),500)},250);
+  }
+  window.printNode=printNode;
+})();
+</script>
+
 <script id="accounts-profits-management-v2">
 (function(){
  const $=id=>document.getElementById(id), n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -4002,7 +4045,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 </div>
 <script id="summary-transfer-feature-v2">
 (function(){
- const $=id=>document.getElementById(id), names={drawer:'إجمالي الدرج (كاش)',transfers:'إجمالي التحويلات',treasury:'إجمالي الخزينة العام',deferred:'إجمالي الآجل (مديونيات)'};
+ const $=id=>document.getElementById(id), num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0;}, names={drawer:'إجمالي الدرج (كاش)',transfers:'إجمالي التحويلات',treasury:'إجمالي الخزينة العام',deferred:'إجمالي الآجل (مديونيات)'};
  let records=[];
  const money=v=>(Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:2});
  async function getRecords(){
@@ -4022,18 +4065,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
   try{await db.collection('financial_summary_transfers').add({from,to,amount,note,createdAt:new Date().toISOString(),createdBy:localStorage.getItem('currentUser')||'المحاسب'});$('stmAmount').value='';$('stmNote').value='';await getRecords();render();await window.loadFinancialStats?.();$('stmStatus').textContent='تم حفظ التحويل بنجاح.';}catch(e){alert('تعذر حفظ التحويل: '+e.message);}
  };
  window.deleteSummaryTransfer=async function(id){const pass=prompt('أدخل كلمة المرور للحذف:');if(pass===null)return;if(pass!=='123'){alert('كلمة المرور غير صحيحة');return;}if(!confirm('هل تريد حذف عملية التحويل؟'))return;try{await db.collection('financial_summary_transfers').doc(id).delete();await getRecords();render();await window.loadFinancialStats?.();}catch(e){alert('تعذر الحذف: '+e.message);}};
- const original=window.loadFinancialStats;
- if(typeof original==='function'){
-  window.loadFinancialStats=async function(){await original.apply(this,arguments);try{await getRecords();const net={drawer:0,transfers:0,treasury:0,deferred:0};records.forEach(r=>{const a=Number(r.amount)||0;if(net[r.from]!==undefined)net[r.from]-=a;if(net[r.to]!==undefined)net[r.to]+=a;});Object.keys(net).forEach(k=>{const el=$({drawer:'statDrawerTotal',transfers:'statTransfersTotal',treasury:'statTreasuryTotal',deferred:'statDeferredTotal'}[k]);if(el){const raw=Number(String(el.textContent).replace(/[^0-9٠-٩.,-]/g,'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/,/g,''))||0;el.textContent=money(raw+net[k]);}});}catch(e){console.warn('تعذر تطبيق تسويات الملخص المالي',e);}};
- }
-})();
-<\\/script>
-\n</body></html>');
-    w.document.close(); w.focus(); setTimeout(()=>{w.print();setTimeout(()=>w.close(),400)},250);
-  }
+
   window.printElement=function(id){
     const map={treasuryStatementPrintArea:'كشف حساب الخزينة',treasuryMovementsPrintArea:'حركة الخزينة',expensesPrintArea:'كشف المصاريف',archivePrintArea:'الأرشيف',clientAccountsPrintArea:'ملخص حسابات العملاء',detailedPrintArea:'الملخص المالي',workersPrintArea:'تقرير العاملين'};
-    printNode(id,map[id]||'تقرير مالي');
+    window.printNode(id,map[id]||'تقرير مالي');
   };
 
   const INVOICE_PRINT_DEFAULTS = {
@@ -4253,6 +4288,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     const el=document.getElementById('printableInvoiceArea'); if(!el){window.print();return;}
     // تجهيز نسختين منفصلتين في مهمة الطباعة: العميل ثم المركز.
     document.getElementById('printableInvoiceCenterCopy')?.remove();
+    document.getElementById('carDeliveryReceiptPrint')?.remove();
     const centerCopy=el.cloneNode(true);
     centerCopy.id='printableInvoiceCenterCopy';
     centerCopy.style.marginTop='0';
@@ -4267,19 +4303,42 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     customerTitle.style.cssText='text-align:center;font-weight:900;font-size:14px;padding:5px;border:2px solid #243653;margin-bottom:8px;color:#243653;';
     el.insertBefore(customerTitle,el.firstChild);
     document.body.appendChild(centerCopy);
-    hideEmptyBlocks(el);
-    hideEmptyBlocks(centerCopy);
+    const receipt=document.createElement('section');
+    receipt.id='carDeliveryReceiptPrint';
+    const getText=id=>(document.getElementById(id)?.textContent||'').trim();
+    const getValue=id=>(document.getElementById(id)?.value||'').trim();
+    const receiptEsc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    receipt.innerHTML=`<div class="car-receipt-head"><h1>مركز أوتو نون لصيانة السيارات</h1><h2>إذن استلام سيارة</h2><p>يُرجى إبراز هذا الإذن عند استلام السيارة من المركز</p></div>
+      <div class="car-receipt-number"><span>رقم إذن الاستلام</span><strong>${receiptEsc(getText('printCarReceiptNo'))}</strong></div>
+      <div class="car-receipt-grid">
+        <div><b>رقم الفاتورة</b><span>${receiptEsc(getText('printInvoiceSerial'))}</span></div>
+        <div><b>تاريخ الإصدار</b><span>${receiptEsc(getText('printInvoiceDate'))}</span></div>
+        <div><b>اسم العميل</b><span>${receiptEsc(getValue('clientName'))}</span></div>
+        <div><b>رقم الهاتف</b><span>${receiptEsc(getValue('clientPhone'))}</span></div>
+        <div><b>السيارة</b><span>${receiptEsc(getValue('carInfo'))}</span></div>
+        <div><b>رقم اللوحة</b><span>${receiptEsc(getValue('carPlate'))}</span></div>
+        <div><b>إجمالي الفاتورة</b><span>${receiptEsc(getText('grandTotalSum'))} جنيه</span></div>
+        <div><b>المبلغ المدفوع</b><span>${receiptEsc(getText('printAmountPaidSum'))} جنيه</span></div>
+        <div><b>المتبقي</b><span>${receiptEsc(getText('remainingBalanceSum'))} جنيه</span></div>
+        <div><b>مسؤول الحسابات</b><span>${receiptEsc(getText('printCashierName'))}</span></div>
+      </div>
+      <div class="car-receipt-notes">تم إصدار إذن الاستلام بعد تسجيل عملية التحصيل. يرجى مراجعة بيانات السيارة ورقم اللوحة قبل مغادرة المركز.</div>
+      <div class="car-receipt-signatures"><span>توقيع مسؤول التسليم: ........................</span><span>توقيع العميل: ........................</span></div>`;
+    document.body.appendChild(receipt);
+    window.hideEmptyBlocks(el);
+    window.hideEmptyBlocks(centerCopy);
     document.body.classList.add('print-a4');
     const printSettings = getInvoicePrintSettings();
     const dynamicPrintStyle = applyInvoicePrintSettingsToPage(printSettings);
     prepareInvoiceFullPagePrint(printSettings);
     // إزالة البنود المالية الصفرية/الفارغة من الفاتورة نفسها قبل الطباعة.
     ['quickServicesTotalSum','servicesTotalSum','advanceDeductionSum','managerDiscountSum','remainingBalanceSum'].forEach(id=>{const x=document.getElementById(id);if(x&&num((x.innerText||'').replace(/,/g,''))===0){const r=x.closest('.summary-row');if(r)r.style.display='none';}});
-    const quick=document.getElementById('invoiceQuickServicesTableBody'); if(quick){const rows=[...quick.querySelectorAll('tr')].filter(rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));const card=quick.closest('.card-box');if(card&&!rows.length)card.style.display='none';}
-    const services=document.getElementById('servicesTableBody'); if(services){const rows=[...services.querySelectorAll('tr')].filter(rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));const card=services.closest('.card-box');if(card&&!rows.length)card.style.display='none';}
+    const quick=document.getElementById('invoiceQuickServicesTableBody'); if(quick){const rows=[...quick.querySelectorAll('tr')].filter(window.rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));const card=quick.closest('.card-box');if(card&&!rows.length)card.style.display='none';}
+    const services=document.getElementById('servicesTableBody'); if(services){const rows=[...services.querySelectorAll('tr')].filter(window.rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));const card=services.closest('.card-box');if(card&&!rows.length)card.style.display='none';}
     const old=document.getElementById('invoicePageSizeStyle');if(old)old.remove();const st=document.createElement('style');st.id='invoicePageSizeStyle';st.textContent='@media print{@page{size:A4 portrait;margin:5mm}#printableInvoiceArea{page-break-inside:avoid!important;break-inside:avoid!important}.card-box{break-inside:avoid!important}}';document.head.appendChild(st);
     window.print();setTimeout(()=>{
       document.getElementById('printableInvoiceCenterCopy')?.remove();
+      document.getElementById('carDeliveryReceiptPrint')?.remove();
       if(customerTitle.parentNode) customerTitle.remove();
       document.body.classList.remove('print-a4');
       st.remove();
@@ -4311,8 +4370,7 @@ window.showClientStatement=async function(clientName){
     const rows=docs.map((x,i)=>{const total=num(x.totalAmount||x.grandTotal),paid=num(x.paidAmount),rem=num(x.remainingAmount||(total-paid));return '<tr><td>'+(i+1)+'</td><td>'+esc(x.date||x.timestamp||x.createdAt||'')+'</td><td>'+esc(x.invoiceSerial||x.invoiceNumber||'')+'</td><td>'+esc(x.carInfo||'')+'</td><td>'+money(total)+'</td><td>'+money(paid)+'</td><td>'+money(rem)+'</td></tr>';}).join('');
     const total=docs.reduce((a,x)=>a+num(x.totalAmount||x.grandTotal),0),paid=docs.reduce((a,x)=>a+num(x.paidAmount),0),rem=docs.reduce((a,x)=>a+num(x.remainingAmount||(num(x.totalAmount||x.grandTotal)-num(x.paidAmount))),0);
     const w=window.open('','_blank','width=1000,height=750');if(!w)return;
-    w.document.write('<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>كشف حساب '+esc(clientName)+'</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;color:#111}.head{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:10px}.meta div{border:1px solid #cbd5e1;padding:6px}.bank{width:100%;border-collapse:collapse;font-size:10px}.bank th,.bank td{border:1px solid #cbd5e1;padding:5px}.bank th{background:#0f172a;color:#fff}.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.tot div{border:1px solid #cbd5e1;padding:7px;font-weight:900}</style></head><body><div class="head"><div><h2 style="margin:0">كشف حساب عميل</h2><div>حركة مالية تفصيلية</div></div><div>'+new Date().toLocaleDateString('en-US')+'</div></div><div class="meta"><div><b>العميل:</b> '+esc(clientName)+'</div><div><b>عدد الزيارات:</b> '+docs.length+'</div><div><b>الرصيد:</b> '+money(rem)+'</div></div><table class="bank"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>البيان / السيارة</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>'+rows+'</tbody></table><div class="tot"><div>إجمالي المدين<br>'+money(total)+'</div><div>إجمالي المدفوع<br>'+money(paid)+'</div><div>الرصيد المستحق<br>'+money(rem)+'</div></div>
-\n</body></html>');
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف حساب ${esc(clientName)}</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;color:#111}.head{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:10px}.meta div{border:1px solid #cbd5e1;padding:6px}.bank{width:100%;border-collapse:collapse;font-size:10px}.bank th,.bank td{border:1px solid #cbd5e1;padding:5px}.bank th{background:#0f172a;color:#fff}.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.tot div{border:1px solid #cbd5e1;padding:7px;font-weight:900}</style></head><body><div class="head"><div><h2 style="margin:0">كشف حساب عميل</h2><div>حركة مالية تفصيلية</div></div><div>${new Date().toLocaleDateString('en-US')}</div></div><div class="meta"><div><b>العميل:</b> ${esc(clientName)}</div><div><b>عدد الزيارات:</b> ${docs.length}</div><div><b>الرصيد:</b> ${money(rem)}</div></div><table class="bank"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>البيان / السيارة</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div>إجمالي المدين<br>${money(total)}</div><div>إجمالي المدفوع<br>${money(paid)}</div><div>الرصيد المستحق<br>${money(rem)}</div></div></body></html>`);
     w.document.close();setTimeout(()=>{w.print();setTimeout(()=>w.close(),500)},250);
   };
 })();
@@ -4625,8 +4683,9 @@ window.addEventListener('load', function () {
  // يومية البيع: عرض فواتير البيع المسجلة في أرشيف الفواتير مع فلاتر التاريخ والبحث.
  window.openSalesDaily=function(){const m=document.getElementById('salesDailyModal');m.classList.add('is-open');const today=new Date().toISOString().slice(0,10);if(!document.getElementById('salesDailyFrom').value)document.getElementById('salesDailyFrom').value=today;if(!document.getElementById('salesDailyTo').value)document.getElementById('salesDailyTo').value=today;loadSalesDaily();};
  window.closeSalesDaily=function(){document.getElementById('salesDailyModal').classList.remove('is-open');};
- window.salesDailyRows=[];
- window.loadSalesDaily=async function(){const body=document.getElementById('salesDailyBody');body.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px">جاري تحميل يومية البيع...</td></tr>';try{if(typeof db==='undefined')throw new Error('قاعدة البيانات غير متاحة');const snap=await db.collection('invoices_archive').get();window.salesDailyRows=[];snap.forEach(doc=>{const d=doc.data()||{};window.salesDailyRows.push({id:doc.id,...d});});renderSalesDaily();}catch(e){body.innerHTML='<tr><td colspan="11" style="text-align:center;color:#b91c1c">تعذر تحميل يومية البيع: '+salesDailyEsc(e.message)+'</td></tr>';}};
+  window.salesDailyRows=[];
+  window.salesDailyExpenses=[];
+  window.loadSalesDaily=async function(){const body=document.getElementById('salesDailyBody');body.innerHTML='<tr><td colspan="12" style="text-align:center;padding:24px">جاري تحميل يومية البيع...</td></tr>';try{if(typeof db==='undefined')throw new Error('قاعدة البيانات غير متاحة');const [snap,expenseSnap,stockSnap]=await Promise.all([db.collection('invoices_archive').get(),db.collection('expenses').get(),db.collection('inventory').get()]);window.salesDailyRows=[];snap.forEach(doc=>{const d=doc.data()||{};window.salesDailyRows.push({id:doc.id,...d});});window.salesDailyExpenses=[];expenseSnap.forEach(doc=>window.salesDailyExpenses.push({id:doc.id,...(doc.data()||{})}));const stockRows=[];stockSnap.forEach(doc=>stockRows.push({id:doc.id,...(doc.data()||{})}));window.accountsProfitCache=window.accountsProfitCache||{};window.accountsProfitCache.inventory=stockRows;renderSalesDaily();}catch(e){body.innerHTML='<tr><td colspan="12" style="text-align:center;color:#b91c1c">تعذر تحميل يومية البيع: '+salesDailyEsc(e.message)+'</td></tr>';}};
  window.salesDailyEsc=function(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));};
  window.renderSalesDaily=function(){
    const from=document.getElementById('salesDailyFrom').value,to=document.getElementById('salesDailyTo').value;
@@ -4654,30 +4713,39 @@ window.addEventListener('load', function () {
        .map(describe).join(' ').toLowerCase();
      return(!from||!day||day>=from)&&(!to||!day||day<=to)&&(!q||hay.includes(q));
    }).sort((a,b)=>new Date(b.dateStr||b.date||b.createdAt||0)-new Date(a.dateStr||a.date||a.createdAt||0));
-   let total=0,paid=0,remaining=0,grossTotal=0,partsProfitTotal=0;
+   let total=0,paid=0,remaining=0,grossTotal=0,partsProfitTotal=0,servicesProfitTotal=0;
    const body=document.getElementById('salesDailyBody');
    if(!rows.length){
-     body.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px">لا توجد فواتير بيع في الفترة المحددة.</td></tr>';
+     body.innerHTML='<tr><td colspan="12" style="text-align:center;padding:24px">لا توجد فواتير بيع في الفترة المحددة.</td></tr>';
    }else{
      body.innerHTML=rows.map((d,i)=>{
        const t=Number(d.totalAmount??d.grandTotal??0)||0;
        const p=Number(d.paidAmount??d.paymentAmount??0)||0;
        const r=Number(d.remainingAmount??Math.max(0,t-p))||0;
        total+=t;paid+=p;remaining+=r;
-       const profitData=window.accountsProfitCalculateInvoiceProfit?window.accountsProfitCalculateInvoiceProfit(d):{gross:0,partsProfit:0};
-       const g=Number(profitData.gross)||0,pp=Number(profitData.partsProfit)||0;
-       grossTotal+=g;partsProfitTotal+=pp;
+       const profitData=window.accountsProfitCalculateInvoiceProfit?window.accountsProfitCalculateInvoiceProfit(d):{gross:0,partsProfit:0,servicesProfit:0};
+       const g=Number(profitData.gross)||0,pp=Number(profitData.partsProfit)||0,sp=Number(profitData.servicesProfit)||0;
+       grossTotal+=g;partsProfitTotal+=pp;servicesProfitTotal+=sp;
        const items=[
          describe(d.repairDetails),describe(d.requiredParts),describe(d.parts),
          describe(d.quickServicesList),describe(d.installationServices),describe(d.services),describe(d.notes)
        ].filter(Boolean).join(' — ');
-       return `<tr><td>${i+1}</td><td>${salesDailyEsc(d.dateFormatted||d.dateStr||d.date||'—')}</td><td>${salesDailyEsc(d.invoiceSerial||d.invoiceNumber||'—')}</td><td>${salesDailyEsc(d.clientName||d.customerName||'—')}</td><td>${salesDailyEsc(d.carInfo||d.carPlate||'—')}</td><td>${salesDailyEsc(items||'—')}</td><td>${t.toLocaleString('en-US')}</td><td>${pp.toLocaleString('en-US')}</td><td>${g.toLocaleString('en-US')}</td><td>${p.toLocaleString('en-US')}</td><td>${r.toLocaleString('en-US')}</td></tr>`;
+       return `<tr><td>${i+1}</td><td>${salesDailyEsc(d.dateFormatted||d.dateStr||d.date||'—')}</td><td>${salesDailyEsc(d.invoiceSerial||d.invoiceNumber||'—')}</td><td>${salesDailyEsc(d.clientName||d.customerName||'—')}</td><td>${salesDailyEsc(d.carInfo||d.carPlate||'—')}</td><td>${salesDailyEsc(items||'—')}</td><td>${t.toLocaleString('en-US')}</td><td>${pp.toLocaleString('en-US')}</td><td>${sp.toLocaleString('en-US')}</td><td>${g.toLocaleString('en-US')}</td><td>${p.toLocaleString('en-US')}</td><td>${r.toLocaleString('en-US')}</td></tr>`;
      }).join('');
    }
+   const expenseRows=(window.salesDailyExpenses||[]).filter(x=>{
+     const raw=x.dateStr||x.date||x.createdAt||x.timestamp||'';
+     const dt=new Date(raw);const day=!Number.isNaN(dt.getTime())?dt.toISOString().slice(0,10):String(raw).slice(0,10);
+     return (!from||!day||day>=from)&&(!to||!day||day<=to);
+   });
+   const expenseTotal=expenseRows.reduce((a,x)=>a+(Number(x.amount??x.value??x.expenseAmount)||0),0);
+   const netProfit=grossTotal-expenseTotal;
    document.getElementById('salesDailyCount').textContent=rows.length;
    document.getElementById('salesDailyTotal').textContent=total.toLocaleString('en-US')+' ';
-   document.getElementById('salesDailyPartsProfit').textContent=partsProfitTotal.toLocaleString('en-US')+' ';
+   document.getElementById('salesDailyPartsProfit').textContent=partsProfitTotal.toLocaleString('en-US')+' ';const servicesEl=document.getElementById('salesDailyServicesProfit');if(servicesEl)servicesEl.textContent=servicesProfitTotal.toLocaleString('en-US')+' ';
    document.getElementById('salesDailyGross').textContent=grossTotal.toLocaleString('en-US')+' ';
+   const expenseEl=document.getElementById('salesDailyExpensesTotal');if(expenseEl)expenseEl.textContent=expenseTotal.toLocaleString('en-US')+' ';
+   const netEl=document.getElementById('salesDailyNetProfit');if(netEl)netEl.textContent=netProfit.toLocaleString('en-US')+' ';
    document.getElementById('salesDailyPaid').textContent=paid.toLocaleString('en-US')+' ';
    document.getElementById('salesDailyRemaining').textContent=remaining.toLocaleString('en-US')+' ';
  };
@@ -4854,12 +4922,15 @@ function printClientLifeStatement(){const content=document.getElementById('clien
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0">
      <div class="card-box" style="margin:0;text-align:center"><small>عدد الفواتير</small><div id="salesDailyCount" style="font-size:21px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي البيع</small><div id="salesDailyTotal" style="font-size:21px;font-weight:900">0 </div></div>
-     <div class="card-box" style="margin:0;text-align:center"><small>ربح قطع الغيار</small><div id="salesDailyPartsProfit" style="font-size:21px;font-weight:900">0 </div></div>
+     <div class="card-box" style="margin:0;text-align:center"><small>ربح قطع الغيار (حسب سعر شراء المخزن)</small><div id="salesDailyPartsProfit" style="font-size:21px;font-weight:900">0 </div></div>
+     <div class="card-box" style="margin:0;text-align:center"><small>إجمالي الخدمات</small><div id="salesDailyServicesProfit" style="font-size:21px;font-weight:900">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي الربح شامل المصنعية والخدمات</small><div id="salesDailyGross" style="font-size:21px;font-weight:900">0 </div></div>
+     <div class="card-box" style="margin:0;text-align:center"><small>مصروفات الفترة</small><div id="salesDailyExpensesTotal" style="font-size:21px;font-weight:900">0 </div></div>
+     <div class="card-box" style="margin:0;text-align:center"><small>صافي الربح بعد المصروفات</small><div id="salesDailyNetProfit" style="font-size:21px;font-weight:900;color:#16845f">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي المدفوع</small><div id="salesDailyPaid" style="font-size:21px;font-weight:900">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي المتبقي</small><div id="salesDailyRemaining" style="font-size:21px;font-weight:900">0 </div></div>
     </div>
-    <div class="table-responsive"><table style="min-width:900px;width:100%"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>العميل</th><th>السيارة / اللوحة</th><th>البيان</th><th>إجمالي المبيع</th><th>ربح قطع الغيار</th><th>إجمالي الربح</th><th>المدفوع</th><th>المتبقي</th></tr></thead><tbody id="salesDailyBody"><tr><td colspan="10">جاري التحميل...</td></tr></tbody></table></div>
+    <div class="table-responsive"><table style="min-width:900px;width:100%"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>العميل</th><th>السيارة / اللوحة</th><th>البيان</th><th>إجمالي المبيع</th><th>ربح قطع الغيار</th><th>ربح الخدمات</th><th>إجمالي الربح شامل المصنعية</th><th>المدفوع</th><th>المتبقي</th></tr></thead><tbody id="salesDailyBody"><tr><td colspan="10">جاري التحميل...</td></tr></tbody></table></div>
    </div>
   </div>
  </div>
@@ -4977,20 +5048,20 @@ function printClientLifeStatement(){const content=document.getElementById('clien
  const norm=v=>String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
  const getQty=x=>num(x.quantityNeeded??x.qty??x.quantity??x.count??1)||1;
  const dateOf=x=>{const raw=x.dateStr??x.date??x.createdAt??x.timestamp??'';if(!raw)return '';const d=new Date(raw);return Number.isNaN(d.getTime())?'':d.toISOString().slice(0,10);};
- const inventory=()=>read('inventory');
+ const inventory=()=>{const cloud=Array.isArray(window.accountsProfitCache?.inventory)?window.accountsProfitCache.inventory:(Array.isArray(cached.inventory)?cached.inventory:[]);const local=read('inventory');if(!cloud.length)return local;const seen=new Set(cloud.map(x=>String(x.id||x.barcode||x.code||x.name||'')));return [...cloud,...local.filter(x=>!seen.has(String(x.id||x.barcode||x.code||x.name||'')))];};
  const purchaseLines=()=>[...read('supplier_issue_orders'),...read('issue_orders')].flatMap(o=>(Array.isArray(o.lines)?o.lines:Array.isArray(o.items)?o.items:[]).map(l=>({...l,_orderDate:o.date||o.dateStr||o.createdAt||''})));
  function findBuyPrice(part){
    const direct=[part.buyPrice,part.purchasePrice,part.costPrice,part.averageCost,part.lastBuyPrice,part.unitCost].find(v=>v!==undefined&&v!==null&&v!==''&&Number.isFinite(Number(v)));
    if(direct!==undefined)return Number(direct);
-   const keys=[part.itemId,part.productId,part.code,part.barcode,part.itemCode,part.name,part.itemName].filter(Boolean).map(norm);
-   const inv=inventory().find(x=>[x.id,x.itemId,x.productId,x.code,x.barcode,x.itemCode,x.name,x.itemName].filter(Boolean).some(v=>keys.includes(norm(v))));
+   const keys=[part.itemId,part.productId,part.stockItemId,part.id,part.code,part.barcode,part.itemCode,part.productCode,part.name,part.itemName].filter(Boolean).map(norm);
+   const inv=inventory().find(x=>[x.id,x.itemId,x.productId,x.stockItemId,x.code,x.barcode,x.itemCode,x.productCode,x.name,x.itemName].filter(Boolean).some(v=>keys.includes(norm(v))));
    if(inv){const v=[inv.buyPrice,inv.purchasePrice,inv.costPrice,inv.averageCost,inv.lastBuyPrice,inv.unitCost].find(v=>v!==undefined&&v!==null&&v!==''&&Number.isFinite(Number(v)));if(v!==undefined)return Number(v);}
    const matches=purchaseLines().filter(x=>[x.itemId,x.productId,x.code,x.barcode,x.itemCode,x.name,x.itemName].filter(Boolean).some(v=>keys.includes(norm(v))));
    if(matches.length){matches.sort((a,b)=>new Date(b._orderDate||0)-new Date(a._orderDate||0));const x=matches[0],v=[x.buyPrice,x.purchasePrice,x.costPrice,x.unitCost,x.price,x.unitPrice].find(v=>v!==undefined&&v!==null&&v!==''&&Number.isFinite(Number(v)));if(v!==undefined)return Number(v);}
    return null;
  }
  window.accountsProfitFindBuyPrice=findBuyPrice;
- let cached={invoices:[],expenses:[],treasuries:[]};
+ let cached={invoices:[],expenses:[],treasuries:[],inventory:[]};
  function invoiceProfit(inv){
    const parts=Array.isArray(inv.requiredParts)?inv.requiredParts:[];
    let revenue=0,cost=0,unknown=0;
@@ -5011,9 +5082,11 @@ function printClientLifeStatement(){const content=document.getElementById('clien
      },0);
    const quickServicesProfit=num(inv.quickServicesTotal)||sumItems(inv.quickServicesList);
    const installationLabor=num(inv.partsLaborTotal);
-   const servicesProfit=num(inv.servicesTotal)||sumItems(inv.installationServices||inv.services);
-   const laborProfit=installationLabor+servicesProfit+quickServicesProfit;
-   return {revenue,cost,partsProfit,gross:partsProfit+laborProfit,laborProfit,quickServicesProfit,unknown,parts:parts.length};
+   const installationServicesProfit=num(inv.servicesTotal)||sumItems(inv.installationServices||inv.services);
+   const servicesProfit=quickServicesProfit+installationServicesProfit;
+   const laborProfit=installationLabor+servicesProfit;
+   // إجمالي الربح = ربح الأصناف من سعر شراء المخزن + المصنعية + الخدمات.
+   return {revenue,cost,partsProfit,servicesProfit,installationLabor,gross:partsProfit+installationLabor+servicesProfit,laborProfit,quickServicesProfit,unknown,parts:parts.length};
  }
  window.accountsProfitCalculateInvoiceProfit=invoiceProfit;
  function inRange(x,from,to){const d=dateOf(x);return !!d&&(!from||d>=from)&&(!to||d<=to);}
@@ -5055,14 +5128,15 @@ function printClientLifeStatement(){const content=document.getElementById('clien
  };
  async function load(){
    $('apStatus').textContent='جاري تحميل الفواتير والمصروفات والخزائن...';
-   const [inv,exp,tr]=await Promise.all([
+   const [inv,exp,tr,stock]=await Promise.all([
      db.collection('invoices_archive').get(),
      db.collection('expenses').get(),
-     db.collection('treasuries').get()
+     db.collection('treasuries').get(),
+     db.collection('inventory').get()
    ]);
    cached.invoices=[];inv.forEach(d=>cached.invoices.push({id:d.id,...(d.data()||{})}));
    cached.expenses=[];exp.forEach(d=>cached.expenses.push({id:d.id,...(d.data()||{})}));
-   cached.treasuries=[];tr.forEach(d=>cached.treasuries.push({id:d.id,...(d.data()||{})}));
+   cached.treasuries=[];tr.forEach(d=>cached.treasuries.push({id:d.id,...(d.data()||{})}));cached.inventory=[];stock.forEach(d=>cached.inventory.push({id:d.id,...(d.data()||{})}));cached.inventory=[];stock.forEach(d=>cached.inventory.push({id:d.id,...(d.data()||{})}));
    window.accountsProfitCache=cached;
    const all=sumRange('','');
    $('apAllGross').textContent=fmt(all.gross);$('apAllExpenses').textContent=fmt(all.expenseTotal);$('apAllNet').textContent=fmt(all.net);
@@ -5092,8 +5166,7 @@ function printClientLifeStatement(){const content=document.getElementById('clien
    clone.querySelectorAll('section').forEach(el=>el.classList.add('report-section'));
    const w=window.open('','_blank','width=1100,height=850');if(!w){alert('اسمح بفتح النوافذ المنبثقة للطباعة.');return;}
    const css='<style>@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{font-family:Tahoma,Arial;color:#17243a;margin:0;font-size:11px;line-height:1.55}.head{border-bottom:3px solid #173753;padding:0 0 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:end}.head h1{font-size:21px;margin:0;color:#173753}.head p{margin:3px 0;color:#64748b}.report-section{border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin:0 0 11px;break-inside:avoid;page-break-inside:avoid;background:#fff!important}.report-section h3{font-size:13px;color:#173753;border-bottom:1px solid #dbe4ee;padding-bottom:6px;margin:0 0 9px}.card-box{box-shadow:none!important;border:1px solid #d5dee8!important;border-radius:6px!important;padding:8px!important;background:#f8fafc!important;color:#17243a!important}table{width:100%;border-collapse:collapse!important;font-size:10px}th{background:#e8eef5!important;color:#173753!important;font-weight:900}th,td{border:1px solid #cbd5e1!important;padding:6px!important;text-align:right}b,strong{color:#173753}.foot{border-top:2px solid #173753;padding-top:7px;margin-top:15px;text-align:center;color:#64748b;font-size:9px}</style>';
-   w.document.open();w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملخص الحسابات والأرباح</title>'+css+'</head><body><header class="head"><div><h1>مركز أوتو نون (NON)</h1><p>ملخص الحسابات والأرباح</p></div><b>تاريخ الطباعة: '+new Date().toLocaleString('ar-EG')+'</b></header>'+clone.innerHTML+'<footer class="foot">مركز أوتو نون لصيانة السيارات — تقرير داخلي للحسابات والأرباح</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\\/script>
-\n</body></html>');w.document.close();
+    w.document.open();w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملخص الحسابات والأرباح</title>${css}</head><body><header class="head"><div><h1>مركز أوتو نون (NON)</h1><p>ملخص الحسابات والأرباح</p></div><b>تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</b></header>${clone.innerHTML}<footer class="foot">مركز أوتو نون لصيانة السيارات — تقرير داخلي للحسابات والأرباح</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\\/script></body></html>`);w.document.close();
   };
 })();
 </script>
