@@ -292,6 +292,7 @@
     <div class="non-nav-group"><button class="non-nav-btn" type="button"><i class="fa-brands fa-whatsapp"></i><span>متابعة العملاء</span><i class="fa-solid fa-chevron-down"></i></button><div class="non-nav-menu"><button onclick="nonNavigate('reminders')">التذكيرات المستحقة</button><button onclick="showReminderArchive()">أرشيف المتابعة</button></div></div>
     <button class="non-nav-btn" onclick="nonNavigate('suppliers',this)"><i class="fa-solid fa-truck-field"></i><span>التجار والموردون</span></button>
     <button class="non-nav-btn" onclick="nonNavigate('accounts',this)"><i class="fa-solid fa-calculator"></i><span>الحسابات</span></button>
+    <button class="non-nav-btn" onclick="nonNavigate('services',this)"><i class="fa-solid fa-screwdriver-wrench"></i><span>عرض الخدمات</span></button>
   </nav>
 
   <div id="deptRequestToastHost" class="dept-toast-host" aria-live="assertive" aria-atomic="false"></div>
@@ -1267,6 +1268,10 @@
       const tbody = document.getElementById('servicesTbody');
       if(!tbody) return;
       tbody.innerHTML = '';
+      if(!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:18px;color:#64748b;">لا توجد خدمات مطابقة للبحث.</td></tr>';
+        return;
+      }
       list.forEach(item => {
         let deleteBtnHtml = settingsConfig.showDelete ? `<button class="btn-action-sm btn-danger global-delete-btn" ${!settingsConfig.enableDelete ? 'disabled style="opacity:0.5;"' : ''} style="padding:2px 5px;" onclick="deleteItem('installation_services', '${item.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
         tbody.innerHTML += `
@@ -1419,6 +1424,7 @@
       if(type === 'reminders') loadCustomerReminders();
       if(type === 'issueOrders') loadIssueOrders();
       if(type === 'returnsTableCard') loadReturnsData();
+      if(type === 'services') loadInstallationServices();
       if(type === 'suppliers') { loadSupplierRecords(); renderSupplierOrders(); }
     }
 
