@@ -380,6 +380,7 @@
     font-weight: 600 !important;
   }
 
+  body.print-a4 #printableInvoiceArea .invoice-signatures { break-inside:avoid!important; page-break-inside:avoid!important; margin-top:8px!important; }
   body.print-a4 #printableInvoiceArea .invoice-footer-notes > div {
     display: flex !important;
     justify-content: space-between !important;
@@ -799,7 +800,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 .header-bar .btn-action:hover{filter:brightness(1.1);transform:translateY(-2px)}
 </style>
 
-</head>
+<style id="non-role-entry-lock">body.non-role-locked>*:not(#nonRoleEntryGate){visibility:hidden!important}body.non-role-locked{overflow:hidden!important}</style>\n</head>
 <body id="pageBody">
 
   <div class="header-bar no-print">
@@ -820,7 +821,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       <button class="btn-action btn-orange" data-quick="suppliers" onclick="openServiceModal('suppliersServiceModal')"><i class="fa-solid fa-truck-field"></i> الموردون والتجار</button>
       <button class="btn-action btn-blue" data-quick="invoices" onclick="openServiceModal('invoicesServiceModal')"><i class="fa-solid fa-file-invoice-dollar"></i> الفواتير</button>
       <button class="btn-action btn-purple" id="customizeQuickActionsBtn" onclick="openQuickActionsSettings()"><i class="fa-solid fa-sliders"></i> تخصيص القائمة</button>
+      <button class="btn-action btn-orange" id="managePermissionsBtn" onclick="openNonPermissionsManager()"><i class="fa-solid fa-user-shield"></i> تعيين الصلاحيات</button>
+      <button class="btn-action btn-purple" id="changeManagerPinBtn" onclick="changeNonManagerPin()" style="display:none"><i class="fa-solid fa-key"></i> كلمة سر المدير</button>
       <button class="btn-action btn-purple" onclick="openSalesDaily()"><i class="fa-solid fa-cash-register"></i> يومية البيع</button>
+      <button id="startShiftBtn" class="btn-action btn-green" onclick="startEmployeeShift()"><i class="fa-solid fa-play"></i> بدء شيفت</button>
       <button class="btn-action btn-purple" onclick="closeDailyRoutine()"><i class="fa-solid fa-calendar-check"></i> تقفيل اليومية</button>
       <button class="btn-action btn-purple" onclick="openAccountsProfits()"><i class="fa-solid fa-chart-line"></i> حسابات وأرباح</button>
       <button class="btn-action btn-purple" onclick="toggleDarkMode()"><i class="fa-solid fa-moon" id="darkModeIcon"></i></button>
@@ -1102,9 +1106,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 
         <div class="invoice-footer-notes">
           <p><b>ملاحظات هامة:</b> تم معاينة السيارة بنجاح من قبل العميل بعد الفحص وحالة السيارة سليمة ولا يوجد بها عيوب.</p>
-          <div style="display: flex; justify-content: space-between; margin-top: 25px;">
-            <span>توقيع مسئول الحسابات: ........................</span>
-            <span>توقيع العميل: ........................</span>
+          <div class="invoice-signatures" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;margin-top:18px;padding-top:8px;border-top:1px dashed #64748b;text-align:center;">
+            <div><b>توقيع مسئول الحسابات</b><div style="height:28px;border-bottom:1px solid #111;margin:4px 8px 0"></div></div>
+            <div><b>ختم المركز</b><div style="height:48px;width:82px;border:2px dashed #64748b;border-radius:50%;margin:2px auto;display:flex;align-items:center;justify-content:center;font-weight:900;color:#334155">أوتو نون</div></div>
+            <div><b>توقيع العميل</b><div style="height:28px;border-bottom:1px solid #111;margin:4px 8px 0"></div></div>
           </div>
         </div>
 
@@ -1207,7 +1212,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     <div style="width:min(1100px,96vw); max-height:92vh; overflow:auto; background:var(--card-bg,#fff); color:var(--text-color,#111827); border:1px solid rgba(148,163,184,.35); border-radius:20px; box-shadow:0 25px 80px rgba(0,0,0,.35);">
       <div style="position:sticky;top:0;z-index:2;padding:18px 20px;background:linear-gradient(135deg,rgba(15,23,42,.98),rgba(30,41,59,.96));color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;border-radius:20px 20px 0 0;">
         <div><div style="font-size:1.15rem;font-weight:900"><i class="fa-solid fa-rotate-left"></i> مراجعة بيانات العميل قبل إرجاعه للحسابات</div><div style="font-size:.78rem;opacity:.8;margin-top:4px">راجع بيانات العميل والأصناف والخدمات وكل التكاليف والقسم السابق قبل فتحه في الحسابات.</div></div>
-        <button class="btn-action btn-danger" onclick="closeReturnCustomerReview()"><i class="fa-solid fa-xmark"></i> إغلاق</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-action btn-green" onclick="printReturnCustomerReview()"><i class="fa-solid fa-print"></i> طباعة فاتورة</button><button class="btn-action btn-danger" onclick="closeReturnCustomerReview()"><i class="fa-solid fa-xmark"></i> إغلاق</button></div>
       </div>
       <div style="padding:18px">
         <div id="returnReviewCustomerGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px"></div>
@@ -1647,7 +1652,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 
   <!-- نافذة الأرشيف -->
   <div id="archiveModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:var(--card-bg); width:90%; max-width:900px; max-height:85vh; border-radius:12px; padding:20px; display:flex; flex-direction:column; border:2px solid var(--treasury-purple);">
+    <div style="background:var(--card-bg); width:96%; max-width:1450px; max-height:88vh; border-radius:12px; padding:20px; display:flex; flex-direction:column; border:2px solid var(--treasury-purple);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <h3 style="color:var(--treasury-purple);"><i class="fa-solid fa-box-archive"></i> أرشيف الفواتير والمستندات</h3>
         <div style="display:flex; gap:8px;">
@@ -1663,16 +1668,18 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           <thead>
             <tr>
               <th>رقم الفاتورة</th>
-              <th>العميل</th>
-              <th>السيارة / اللوحة</th>
+              <th>بيانات العميل (الهاتف واللوحة)</th>
+              <th>السيارة</th>
+              <th>قطع الغيار</th>
+              <th>المصنعية</th>
+              <th>الخدمات</th>
               <th>الإجمالي</th>
               <th>المدفوع / الأجل</th>
-              <th>التاريخ</th>
-              <th>إجراءات</th>
+              <th>التاريخ والإجراءات</th>
             </tr>
           </thead>
           <tbody id="archiveTableBody">
-            <tr><td colspan="7" style="text-align:center; color:#64748b;">جاري تحميل الأرشيف...</td></tr>
+            <tr><td colspan="9" style="text-align:center; color:#64748b;">جاري تحميل الأرشيف...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1727,7 +1734,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         <button class="btn-action btn-green" type="button" onclick="saveDiagnosisAdvancePayment()"><i class="fa-solid fa-check"></i> حفظ الدفعة المقدمة وطباعة الإيصال</button>
         <button class="btn-action btn-blue" type="button" onclick="loadDiagnosisCarsForAdvance()"><i class="fa-solid fa-rotate"></i> تحديث أسماء العملاء</button>
         <button id="advancePaymentWhatsAppBtn" class="btn-action btn-green" type="button" style="display:none;background:#16a34a" onclick="sendAdvancePaymentWhatsApp()"><i class="fa-brands fa-whatsapp"></i> إرسال إيصال واتساب</button>
-        <button id="advancePaymentPrintOtherBtn" class="btn-action btn-orange" type="button" style="display:none" onclick="chooseAdvancePaymentPrintSize()"><i class="fa-solid fa-print"></i> طباعة بمقاس آخر (1 / 2 / 3)</button>
+        <button id="advancePaymentPrintOtherBtn" class="btn-action btn-orange" type="button" style="display:none" onclick="printLastAdvancePaymentReceipt('A4')"><i class="fa-solid fa-print"></i> طباعة A4</button>
         <button id="advancePaymentArchiveBtn" class="btn-action btn-purple" type="button" onclick="openAdvancePaymentsArchive()"><i class="fa-solid fa-clock-rotate-left"></i> سجل الدفعات المدفوعة</button>
       </div>
       <div id="advancePaymentStatus" role="status" style="margin-top:10px;font-size:.82rem;color:#64748b"></div>
@@ -1789,8 +1796,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
   </div>
 
   <script>
-    const loggedUser = localStorage.getItem('currentUser') || 'المحاسب';
-    document.getElementById('userBadge').innerHTML = `<i class="fa-solid fa-cash-register"></i> المحاسب: ${loggedUser}`;
+    const loggedUserRaw = localStorage.getItem('currentUser') || 'المحاسب';
+    let loggedUser = loggedUserRaw;
+    try { const lu=JSON.parse(loggedUserRaw); if(lu && typeof lu==='object') loggedUser=lu.fullName||lu.name||lu.username||lu.userName||'المحاسب'; } catch(_) {}
+    document.getElementById('userBadge').innerHTML = `<i class="fa-solid fa-cash-register"></i> الحساب: ${String(loggedUser).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}`;
 
     if (localStorage.getItem('darkMode') === 'enabled') {
       document.body.classList.add('dark-mode');
@@ -2143,15 +2152,15 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       try {
         const res = await db.runTransaction(async transaction => {
           const doc = await transaction.get(counterRef);
-          // يبدأ ترقيم الفواتير من 1001 مع الحفاظ على أي تسلسل أعلى موجود بالفعل.
-          const lastSerial = doc.exists ? (parseInt(doc.data().lastSerial, 10) || 1000) : 1000;
-          const newSerial = Math.max(1000, lastSerial) + 1;
+          // أول فاتورة تبدأ برقم 1000 ثم يستمر التسلسل دون تكرار.
+          const lastSerial = doc.exists ? (parseInt(doc.data().lastSerial, 10) || 999) : 999;
+          const newSerial = Math.max(999, lastSerial) + 1;
           transaction.set(counterRef, { lastSerial: newSerial }, { merge: true });
           return newSerial;
         });
         return res;
       } catch (e) {
-        return 1001 + Math.floor(Math.random() * 900000);
+        return 1000 + Math.floor(Math.random() * 900000);
       }
     }
 
@@ -2321,6 +2330,17 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       document.getElementById('returnCustomerReviewModal').style.display='flex';
     }
 
+    window.printReturnCustomerReview=function(){
+      const modal=document.getElementById('returnCustomerReviewModal');
+      if(!modal||!currentSelectedQueueItem){alert('لا توجد بيانات عميل للطباعة.');return;}
+      const content=modal.querySelector(':scope > div > div:nth-child(2)');
+      const w=window.open('','_blank','width=1000,height=850');
+      if(!w){alert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.');return;}
+      const title='مراجعة بيانات العميل - '+(currentSelectedQueueItem.invoiceSerial||'فاتورة');
+      w.document.open();
+      w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'+returnReviewSafe(title)+'</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Tahoma,Arial;color:#111;font-size:11px}h3,h4{margin:8px 0}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #555;padding:5px;text-align:right}th{background:#eee}.card-box{border:1px solid #bbb;padding:8px;margin:6px 0;border-radius:5px}button{display:none!important}#returnReviewCustomerGrid,#returnReviewExtraInfo{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-top:25px;text-align:center}.line{height:32px;border-bottom:1px solid #111}.stamp{border:2px dashed #555;border-radius:50%;height:55px;width:85px;margin:auto;display:grid;place-items:center;font-weight:bold}</style></head><body><h2 style="text-align:center">مركز أوتو نون لصيانة السيارات</h2><h3 style="text-align:center">مراجعة بيانات العميل قبل إرجاعه للحسابات</h3>'+content.innerHTML+'<div class="signatures"><div>توقيع مسئول الحسابات<div class="line"></div></div><div>ختم المركز<div class="stamp">أوتو نون</div></div><div>توقيع العميل<div class="line"></div></div></div><script>window.onload=()=>window.print()<\/script></body></html>');
+      w.document.close();
+    };
     function closeReturnCustomerReview(){ document.getElementById('returnCustomerReviewModal').style.display='none'; }
     async function executeReturnAfterReview(){
       if(!currentSelectedQueueItem) return;
@@ -2625,7 +2645,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           advancePayment: currentAdvancePayment, managerDiscount: discount, discountReason,
           totalAmount: finalTotal, paidAmount, paymentAmount: paidAmount, remainingAmount,
           method: paymentMethod, paymentMethod, treasuryId: targetTreasuryId || '',
-          cashier: loggedUser, dateStr: new Date().toISOString(), dateFormatted: currentDateStr
+          cashier: loggedUser, employeeName: loggedUser, shiftId: window.getEmployeeShiftStamp?.().shiftId || '', dateStr: new Date().toISOString(), dateFormatted: currentDateStr
         };
 
         let invoiceArchiveId = existingArchiveData && existingArchiveData.archiveInvoiceId;
@@ -3022,7 +3042,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
             remainingAmount: Math.max(0, totalSum - amountPaid),
             method: `صيانة سريعة (${paymentMethod})`,
             treasuryId: targetTreasuryId || '',
-            cashier: loggedUser,
+            cashier: loggedUser, employeeName: loggedUser, shiftId: window.getEmployeeShiftStamp?.().shiftId || '',
             dateStr: new Date().toISOString(),
             dateFormatted: currentDateStr
           };
@@ -3101,6 +3121,9 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         ]);
 
         let drawerTotal = 0;
+        let shiftDrawerTotal = 0;
+        const activeShift = window.getActiveEmployeeShift?.();
+        const activeShiftStart = activeShift && activeShift.status === 'open' ? (Date.parse(activeShift.startAt)||0) : 0;
         let transfersTotal = 0;
         let deferredTotal = 0;
         let treasuryBalanceTotal = 0;
@@ -3125,10 +3148,21 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
             if (/انستا.?باي|تحويل|بطاق|visa|mastercard/.test(method)) {
               transfersTotal += paid;
             } else if (/نقد|كاش|cash/.test(method)) {
-              // إجمالي الدرج = المقبوضات المدفوعة نقداً فقط.
               drawerTotal += paid;
             }
             deferredTotal += rem;
+          }
+          if (activeShiftStart && /نقد|كاش|cash/.test(method)) {
+            const rawTime=d.dateStr||d.date||d.createdAt||d.timestamp||'';
+            let txTime=new Date(rawTime).getTime();
+            if(!Number.isFinite(txTime) || !txTime) txTime=Number(rawTime)||0;
+            if(txTime>0 && txTime<1000000000000) txTime*=1000;
+            const sameShift=!d.shiftId || String(d.shiftId)===String(activeShift.id);
+            if(txTime>=activeShiftStart && sameShift) {
+              const amount=Number(d.amount??d.paidAmount??d.paymentAmount??d.expenseAmount)||0;
+              const outgoing=String(d.direction||d.type||'').toLowerCase();
+              shiftDrawerTotal += (/out|سحب|صرف|مصروف|سداد|دفع|مرتجع|تالف/i.test(outgoing)||Number(d.expenseAmount)>0) ? -amount : amount;
+            }
           }
         });
 
@@ -3147,7 +3181,8 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 
         // إجمالي الدرج والخزينة العامة موحد: مجموع أرصدة كل الخزائن بعد التسويات.
         const unifiedCashTotal = treasuryBalanceTotal + adjustments.drawer;
-        if (drawerEl) drawerEl.textContent = formatFinancialAmount(unifiedCashTotal);
+        // درج الشيفت يبدأ من صفر مع كل شيفت جديد، بينما الخزينة العامة تحتفظ برصيدها التراكمي.
+        if (drawerEl) drawerEl.textContent = formatFinancialAmount(activeShiftStart ? shiftDrawerTotal : 0);
         if (transfersEl) transfersEl.textContent = formatFinancialAmount(transfersTotal);
         if (treasuryEl) treasuryEl.textContent = formatFinancialAmount(unifiedCashTotal);
         if (deferredEl) deferredEl.textContent = formatFinancialAmount(deferredTotal);
@@ -3366,7 +3401,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           treasuryId:id,treasuryName:t.name,type,direction,amount,
           paidAmount:direction==='in'?amount:0,expenseAmount:direction==='out'?amount:0,
           method:'نقدي',notes:notes||type,dateStr:dateISO,dateFormatted:date.toLocaleString('en-US'),
-          cashier:loggedUser||'المحاسب',createdAt:dateISO
+          cashier:loggedUser||'المحاسب',employeeName:loggedUser||'المحاسب',shiftId:window.getEmployeeShiftStamp?.().shiftId||'',createdAt:dateISO
         });
         document.getElementById('tmAmount').value='';document.getElementById('tmNotes').value='';
         await loadTreasuriesData();
@@ -3439,7 +3474,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
             toTreasuryName: toTreasury.name,
             amount: amount,
             reason: reason,
-            cashier: loggedUser,
+            cashier: loggedUser, employeeName: loggedUser, shiftId: window.getEmployeeShiftStamp?.().shiftId || '',
             dateStr: new Date().toISOString(),
             dateFormatted: new Date().toLocaleString('en-US')
           });
@@ -3767,6 +3802,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       await loadArchiveData();
     }
     function closeArchiveModal() { document.getElementById('archiveModal').style.display = 'none'; }
+    function findArchivedInvoiceByKey(key){return (archiveInvoicesList||[]).find(x=>String(x.id||x.invoiceSerial)===String(key));}
+    window.openArchivedInvoiceById=function(key){const inv=findArchivedInvoiceByKey(key);if(inv)openArchivedInvoice(inv);};
+    window.printArchivedInvoiceById=function(key){const inv=findArchivedInvoiceByKey(key);if(inv)printArchivedInvoice(inv,'A4');};
+    window.openArchivedReturnReviewById=function(key){const inv=findArchivedInvoiceByKey(key);if(inv)openArchivedReturnReview(inv);};
 
     async function loadArchiveData() {
       const tbody = document.getElementById('archiveTableBody');
@@ -3775,6 +3814,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         const snapshot = await db.collection('invoices_archive').orderBy('invoiceSerial', 'desc').get();
         archiveInvoicesList = [];
         snapshot.forEach(doc => { archiveInvoicesList.push({ id: doc.id, ...doc.data() }); });
+        archiveInvoicesList.sort((a,b)=>(Number(b.invoiceSerial)||0)-(Number(a.invoiceSerial)||0));
         renderArchiveTable(archiveInvoicesList);
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">خطأ في تحميل الأرشيف: ${e.message}</td></tr>`;
@@ -3784,31 +3824,32 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     function renderArchiveTable(list) {
       const tbody = document.getElementById('archiveTableBody');
       tbody.innerHTML = '';
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b;">لا توجد فواتير مؤرشفة.</td></tr>`;
-        return;
-      }
-      list.forEach(inv => {
-        const rem = inv.remainingAmount || 0;
-        tbody.innerHTML += `
-          <tr>
-            <td><b>#${inv.invoiceSerial}</b></td>
-            <td>${inv.clientName || '---'}</td>
-            <td>${inv.carPlate || inv.carInfo || '---'}</td>
-            <td><b>${inv.totalAmount}</b></td>
-            <td>المدفوع: ${inv.paidAmount || 0} <br><span style="color:var(--danger-red);">آجل: ${rem}</span></td>
-            <td>${inv.dateFormatted || new Date(inv.dateStr).toLocaleDateString()}</td>
-            <td>
-              <button class="btn-action btn-purple" style="padding:4px 8px; font-size:0.72rem;" onclick='openArchivedInvoice(${JSON.stringify(inv)})'>
-                <i class="fa-solid fa-eye"></i> عرض
-              </button>
-              <button class="btn-action btn-blue" style="padding:4px 8px; font-size:0.72rem;" onclick='openArchivedReturnReview(${JSON.stringify(inv)})'>
-                <i class="fa-solid fa-arrow-right-to-bracket"></i> إرجاع للحسابات
-              </button>
-            </td>
-          </tr>
-        `;
-      });
+      if (!list.length) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#64748b;">لا توجد فواتير مؤرشفة.</td></tr>`; return; }
+      const moneyArchive = v => (Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:2});
+      const escArchive = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      let totals={parts:0,labor:0,services:0,grand:0,paid:0,remaining:0};
+      const rows=list.map(inv=>{
+        const parts=Number(inv.partsOnlyTotal ?? Math.max(0,Number(inv.partsTotal||0)-Number(inv.partsLaborTotal||0)))||0;
+        const labor=Number(inv.partsLaborTotal||0)||0;
+        const services=Number(inv.quickServicesTotal||0)+Number(inv.servicesTotal||0);
+        const grand=Number(inv.totalAmount||0)||0,paid=Number(inv.paidAmount??inv.paymentAmount??0)||0,rem=Number(inv.remainingAmount??Math.max(0,grand-paid))||0;
+        totals.parts+=parts;totals.labor+=labor;totals.services+=services;totals.grand+=grand;totals.paid+=paid;totals.remaining+=rem;
+        const customer=[inv.clientName||'---',inv.clientPhone||'بدون هاتف',inv.carPlate||inv.plate||'بدون لوحة'].join(' | ');
+        return `<tr>
+          <td><b>#${escArchive(inv.invoiceSerial||'---')}</b></td>
+          <td><b>${escArchive(customer)}</b></td><td>${escArchive(inv.carInfo||'---')}</td>
+          <td>${moneyArchive(parts)}</td><td>${moneyArchive(labor)}</td><td>${moneyArchive(services)}</td>
+          <td><b>${moneyArchive(grand)}</b></td>
+          <td>المدفوع: ${moneyArchive(paid)}<br><span style="color:var(--danger-red)">آجل: ${moneyArchive(rem)}</span></td>
+          <td>${escArchive(inv.dateFormatted || (inv.dateStr?new Date(inv.dateStr).toLocaleDateString('ar-EG'):'---'))}<br>
+            <button class="btn-action btn-purple" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="openArchivedInvoiceById(this.dataset.archiveId)"><i class="fa-solid fa-eye"></i> عرض</button>
+            <button class="btn-action btn-green" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="printArchivedInvoiceById(this.dataset.archiveId)"><i class="fa-solid fa-print"></i> طباعة فاتورة</button>
+            <button class="btn-action btn-blue" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="openArchivedReturnReviewById(this.dataset.archiveId)"><i class="fa-solid fa-arrow-right-to-bracket"></i> إرجاع</button>
+          </td></tr>`;
+      }).join('');
+      tbody.innerHTML=rows+`<tr style="font-weight:900;background:#fff7ed">
+        <td colspan="3">إجمالي الأرشيف (${list.length} فاتورة)</td><td>${moneyArchive(totals.parts)}</td><td>${moneyArchive(totals.labor)}</td><td>${moneyArchive(totals.services)}</td>
+        <td>${moneyArchive(totals.grand)}</td><td>مدفوع ${moneyArchive(totals.paid)}<br>آجل ${moneyArchive(totals.remaining)}</td><td>—</td></tr>`;
     }
 
     function filterArchive() {
@@ -3985,17 +4026,14 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         <td style="white-space:nowrap">
           <button class="btn-action btn-blue" onclick="editAdvancePayment('${advancePaymentEsc(p.docId)}')">تعديل</button>
           <button class="btn-action btn-danger" onclick="deleteAdvancePayment('${advancePaymentEsc(p.docId)}')">حذف</button>
-          <button class="btn-action btn-orange" onclick="chooseArchivedAdvancePaymentPrintSize('${advancePaymentEsc(p.docId)}')">طباعة بمقاس</button>
+          <button class="btn-action btn-orange" onclick="printArchivedAdvancePayment('${advancePaymentEsc(p.docId)}','A4')">طباعة A4</button>
         </td></tr>`).join('');
     }
-    function printArchivedAdvancePayment(docId,paper='A6'){
+    function printArchivedAdvancePayment(docId,paper='A4'){
       const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(!p)return;
       lastAdvancePaymentReceipt=p;printLastAdvancePaymentReceipt(paper);
     }
-    function chooseArchivedAdvancePaymentPrintSize(docId){
-      const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(!p)return;
-      chooseAdvancePaymentPrintSize(p);
-    }
+    function chooseArchivedAdvancePaymentPrintSize(docId){ printArchivedAdvancePayment(docId,'A4'); }
     async function editAdvancePayment(docId){
       const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(!p)return;
       const raw=prompt('اكتب قيمة الدفعة الجديدة بالجنيه:',String(p.amount||0));
@@ -4158,20 +4196,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       const amount = advancePaymentMoney(payment.amount);
       const amountWords = amount + ' جنيه';
       return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إيصال دفعة مقدمة ${e(payment.id)}</title><style>
-      @page{size:${['A4','A5','A6'].includes(paper) ? paper : 'A6'} portrait;margin:${paper === 'A6' ? '4mm' : '8mm'}}*{box-sizing:border-box}body{margin:0;background:#fff;color:#10243a;font-family:Tahoma,Arial,sans-serif;direction:rtl}.receipt{width:100%;min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')};border:2px solid #173b67;border-radius:14px;padding:${paper === 'A6' ? '4mm' : '9mm'};position:relative;overflow:hidden;background:linear-gradient(135deg,#fff 65%,#f3f6fb)}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #f28c28;padding-bottom:7mm}.brand{font-size:${paper === 'A6' ? '15px' : '25px'};font-weight:900;color:#173b67}.brand small{display:block;font-size:11px;color:#e87919;margin-top:4px}.center{text-align:center}.center h1{font-size:${paper === 'A6' ? '17px' : '27px'};margin:0;color:#173b67}.center p{margin:5px 0 0;color:#52647b;font-weight:bold}.tag{background:#173b67;color:#fff;border-radius:8px;padding:${paper === 'A6' ? '5px 10px' : '10px 22px'};font-weight:bold;font-size:${paper === 'A6' ? '13px' : '20px'};margin:7mm auto;width:max-content}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:5mm 0}.meta div,.field{border:1px solid #b9c9dc;border-radius:8px;padding:10px;background:#fff}.meta b,.field b{display:block;color:#63758a;font-size:${paper === 'A6' ? '9px' : '12px'};margin-bottom:5px}.meta strong,.field strong{font-size:${paper === 'A6' ? '11px' : '16px'}}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.payment{margin-top:7mm;border:2px solid #f28c28;border-radius:10px;overflow:hidden}.payment h3{margin:0;background:#173b67;color:#fff;padding:10px 14px}.payment .amount{background:#fff4e8;color:#173b67;font-size:${paper === 'A6' ? '18px' : '27px'};font-weight:900;padding:14px;text-align:center}.bottom{display:flex;justify-content:space-between;align-items:end;margin-top:${paper === 'A6' ? '3mm' : '9mm'};border-top:1px solid #ccd6e2;padding-top:7mm}.thanks{font-size:${paper === 'A6' ? '14px' : '22px'};font-weight:900;color:#173b67}.stamp{border:2px solid #64748b;color:transparent;border-radius:50%;width:${paper === 'A6' ? '54px' : '105px'};height:${paper === 'A6' ? '54px' : '105px'};display:block;flex:0 0 auto;background:transparent;transform:none}.foot{position:absolute;bottom:0;left:0;right:0;background:#102b4d;color:#fff;padding:9px 15px;text-align:center;font-size:12px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.receipt{min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')}}}
-      </style></head><body><main class="receipt"><header class="top"><div class="brand">AUTO NON <small>CAR SERVICE CENTER • خدمة أفضل لسيارتك</small></div><div class="center"><h1>مركز أوتو نون</h1><p>صيانة - تشخيص - قطع غيار</p></div><div style="font-size:28px;color:#f28c28">⚙</div></header><div style="display:flex;justify-content:space-between;align-items:center;gap:${paper === 'A6' ? '5px' : '12px'};margin-top:${paper === 'A6' ? '2mm' : '5mm'}"><div class="tag" style="margin:0">إيصال دفعة مقدمة</div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div id="customerQr" title="QR يحتوي على بيانات العميل والإيصال" style="width:${paper === 'A6' ? '70px' : '120px'};height:${paper === 'A6' ? '70px' : '120px'};background:#fff;padding:4px;border:1px solid #64748b;border-radius:6px"></div><small style="font-size:${paper === 'A6' ? '8px' : '11px'};font-weight:bold;color:#173b67">QR بيانات العميل</small></div></div><section class="meta"><div><b>رقم الإيصال</b><strong>${e(payment.id)}</strong></div><div><b>التاريخ</b><strong>${e(dateText)}</strong></div><div><b>الوقت</b><strong>${e(timeText)}</strong></div></section><section class="grid"><div class="field"><b>اسم العميل</b><strong>${e(payment.clientName||'---')}</strong></div><div class="field"><b>رقم التليفون</b><strong>${e(payment.clientPhone||'---')}</strong></div><div class="field"><b>السيارة</b><strong>${e(payment.carInfo||'---')}</strong></div><div class="field"><b>رقم اللوحة</b><strong>${e(payment.carPlate||'---')}</strong></div><div class="field"><b>طريقة الدفع</b><strong>${e(payment.method||'---')}</strong></div><div class="field"><b>الخزينة المستلمة</b><strong>${e(payment.treasuryName||'---')}</strong></div></section><section class="payment"><h3>بيان الدفعة المقدمة</h3><div class="amount">${amount} جنيه مصري</div></section><div class="field" style="margin-top:7mm"><b>المبلغ بالحروف / ملاحظات</b><strong>${e(amountWords)}${payment.notes?' — '+e(payment.notes):''}</strong></div><section class="bottom"><div class="stamp" aria-label="مكان الختم فارغ"></div><div class="thanks">شكراً لثقتكم بنا<br><small style="font-size:13px">نتمنى لكم رحلة آمنة</small></div><div style="text-align:left;font-weight:bold">توقيع المستلم<br><br>........................</div></section><footer class="foot">مركز أوتو نون لصيانة السيارات　 |　 تليفون المركز: 01556004991　 |　 ${e(payment.clientPhone||'')}　 |　 إيصال دفعة مقدمة</footer></main><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>window.addEventListener('load',function(){var q=document.getElementById('customerQr');if(window.QRCode&&q){var data={center:'مركز أوتو نون',centerPhone:'01556004991',receipt:${JSON.stringify(payment.id)},client:${JSON.stringify(payment.clientName||'')},clientPhone:${JSON.stringify(payment.clientPhone||'')},car:${JSON.stringify(payment.carInfo||'')},plate:${JSON.stringify(payment.carPlate||'')},amount:${Number(payment.amount)||0},date:${JSON.stringify(payment.dateStr||'')}};new QRCode(q,{text:JSON.stringify(data),width:${paper === 'A6' ? '62' : '110'},height:${paper === 'A6' ? '62' : '110'},correctLevel:QRCode.CorrectLevel.M});}});<\/script></body></html>`;
+      @page{size:${paper} portrait;margin:${paper === 'A6' ? '4mm' : '7mm'}}*{box-sizing:border-box}body{margin:0;background:#fff;color:#10243a;font-family:Tahoma,Arial,sans-serif;direction:rtl}.receipt{width:100%;min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')};border:2px solid #173b67;border-radius:14px;padding:${paper === 'A6' ? '4mm' : '9mm'};position:relative;overflow:hidden;background:linear-gradient(135deg,#fff 65%,#f3f6fb)}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #f28c28;padding-bottom:7mm}.brand{font-size:${paper === 'A6' ? '15px' : '25px'};font-weight:900;color:#173b67}.brand small{display:block;font-size:11px;color:#e87919;margin-top:4px}.center{text-align:center}.center h1{font-size:${paper === 'A6' ? '17px' : '27px'};margin:0;color:#173b67}.center p{margin:5px 0 0;color:#52647b;font-weight:bold}.tag{background:#173b67;color:#fff;border-radius:8px;padding:${paper === 'A6' ? '5px 10px' : '10px 22px'};font-weight:bold;font-size:${paper === 'A6' ? '13px' : '20px'};margin:7mm auto;width:max-content}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:5mm 0}.meta div,.field{border:1px solid #b9c9dc;border-radius:8px;padding:10px;background:#fff}.meta b,.field b{display:block;color:#63758a;font-size:${paper === 'A6' ? '9px' : '12px'};margin-bottom:5px}.meta strong,.field strong{font-size:${paper === 'A6' ? '11px' : '16px'}}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.payment{margin-top:7mm;border:2px solid #f28c28;border-radius:10px;overflow:hidden}.payment h3{margin:0;background:#173b67;color:#fff;padding:10px 14px}.payment .amount{background:#fff4e8;color:#173b67;font-size:${paper === 'A6' ? '18px' : '27px'};font-weight:900;padding:14px;text-align:center}.bottom{display:flex;justify-content:space-between;align-items:end;margin-top:${paper === 'A6' ? '3mm' : '9mm'};border-top:1px solid #ccd6e2;padding-top:7mm}.thanks{font-size:${paper === 'A6' ? '14px' : '22px'};font-weight:900;color:#173b67}.stamp{border:2px solid #64748b;color:transparent;border-radius:50%;width:${paper === 'A6' ? '54px' : '105px'};height:${paper === 'A6' ? '54px' : '105px'};display:block;flex:0 0 auto;background:transparent;transform:none}.foot{position:absolute;bottom:0;left:0;right:0;background:#102b4d;color:#fff;padding:9px 15px;text-align:center;font-size:12px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.receipt{min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')}}}
+      </style></head><body><main class="receipt"><header class="top"><div class="brand">AUTO NON <small>CAR SERVICE CENTER • خدمة أفضل لسيارتك</small></div><div class="center"><h1>مركز أوتو نون</h1><p>صيانة - تشخيص - قطع غيار</p></div><div style="font-size:28px;color:#f28c28">⚙</div></header><div style="display:flex;justify-content:space-between;align-items:center;gap:${paper === 'A6' ? '5px' : '12px'};margin-top:${paper === 'A6' ? '2mm' : '5mm'}"><div class="tag" style="margin:0">إيصال دفعة مقدمة</div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div id="customerQr" title="QR يحتوي على بيانات العميل والإيصال" style="width:${paper === 'A6' ? '88px' : '120px'};height:${paper === 'A6' ? '88px' : '120px'};background:#fff;padding:4px;border:1px solid #64748b;border-radius:6px"></div><small style="font-size:${paper === 'A6' ? '8px' : '11px'};font-weight:bold;color:#173b67">QR بيانات العميل</small></div></div><section class="meta"><div><b>رقم الإيصال</b><strong>${e(payment.id)}</strong></div><div><b>التاريخ</b><strong>${e(dateText)}</strong></div><div><b>الوقت</b><strong>${e(timeText)}</strong></div></section><section class="grid"><div class="field"><b>اسم العميل</b><strong>${e(payment.clientName||'---')}</strong></div><div class="field"><b>رقم التليفون</b><strong>${e(payment.clientPhone||'---')}</strong></div><div class="field"><b>السيارة</b><strong>${e(payment.carInfo||'---')}</strong></div><div class="field"><b>رقم اللوحة</b><strong>${e(payment.carPlate||'---')}</strong></div><div class="field"><b>طريقة الدفع</b><strong>${e(payment.method||'---')}</strong></div><div class="field"><b>الخزينة المستلمة</b><strong>${e(payment.treasuryName||'---')}</strong></div></section><section class="payment"><h3>بيان الدفعة المقدمة</h3><div class="amount">${amount} جنيه مصري</div></section><div class="field" style="margin-top:7mm"><b>المبلغ بالحروف / ملاحظات</b><strong>${e(amountWords)}${payment.notes?' — '+e(payment.notes):''}</strong></div><section class="bottom"><div class="stamp" aria-label="مكان الختم فارغ"></div><div class="thanks">شكراً لثقتكم بنا<br><small style="font-size:13px">نتمنى لكم رحلة آمنة</small></div><div style="text-align:left;font-weight:bold">توقيع المستلم<br><br>........................</div></section><footer class="foot">مركز أوتو نون لصيانة السيارات　 |　 تليفون المركز: 01556004991　 |　 إيصال دفعة مقدمة</footer></main><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>window.addEventListener('load',function(){var q=document.getElementById('customerQr');if(window.QRCode&&q){var data={center:'مركز أوتو نون',centerPhone:'01556004991',receipt:${JSON.stringify(payment.id)},client:${JSON.stringify(payment.clientName||'')},clientPhone:${JSON.stringify(payment.clientPhone||'')},car:${JSON.stringify(payment.carInfo||'')},plate:${JSON.stringify(payment.carPlate||'')},amount:${Number(payment.amount)||0},date:${JSON.stringify(payment.dateStr||'')}};new QRCode(q,{text:JSON.stringify(data),width:${paper === 'A6' ? '80' : '110'},height:${paper === 'A6' ? '80' : '110'},correctLevel:QRCode.CorrectLevel.M});}});<\/script></body></html>`;
     }
-    function printLastAdvancePaymentReceipt(paper='A6'){ if(!lastAdvancePaymentReceipt)return; const size=['A4','A5','A6'].includes(paper)?paper:'A6'; const w=window.open('','_blank'); if(!w){alert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.');return;} w.document.open();w.document.write(buildAdvancePaymentReceiptHtml(lastAdvancePaymentReceipt,size));w.document.close();setTimeout(()=>{w.focus();w.print();},900); }
-    function chooseAdvancePaymentPrintSize(payment=lastAdvancePaymentReceipt){
-      if(!payment){alert('لا يوجد إيصال متاح للطباعة.');return;}
-      const answer=prompt('اختر مقاس الطباعة بكتابة رقم الاختيار:\n1 = A4 (ورق كبير)\n2 = A5 (نصف A4)\n3 = A6 (المقاس الافتراضي)','3');
-      if(answer===null)return;
-      const choices={'1':'A4','2':'A5','3':'A6'};
-      const size=choices[String(answer).trim()];
-      if(!size){alert('اختيار غير صحيح. اكتب 1 أو 2 أو 3.');return;}
-      lastAdvancePaymentReceipt=payment;
-      printLastAdvancePaymentReceipt(size);
-    }
+    function printLastAdvancePaymentReceipt(paper='A4'){ if(!lastAdvancePaymentReceipt)return; const w=window.open('','_blank'); if(!w){alert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.');return;} w.document.open();w.document.write(buildAdvancePaymentReceiptHtml(lastAdvancePaymentReceipt,paper));w.document.close();setTimeout(()=>{w.focus();w.print();},900); }
     function buildAdvancePaymentWhatsAppUrl(p){
       let phone=String(p.clientPhone||'').replace(/\\D/g,'');
       if(phone.startsWith('0')) phone='20'+phone.slice(1); else if(!phone.startsWith('20') && phone.length===10) phone='20'+phone;
@@ -4244,7 +4272,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
             carInfo:[freshCar.brand,freshCar.model].filter(Boolean).join(' '),
             carPlate:freshCar.plate || freshCar.carPlate || '',
             amount, previousAdvance, totalAdvance, method, treasuryId, treasuryName,
-            notes, type:'دفعة مقدمة قبل تحويل السيارة للحسابات',
+            notes, cashier:loggedUser||'المحاسب', employeeName:loggedUser||'المحاسب', shiftId:window.getEmployeeShiftStamp?.().shiftId||'', type:'دفعة مقدمة قبل تحويل السيارة للحسابات',
             dateStr:now, dateFormatted:new Date(now).toLocaleString('en-US')
           };
           transaction.update(treasuryRef,{balance:(Number(treasury.balance)||0)+amount,updatedAt:now});
@@ -4286,7 +4314,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         document.getElementById('advancePaymentPrintOtherBtn').style.display='inline-flex';
         statusBox.textContent = `تم تسجيل الدفعة بنجاح: ${advancePaymentMoney(amount)} جنيه. تم فتح إيصال الطباعة، ويمكنك إرسال تفاصيله للعميل عبر واتساب.`;
         if(receiptWindow && !receiptWindow.closed){receiptWindow.document.open();receiptWindow.document.write(buildAdvancePaymentReceiptHtml(payment,'A6'));receiptWindow.document.close();setTimeout(()=>{receiptWindow.focus();receiptWindow.print();},700);}
-        else { alert('تم حفظ الدفعة بنجاح، لكن المتصفح منع نافذة الطباعة. استخدم زر طباعة A4 أو نصف A4.'); }
+        else { alert('تم حفظ الدفعة بنجاح، لكن المتصفح منع نافذة الطباعة. استخدم زر طباعة A6.'); }
         const waUrl = buildAdvancePaymentWhatsAppUrl(payment);
         if (whatsappWindow && !whatsappWindow.closed && waUrl) whatsappWindow.location.href = waUrl;
         else if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
@@ -4314,18 +4342,22 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         const snap = await db.collection('client_accounts').get();
         let map = {};
         snap.forEach(doc => {
-          const d = doc.data();
-          const key = d.clientName || 'عميل';
-          if (!map[key]) {
-            map[key] = { name: key, phone: d.clientPhone || '---', visits: 0, totalSpent: 0, totalPaid: 0, remaining: 0 };
-          }
+          const d = doc.data() || {};
+          const name = String(d.clientName || 'عميل').trim().replace(/\s+/g,' ');
+          const phone = String(d.clientPhone || d.phone || '').trim();
+          const norm = v => String(v||'').normalize('NFKC').replace(/[\u064B-\u065F\u0670]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').trim().toLowerCase();
+          const key = norm(name);
+          if (!map[key]) map[key] = { name, phone: phone || '---', visits: 0, totalSpent: 0, totalPaid: 0, remaining: 0, phones:new Set(), cars:new Set(), plates:new Set() };
           if (d.recordType !== 'advance_payment') map[key].visits += 1;
           map[key].totalSpent += (parseFloat(d.totalAmount) || 0);
           map[key].totalPaid += (parseFloat(d.paidAmount) || 0);
           map[key].remaining += (parseFloat(d.remainingAmount) || 0);
+          if(phone)map[key].phones.add(phone);
+          if(d.carInfo)map[key].cars.add(d.carInfo);
+          if(d.carPlate||d.plate)map[key].plates.add(d.carPlate||d.plate);
         });
 
-        renderClientAccountsTable(Object.values(map));
+        renderClientAccountsTable(Object.values(map).map(c=>({...c,phone:[...c.phones].join('، ')||c.phone,cars:[...c.cars],plates:[...c.plates]})));
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">خطأ: ${e.message}</td></tr>`;
       }
@@ -4342,7 +4374,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         tbody.innerHTML += `
           <tr>
             <td><b>${c.name}</b></td>
-            <td>${c.phone}</td>
+            <td>${c.phone}<br><small>${(c.plates||[]).join('، ')}</small></td>
             <td>${c.visits}</td>
             <td>${c.totalSpent}</td>
             <td style="color:var(--btn-green);">${c.totalPaid}</td>
@@ -4742,60 +4774,39 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 
   window.printInvoiceBySize=function(){
     const el=document.getElementById('printableInvoiceArea'); if(!el){window.print();return;}
-    // تجهيز نسختين منفصلتين في مهمة الطباعة: العميل ثم المركز.
+    // طباعة نسخة واحدة فقط من الفاتورة على ورقة A4.
     document.getElementById('printableInvoiceCenterCopy')?.remove();
     document.getElementById('carDeliveryReceiptPrint')?.remove();
-    const centerCopy=el.cloneNode(true);
-    centerCopy.id='printableInvoiceCenterCopy';
-    centerCopy.style.marginTop='0';
-    centerCopy.style.pageBreakBefore='always';
-    centerCopy.style.breakBefore='page';
-    const centerTitle=document.createElement('div');
-    centerTitle.textContent='نسخة المركز';
-    centerTitle.style.cssText='text-align:center;font-weight:900;font-size:14px;padding:5px;border:2px solid #243653;margin-bottom:8px;color:#243653;';
-    centerCopy.insertBefore(centerTitle,centerCopy.firstChild);
-    const customerTitle=document.createElement('div');
-    customerTitle.textContent='نسخة العميل';
-    customerTitle.style.cssText='text-align:center;font-weight:900;font-size:14px;padding:5px;border:2px solid #243653;margin-bottom:8px;color:#243653;';
-    el.insertBefore(customerTitle,el.firstChild);
-    document.body.appendChild(centerCopy);
-    const receipt=document.createElement('section');
-    receipt.id='carDeliveryReceiptPrint';
-    const getText=id=>(document.getElementById(id)?.textContent||'').trim();
-    const getValue=id=>(document.getElementById(id)?.value||'').trim();
-    const receiptEsc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    receipt.innerHTML=`<div class="car-receipt-head"><h1>مركز أوتو نون لصيانة السيارات</h1><h2>إذن استلام سيارة</h2><p>يُرجى إبراز هذا الإذن عند استلام السيارة من المركز</p></div>
-      <div class="car-receipt-number"><span>رقم إذن الاستلام</span><strong>${receiptEsc(getText('printCarReceiptNo'))}</strong></div>
-      <div class="car-receipt-grid">
-        <div><b>رقم الفاتورة</b><span>${receiptEsc(getText('printInvoiceSerial'))}</span></div>
-        <div><b>تاريخ الإصدار</b><span>${receiptEsc(getText('printInvoiceDate'))}</span></div>
-        <div><b>اسم العميل</b><span>${receiptEsc(getValue('clientName'))}</span></div>
-        <div><b>رقم الهاتف</b><span>${receiptEsc(getValue('clientPhone'))}</span></div>
-        <div><b>السيارة</b><span>${receiptEsc(getValue('carInfo'))}</span></div>
-        <div><b>رقم اللوحة</b><span>${receiptEsc(getValue('carPlate'))}</span></div>
-        <div><b>إجمالي الفاتورة</b><span>${receiptEsc(getText('grandTotalSum'))} جنيه</span></div>
-        <div><b>المبلغ المدفوع</b><span>${receiptEsc(getText('printAmountPaidSum'))} جنيه</span></div>
-        <div><b>المتبقي</b><span>${receiptEsc(getText('remainingBalanceSum'))} جنيه</span></div>
-        <div><b>مسؤول الحسابات</b><span>${receiptEsc(getText('printCashierName'))}</span></div>
-      </div>
-      <div class="car-receipt-notes">تم إصدار إذن الاستلام بعد تسجيل عملية التحصيل. يرجى مراجعة بيانات السيارة ورقم اللوحة قبل مغادرة المركز.</div>
-      <div class="car-receipt-signatures"><span>توقيع مسؤول التسليم: ........................</span><span>توقيع العميل: ........................</span></div>`;
-    document.body.appendChild(receipt);
+    el.querySelector('.invoice-print-copy-title')?.remove();
     window.hideEmptyBlocks(el);
-    window.hideEmptyBlocks(centerCopy);
     document.body.classList.add('print-a4');
     const printSettings = getInvoicePrintSettings();
     const dynamicPrintStyle = applyInvoicePrintSettingsToPage(printSettings);
     prepareInvoiceFullPagePrint(printSettings);
-    // إزالة البنود المالية الصفرية/الفارغة من الفاتورة نفسها قبل الطباعة.
-    ['quickServicesTotalSum','servicesTotalSum','advanceDeductionSum','managerDiscountSum','remainingBalanceSum'].forEach(id=>{const x=document.getElementById(id);if(x&&num((x.innerText||'').replace(/,/g,''))===0){const r=x.closest('.summary-row');if(r)r.style.display='none';}});
-    const quick=document.getElementById('invoiceQuickServicesTableBody'); if(quick){const rows=[...quick.querySelectorAll('tr')].filter(window.rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));const card=quick.closest('.card-box');if(card&&!rows.length)card.style.display='none';}
-    const services=document.getElementById('servicesTableBody'); if(services){const rows=[...services.querySelectorAll('tr')].filter(window.rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));const card=services.closest('.card-box');if(card&&!rows.length)card.style.display='none';}
-    const old=document.getElementById('invoicePageSizeStyle');if(old)old.remove();const st=document.createElement('style');st.id='invoicePageSizeStyle';st.textContent='@media print{@page{size:A4 portrait;margin:5mm}#printableInvoiceArea{page-break-inside:avoid!important;break-inside:avoid!important}.card-box{break-inside:avoid!important}}';document.head.appendChild(st);
-    window.print();setTimeout(()=>{
+    ['quickServicesTotalSum','servicesTotalSum','advanceDeductionSum','managerDiscountSum','remainingBalanceSum'].forEach(id=>{
+      const x=document.getElementById(id);
+      if(x&&num((x.innerText||'').replace(/,/g,''))===0){
+        const r=x.closest('.summary-row');if(r)r.style.display='none';
+      }
+    });
+    const quick=document.getElementById('invoiceQuickServicesTableBody');
+    if(quick){
+      const rows=[...quick.querySelectorAll('tr')].filter(window.rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));
+      const card=quick.closest('.card-box');if(card&&!rows.length)card.style.display='none';
+    }
+    const services=document.getElementById('servicesTableBody');
+    if(services){
+      const rows=[...services.querySelectorAll('tr')].filter(window.rowHasData).filter(r=>!/(لا توجد|جاري التحميل)/.test(r.innerText||''));
+      const card=services.closest('.card-box');if(card&&!rows.length)card.style.display='none';
+    }
+    const old=document.getElementById('invoicePageSizeStyle');if(old)old.remove();
+    const st=document.createElement('style');st.id='invoicePageSizeStyle';
+    st.textContent='@media print{@page{size:A4 portrait;margin:5mm}#printableInvoiceArea{page-break-inside:avoid!important;break-inside:avoid!important;zoom:.76!important;max-height:286mm!important;overflow:hidden!important}#printableInvoiceCenterCopy,#carDeliveryReceiptPrint{display:none!important}.invoice-signatures{break-inside:avoid!important;page-break-inside:avoid!important}}';
+    document.head.appendChild(st);
+    window.print();
+    setTimeout(()=>{
       document.getElementById('printableInvoiceCenterCopy')?.remove();
       document.getElementById('carDeliveryReceiptPrint')?.remove();
-      if(customerTitle.parentNode) customerTitle.remove();
       document.body.classList.remove('print-a4');
       st.remove();
       dynamicPrintStyle.remove();
@@ -4810,7 +4821,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           t.style.pageBreakInside='';
         });
       }
-    },1000);
+    },1200);
   };
   // إصلاح: تصدير دوال إعدادات الطباعة حتى تعمل أزرار onclick في HTML
   window.openInvoicePrintSettings = openInvoicePrintSettings;
@@ -4837,7 +4848,7 @@ window.showClientStatement=async function(clientName){
   @page { size:A4 portrait; margin:8mm 9mm 8mm; }
 
   body.print-a4 #printableInvoiceArea { page-break-before:auto !important; break-before:auto !important; }
-  body.print-a4 #printableInvoiceCenterCopy { page-break-before:always !important; break-before:page !important; }
+  body.print-a4 #printableInvoiceCenterCopy { display:none !important; }
   body.print-a4 #printableInvoiceArea > div:first-child, body.print-a4 #printableInvoiceCenterCopy > div:first-child { flex:0 0 auto !important; margin:0 0 2mm !important; padding:1.5mm 3mm !important; font-size:9pt !important; line-height:1.1 !important; }
 
   html,body {
@@ -5084,7 +5095,7 @@ window.addEventListener('load', function () {
  let waWindow=null; try { waWindow=window.open('about:blank','_blank'); } catch(_) {}
  try{const treasuryRef=db.collection('treasuries').doc(treasuryId),snap=await treasuryRef.get();if(!snap.exists){alert('الخزينة المحددة غير موجودة.');return;}const treasury=snap.data(),balance=n(treasury.balance);if(balance<v){alert('رصيد الخزينة غير كافٍ. الرصيد الحالي: '+money(balance)+' ');return;}
  const method=document.getElementById('accountSupplierPaymentMethod')?.value||'نقدي',date=new Date().toISOString(),paymentId='PAY-'+Date.now(),treasuryName=treasury.name||'الخزينة';
- await treasuryRef.update({balance:balance-v,updatedAt:date});await db.collection('treasury_transactions').add({treasuryId,treasuryName,type:'سداد مورد',direction:'out',paidAmount:0,expenseAmount:v,amount:v,method,dateStr:date,dateFormatted:new Date(date).toLocaleString('en-US'),invoiceSerial:paymentId,supplierId:s.id,supplierName:s.name,notes:'سداد مستحقات مورد'});
+ await treasuryRef.update({balance:balance-v,updatedAt:date});await db.collection('treasury_transactions').add({treasuryId,treasuryName,type:'سداد مورد',direction:'out',paidAmount:0,expenseAmount:v,amount:v,method,dateStr:date,dateFormatted:new Date(date).toLocaleString('en-US'),cashier:loggedUser||'المحاسب',employeeName:loggedUser||'المحاسب',shiftId:window.getEmployeeShiftStamp?.().shiftId||'',invoiceSerial:paymentId,supplierId:s.id,supplierName:s.name,notes:'سداد مستحقات مورد'});
  let left=v,arr=orders(),os=arr.filter(o=>o.supplierId===s.id).sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));for(const o of os){let due=Math.max(0,n(o.remaining??(n(o.total)-n(o.paid))));if(!due||left<=0)continue;let take=Math.min(due,left);o.paid=n(o.paid)+take;o.remaining=Math.max(0,n(o.total)-o.paid);o.payments=Array.isArray(o.payments)?o.payments:[];o.payments.push({amount:take,method,date,type:mode==='full'?'سداد كامل من حساب المورد':'سداد من حساب المورد',treasuryId,treasuryName,paymentId});left-=take;}write('supplier_issue_orders',arr);
  const payment={id:paymentId,supplierId:s.id,supplierName:s.name,amount:v,method,date,treasuryId,treasuryName,notes:mode==='full'?'سداد كامل إجمالي حساب المورد':'دفعة من إجمالي حساب المورد',remainingBefore:remaining,remainingAfter:Math.max(0,remaining-v)};
  const l=ledger();l.push({id:paymentId,supplierId:s.id,supplierName:s.name,type:'سداد',value:v,amount:v,method,date,treasuryId,treasuryName,notes:payment.notes});write('supplier_ledger',l);const archive=JSON.parse(localStorage.getItem('supplier_payment_archive')||'[]');archive.push(payment);localStorage.setItem('supplier_payment_archive',JSON.stringify(archive));currentSupplierPayment=payment;
@@ -5122,8 +5133,8 @@ window.addEventListener('load', function () {
  window.closeServiceModal=function(id){const m=$(id);if(!m)return;m.classList.remove('is-open');m.setAttribute('aria-hidden','true');if(!document.querySelector('.non-service-overlay.is-open'))document.body.style.overflow='';};
  function createServiceModal(id,title,element){if(!element)return;const overlay=document.createElement('div');overlay.className='non-service-overlay';overlay.id=id;overlay.setAttribute('aria-hidden','true');overlay.innerHTML='<div class="non-service-window" role="dialog" aria-modal="true" aria-label="'+title+'"><div class="non-service-window-head"><h2><i class="fa-solid fa-layer-group"></i> '+title+'</h2><button class="non-service-close" type="button" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i> إغلاق <span>Esc</span></button></div><div class="non-service-body"></div></div>';overlay.querySelector('.non-service-close').addEventListener('click',()=>window.closeServiceModal(id));overlay.addEventListener('click',e=>{if(e.target===overlay)window.closeServiceModal(id)});overlay.querySelector('.non-service-body').appendChild(element);document.body.appendChild(overlay);}
  function moveCardToModal(cardId,modalId,title){const card=$(cardId);if(!card)return;const placeholder=document.createComment('placeholder:'+cardId);card.parentNode.insertBefore(placeholder,card);createServiceModal(modalId,title,card);}
- function setupQuickCustomization(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('nonQuickActionsPrefs')||'{}')}catch(e){}document.querySelectorAll('[data-quick]').forEach(b=>{const key=b.dataset.quick;if(Object.prototype.hasOwnProperty.call(prefs,key))b.style.display=prefs[key]?'':'none';});}
- window.openQuickActionsSettings=function(){let old=$('nonQuickActionsModal');if(old){old.classList.add('is-open');return;}const overlay=document.createElement('div');overlay.className='non-service-overlay is-open';overlay.id='nonQuickActionsModal';overlay.innerHTML='<div class="non-service-window" role="dialog" aria-modal="true"><div class="non-service-window-head"><h2><i class="fa-solid fa-sliders"></i> تخصيص الأزرار السريعة</h2><button type="button" class="non-service-close" id="closeQuickSettings">إغلاق ✕</button></div><p>اختر الأزرار التي تريد ظهورها في الشريط العلوي. اختيارك محفوظ على هذا الجهاز.</p><div class="non-quick-settings" id="nonQuickOptions"></div><div style="display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap"><button class="btn-action btn-orange" id="saveQuickSettings">حفظ الاختيارات</button><button class="btn-action btn-blue" id="resetQuickSettings">إظهار الكل</button></div></div>';document.body.appendChild(overlay);const host=$('nonQuickOptions');let prefs={};try{prefs=JSON.parse(localStorage.getItem('nonQuickActionsPrefs')||'{}')}catch(e){}document.querySelectorAll('[data-quick]').forEach(b=>{const key=b.dataset.quick;if(!key)return;const label=(b.innerText||key).trim();host.insertAdjacentHTML('beforeend','<label class="non-quick-option"><input type="checkbox" data-key="'+key+'" '+(prefs[key]!==false?'checked':'')+'><span>'+label.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</span></label>')});const close=()=>window.closeServiceModal('nonQuickActionsModal');$('closeQuickSettings').onclick=close;overlay.addEventListener('click',e=>{if(e.target===overlay)close()});$('saveQuickSettings').onclick=()=>{const p={};host.querySelectorAll('input[data-key]').forEach(i=>p[i.dataset.key]=i.checked);localStorage.setItem('nonQuickActionsPrefs',JSON.stringify(p));setupQuickCustomization();close();};$('resetQuickSettings').onclick=()=>{host.querySelectorAll('input[data-key]').forEach(i=>i.checked=true);};};
+ function setupQuickCustomization(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('nonQuickActionsPrefs')||'{}')}catch(e){}document.querySelectorAll('.header-bar button').forEach((b,i)=>{if(b.id==='customizeQuickActionsBtn'||b.hasAttribute('data-no-customize'))return;if(!b.dataset.quick)b.dataset.quick='custom-extra-'+i;const key=b.dataset.quick;if(Object.prototype.hasOwnProperty.call(prefs,key))b.style.display=prefs[key]?'':'none';});}
+ window.openQuickActionsSettings=function(){const savedPin=localStorage.getItem('nonQuickActionsPin')||'123';const entered=prompt('أدخل كلمة سر تخصيص القائمة:');if(entered===null)return;if(entered!==savedPin){alert('كلمة السر غير صحيحة.');return;}let old=$('nonQuickActionsModal');if(old){old.classList.add('is-open');return;}const overlay=document.createElement('div');overlay.className='non-service-overlay is-open';overlay.id='nonQuickActionsModal';overlay.innerHTML='<div class="non-service-window" role="dialog" aria-modal="true"><div class="non-service-window-head"><h2><i class="fa-solid fa-sliders"></i> تخصيص الأزرار السريعة</h2><button type="button" class="non-service-close" id="closeQuickSettings">إغلاق ✕</button></div><p>اختر الأزرار التي تريد ظهورها في الشريط العلوي. اختيارك محفوظ على هذا الجهاز.</p><div class="non-quick-settings" id="nonQuickOptions"></div><div style="display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap"><button class="btn-action btn-orange" id="saveQuickSettings">حفظ الاختيارات</button><button class="btn-action btn-blue" id="resetQuickSettings">إظهار الكل</button><button class="btn-action btn-purple" id="changeQuickPin">تغيير كلمة السر</button></div></div>';document.body.appendChild(overlay);const host=$('nonQuickOptions');let prefs={};try{prefs=JSON.parse(localStorage.getItem('nonQuickActionsPrefs')||'{}')}catch(e){}document.querySelectorAll('[data-quick]').forEach(b=>{const key=b.dataset.quick;if(!key)return;const label=(b.innerText||key).trim();host.insertAdjacentHTML('beforeend','<label class="non-quick-option"><input type="checkbox" data-key="'+key+'" '+(prefs[key]!==false?'checked':'')+'><span>'+label.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))+'</span></label>')});const close=()=>window.closeServiceModal('nonQuickActionsModal');$('closeQuickSettings').onclick=close;overlay.addEventListener('click',e=>{if(e.target===overlay)close()});$('saveQuickSettings').onclick=()=>{const p={};host.querySelectorAll('input[data-key]').forEach(i=>p[i.dataset.key]=i.checked);localStorage.setItem('nonQuickActionsPrefs',JSON.stringify(p));setupQuickCustomization();close();};$('resetQuickSettings').onclick=()=>{host.querySelectorAll('input[data-key]').forEach(i=>i.checked=true);};$('changeQuickPin').onclick=()=>{const oldPin=prompt('كلمة السر الحالية:');if(oldPin===null)return;if(oldPin!==(localStorage.getItem('nonQuickActionsPin')||'123'))return alert('كلمة السر الحالية غير صحيحة.');const next=prompt('أدخل كلمة السر الجديدة:');if(next===null)return;if(!next.trim())return alert('كلمة السر لا يمكن أن تكون فارغة.');localStorage.setItem('nonQuickActionsPin',next);alert('تم تغيير كلمة سر تخصيص القائمة على هذا الجهاز.');};};
  document.addEventListener('DOMContentLoaded',()=>{
   moveCardToModal('supplierAccountingCard','suppliersServiceModal','الموردون والتجار وربط المخزن');
   moveCardToModal('printableInvoiceArea','invoicesServiceModal','الفواتير وأوامر التشغيل');
@@ -5137,19 +5148,20 @@ window.addEventListener('load', function () {
   });
  });
  // يومية البيع: عرض فواتير البيع المسجلة في أرشيف الفواتير مع فلاتر التاريخ والبحث.
- window.openSalesDaily=function(){const m=document.getElementById('salesDailyModal');m.classList.add('is-open');const today=new Date().toISOString().slice(0,10);if(!document.getElementById('salesDailyFrom').value)document.getElementById('salesDailyFrom').value=today;if(!document.getElementById('salesDailyTo').value)document.getElementById('salesDailyTo').value=today;loadSalesDaily();};
+ window.openSalesDaily=function(){const m=document.getElementById('salesDailyModal');m.classList.add('is-open');const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');document.getElementById('salesDailyFrom').value=today;document.getElementById('salesDailyTo').value=today;loadSalesDaily();};
  window.closeSalesDaily=function(){document.getElementById('salesDailyModal').classList.remove('is-open');};
   window.salesDailyRows=[];
   window.salesDailyExpenses=[];
-  window.loadSalesDaily=async function(){const body=document.getElementById('salesDailyBody');body.innerHTML='<tr><td colspan="12" style="text-align:center;padding:24px">جاري تحميل يومية البيع...</td></tr>';try{if(typeof db==='undefined')throw new Error('قاعدة البيانات غير متاحة');const [snap,expenseSnap,stockSnap]=await Promise.all([db.collection('invoices_archive').get(),db.collection('expenses').get(),db.collection('inventory').get()]);window.salesDailyRows=[];snap.forEach(doc=>{const d=doc.data()||{};window.salesDailyRows.push({id:doc.id,...d});});window.salesDailyExpenses=[];expenseSnap.forEach(doc=>window.salesDailyExpenses.push({id:doc.id,...(doc.data()||{})}));const stockRows=[];stockSnap.forEach(doc=>stockRows.push({id:doc.id,...(doc.data()||{})}));window.accountsProfitCache=window.accountsProfitCache||{};window.accountsProfitCache.inventory=stockRows;renderSalesDaily();}catch(e){body.innerHTML='<tr><td colspan="12" style="text-align:center;color:#b91c1c">تعذر تحميل يومية البيع: '+salesDailyEsc(e.message)+'</td></tr>';}};
+  window.loadSalesDaily=async function(){const body=document.getElementById('salesDailyBody');body.innerHTML='<tr><td colspan="13" style="text-align:center;padding:24px">جاري تحميل يومية البيع والتحصيلات...</td></tr>';try{if(typeof db==='undefined')throw new Error('قاعدة البيانات غير متاحة');const [snap,expenseSnap,stockSnap,collectionSnap]=await Promise.all([db.collection('invoices_archive').get(),db.collection('expenses').get(),db.collection('inventory').get(),db.collection('client_collection_receipts').get()]);window.salesDailyRows=[];snap.forEach(doc=>{const d=doc.data()||{};window.salesDailyRows.push({id:doc.id,...d});});window.salesDailyCollections=[];collectionSnap.forEach(doc=>{const d=doc.data()||{};window.salesDailyCollections.push({id:doc.id,...d,entryType:'collection'});});window.salesDailyExpenses=[];expenseSnap.forEach(doc=>window.salesDailyExpenses.push({id:doc.id,...(doc.data()||{})}));const stockRows=[];stockSnap.forEach(doc=>stockRows.push({id:doc.id,...(doc.data()||{})}));window.accountsProfitCache=window.accountsProfitCache||{};window.accountsProfitCache.invoices=window.salesDailyRows.slice();window.accountsProfitCache.expenses=window.salesDailyExpenses.slice();window.accountsProfitCache.inventory=stockRows;renderSalesDaily();}catch(e){body.innerHTML='<tr><td colspan="13" style="text-align:center;color:#b91c1c">تعذر تحميل يومية البيع: '+salesDailyEsc(e.message)+'</td></tr>';}};
  window.salesDailyEsc=function(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));};
+  window.salesDailyLocalDate=function(value){const d=value instanceof Date?value:new Date(value);if(Number.isNaN(d.getTime()))return String(value||'').slice(0,10);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
  window.renderSalesDaily=function(){
    const from=document.getElementById('salesDailyFrom').value,to=document.getElementById('salesDailyTo').value;
    const q=(document.getElementById('salesDailySearch').value||'').trim().toLowerCase();
    const parseDate=d=>{
      const raw=d.dateStr||d.date||d.createdAt||d.timestamp||'';
      const x=new Date(raw);
-     if(!Number.isNaN(x.getTime()))return x.toISOString().slice(0,10);
+     if(!Number.isNaN(x.getTime()))return salesDailyLocalDate(x);
      const f=String(d.dateFormatted||'');const m=f.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
      return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:'';
    };
@@ -5169,10 +5181,16 @@ window.addEventListener('load', function () {
        .map(describe).join(' ').toLowerCase();
      return(!from||!day||day>=from)&&(!to||!day||day<=to)&&(!q||hay.includes(q));
    }).sort((a,b)=>new Date(b.dateStr||b.date||b.createdAt||0)-new Date(a.dateStr||a.date||a.createdAt||0));
-   let total=0,paid=0,remaining=0,grossTotal=0,partsProfitTotal=0,servicesProfitTotal=0;
+   const collectionRows=(window.salesDailyCollections||[]).filter(d=>{
+     const day=parseDate(d);
+     const hay=[d.invoiceSerial,d.clientName,d.clientPhone,d.carInfo,d.treasuryName,d.method,d.type,'تحصيل مديونية سابقة'].join(' ').toLowerCase();
+     return(!from||!day||day>=from)&&(!to||!day||day<=to)&&(!q||hay.includes(q));
+   }).sort((a,b)=>new Date(b.date||b.createdAt||0)-new Date(a.date||a.createdAt||0));
+   let total=0,paid=0,remaining=0,grossTotal=0,partsProfitTotal=0,servicesProfitTotal=0,installationLaborTotal=0;
+   const collectionTotal=collectionRows.reduce((sum,d)=>sum+(Number(d.paidAmount??d.amount)||0),0);
    const body=document.getElementById('salesDailyBody');
    if(!rows.length){
-     body.innerHTML='<tr><td colspan="12" style="text-align:center;padding:24px">لا توجد فواتير بيع في الفترة المحددة.</td></tr>';
+     body.innerHTML='<tr><td colspan="13" style="text-align:center;padding:24px">لا توجد فواتير بيع في الفترة المحددة.</td></tr>';
    }else{
      body.innerHTML=rows.map((d,i)=>{
        const t=Number(d.totalAmount??d.grandTotal??0)||0;
@@ -5181,24 +5199,35 @@ window.addEventListener('load', function () {
        total+=t;paid+=p;remaining+=r;
        const profitData=window.accountsProfitCalculateInvoiceProfit?window.accountsProfitCalculateInvoiceProfit(d):{gross:0,partsProfit:0,servicesProfit:0};
        const g=Number(profitData.gross)||0,pp=Number(profitData.partsProfit)||0,sp=Number(profitData.servicesProfit)||0;
-       grossTotal+=g;partsProfitTotal+=pp;servicesProfitTotal+=sp;
+       const laborParts=Array.isArray(d.requiredParts)?d.requiredParts:(Array.isArray(d.parts)?d.parts:[]);
+       const il=laborParts.reduce((sum,item)=>sum+(Number(item.installationFee??item.laborFee??item.installationCost??0)||0),0);
+       grossTotal+=g;partsProfitTotal+=pp;servicesProfitTotal+=sp;installationLaborTotal+=il;
        const items=[
          describe(d.repairDetails),describe(d.requiredParts),describe(d.parts),
          describe(d.quickServicesList),describe(d.installationServices),describe(d.services),describe(d.notes)
        ].filter(Boolean).join(' — ');
-       return `<tr><td>${i+1}</td><td>${salesDailyEsc(d.dateFormatted||d.dateStr||d.date||'—')}</td><td>${salesDailyEsc(d.invoiceSerial||d.invoiceNumber||'—')}</td><td>${salesDailyEsc(d.clientName||d.customerName||'—')}</td><td>${salesDailyEsc(d.carInfo||d.carPlate||'—')}</td><td>${salesDailyEsc(items||'—')}</td><td>${t.toLocaleString('en-US')}</td><td>${pp.toLocaleString('en-US')}</td><td>${sp.toLocaleString('en-US')}</td><td>${g.toLocaleString('en-US')}</td><td>${p.toLocaleString('en-US')}</td><td>${r.toLocaleString('en-US')}</td></tr>`;
+       return `<tr><td>${i+1}</td><td>${salesDailyEsc(d.dateFormatted||d.dateStr||d.date||'—')}</td><td>${salesDailyEsc(d.invoiceSerial||d.invoiceNumber||'—')}</td><td>${salesDailyEsc(d.clientName||d.customerName||'—')}</td><td>${salesDailyEsc(d.carInfo||d.carPlate||'—')}</td><td>${salesDailyEsc(items||'—')}</td><td>${t.toLocaleString('en-US')}</td><td>${pp.toLocaleString('en-US')}</td><td>${il.toLocaleString('en-US')}</td><td>${sp.toLocaleString('en-US')}</td><td>${g.toLocaleString('en-US')}</td><td>${p.toLocaleString('en-US')}</td><td>${r.toLocaleString('en-US')}</td></tr>`;
      }).join('');
    }
+   if(collectionRows.length){
+     if(!rows.length)body.innerHTML='';
+     const collectionHtml=collectionRows.map((d,i)=>{
+       const amount=Number(d.paidAmount??d.amount)||0;paid+=amount;
+       return `<tr style="background:#ecfdf5"><td>ت-${i+1}</td><td>${salesDailyEsc(d.dateFormatted||d.date||d.createdAt||'—')}</td><td>${salesDailyEsc(d.invoiceSerial||'—')}</td><td>${salesDailyEsc(d.clientName||'—')}</td><td>${salesDailyEsc(d.carInfo||'—')}</td><td><b>تحصيل مديونية سابقة</b> — ${salesDailyEsc(d.method||'')} — ${salesDailyEsc(d.treasuryName||'')}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>${amount.toLocaleString('en-US')}</td><td>${Number(d.remainingAmount||0).toLocaleString('en-US')}</td></tr>`;
+     }).join('');
+     body.insertAdjacentHTML('beforeend',collectionHtml);
+   }
+   const collectionEl=document.getElementById('salesDailyCollectionsTotal');if(collectionEl)collectionEl.textContent=collectionTotal.toLocaleString('en-US')+' ';
    const expenseRows=(window.salesDailyExpenses||[]).filter(x=>{
      const raw=x.dateStr||x.date||x.createdAt||x.timestamp||'';
-     const dt=new Date(raw);const day=!Number.isNaN(dt.getTime())?dt.toISOString().slice(0,10):String(raw).slice(0,10);
+     const dt=new Date(raw);const day=!Number.isNaN(dt.getTime())?salesDailyLocalDate(dt):String(raw).slice(0,10);
      return (!from||!day||day>=from)&&(!to||!day||day<=to);
    });
    const expenseTotal=expenseRows.reduce((a,x)=>a+(Number(x.amount??x.value??x.expenseAmount)||0),0);
    const netProfit=grossTotal-expenseTotal;
    document.getElementById('salesDailyCount').textContent=rows.length;
    document.getElementById('salesDailyTotal').textContent=total.toLocaleString('en-US')+' ';
-   document.getElementById('salesDailyPartsProfit').textContent=partsProfitTotal.toLocaleString('en-US')+' ';const servicesEl=document.getElementById('salesDailyServicesProfit');if(servicesEl)servicesEl.textContent=servicesProfitTotal.toLocaleString('en-US')+' ';
+   document.getElementById('salesDailyPartsProfit').textContent=partsProfitTotal.toLocaleString('en-US')+' ';const laborEl=document.getElementById('salesDailyInstallationLabor');if(laborEl)laborEl.textContent=installationLaborTotal.toLocaleString('en-US')+' ';const servicesEl=document.getElementById('salesDailyServicesProfit');if(servicesEl)servicesEl.textContent=servicesProfitTotal.toLocaleString('en-US')+' ';
    document.getElementById('salesDailyGross').textContent=grossTotal.toLocaleString('en-US')+' ';
    const expenseEl=document.getElementById('salesDailyExpensesTotal');if(expenseEl)expenseEl.textContent=expenseTotal.toLocaleString('en-US')+' ';
    const netEl=document.getElementById('salesDailyNetProfit');if(netEl)netEl.textContent=netProfit.toLocaleString('en-US')+' ';
@@ -5207,7 +5236,104 @@ window.addEventListener('load', function () {
  };
  window.printSalesDaily=function(){const area=document.getElementById('salesDailyPrintArea');const w=window.open('','_blank','width=1200,height=850');if(!w){alert('اسمح بفتح النوافذ المنبثقة للطباعة');return;}w.document.write('<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>يومية البيع - مركز أوتو نون</title><style>body{font-family:Tahoma,Arial;padding:18px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #555;padding:6px;text-align:center}th{background:#e8e8e8}.stats{display:flex;gap:18px;margin:12px 0;font-weight:bold}@page{size:A4 landscape;margin:8mm}</style><h2>مركز أوتو نون لصيانة السيارات — يومية البيع</h2><p>الفترة: '+salesDailyEsc(document.getElementById('salesDailyFrom').value)+' إلى '+salesDailyEsc(document.getElementById('salesDailyTo').value)+'</p>'+area.innerHTML+'<script>window.onload=()=>window.print()<\/script></html>');w.document.close();};
  // This function was accidentally stranded in visible HTML by a malformed embedded script tag in the print template.
- window.closeDailyRoutine=async function(){if(!confirm('تأكيد تقفيل اليومية؟ سيتم حفظ ملخص بالأرقام الحالية.'))return;try{let transactions=[];if(typeof db!=='undefined'){let snap=await db.collection('treasury_transactions').get();snap.forEach(d=>transactions.push({id:d.id,...d.data()}));}const summary={id:'daily_'+Date.now(),date:new Date().toISOString(),transactions:transactions.length,totalPaid:transactions.reduce((n,x)=>n+(Number(x.paidAmount)||0),0),totalRemaining:transactions.reduce((n,x)=>n+(Number(x.remainingAmount)||0),0)};const list=JSON.parse(localStorage.getItem('daily_closings')||'[]');list.push(summary);localStorage.setItem('daily_closings',JSON.stringify(list));alert('تم حفظ تقفيل اليومية رقم '+summary.id+'\nعدد الحركات: '+summary.transactions+'\nإجمالي المقبوضات: '+summary.totalPaid+' ');}catch(e){alert('تعذر تقفيل اليومية: '+e.message);}};
+ 
+ function employeeShiftName(){
+   const raw=localStorage.getItem('currentUser')||'المحاسب';
+   try{const u=JSON.parse(raw);return String(u?.name||u?.username||u?.userName||u?.email||raw).trim()||'المحاسب';}
+   catch(_){return String(raw).trim()||'المحاسب';}
+ }
+ function employeeShiftStorageKey(){return 'activeEmployeeShift_'+encodeURIComponent(employeeShiftName());}
+ function readActiveEmployeeShift(){try{return JSON.parse(localStorage.getItem(employeeShiftStorageKey())||'null');}catch(_){return null;}}
+ window.getActiveEmployeeShift=function(){return readActiveEmployeeShift();};
+ window.getEmployeeShiftStamp=function(){const sh=readActiveEmployeeShift();return sh&&sh.status==='open'?{shiftId:sh.id,employeeName:sh.employeeName}: {shiftId:'',employeeName:employeeShiftName()};};
+ const initialShift=readActiveEmployeeShift();if(initialShift&&initialShift.status==='open'){const shiftBtn=document.getElementById('startShiftBtn');if(shiftBtn)shiftBtn.style.display='none';}
+ let employeeShiftHours=6,employeeShiftUserId='';
+ async function loadEmployeeShiftHours(){try{const raw=localStorage.getItem('currentUser')||'';let u={};try{u=JSON.parse(raw)||{}}catch(_){u={username:raw}}const username=String(u.username||u.userName||'').toLowerCase();const name=String(u.fullName||u.name||u.username||raw||'').trim();if(username){const q=await db.collection('users').where('username','==',username).limit(1).get();if(!q.empty){const d=q.docs[0].data()||{};employeeShiftHours=Number(d.shiftHours||d.workShiftHours||6)||6;employeeShiftUserId=q.docs[0].id;return;}}if(name){const q=await db.collection('users').where('fullName','==',name).limit(1).get();if(!q.empty){const d=q.docs[0].data()||{};employeeShiftHours=Number(d.shiftHours||d.workShiftHours||6)||6;}}}catch(e){console.warn('تعذر تحميل مدة الشيفت المحددة للموظف',e)}}
+ loadEmployeeShiftHours();
+ function shiftRecordTime(d){
+   const v=d.dateStr||d.date||d.createdAt||d.timestamp||d.created_at||'';
+   if(typeof v==='number')return v>1e12?v:v*1000;
+   const t=Date.parse(v);return Number.isFinite(t)?t:0;
+ }
+ function shiftRecordEmployee(d){
+   const v=d.cashier||d.cashierName||d.employeeName||d.createdBy||d.userName||d.username||d.sellerName||'';
+   if(v&&typeof v==='object')return String(v.name||v.username||v.email||'');
+   return String(v||'').trim();
+ }
+ function shiftEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ window.startEmployeeShift=async function(){
+   const name=employeeShiftName(), key=employeeShiftStorageKey();
+   const local=readActiveEmployeeShift();
+   if(local&&local.status==='open'){alert('يوجد شيفت مفتوح بالفعل لهذا الموظف منذ '+new Date(local.startAt).toLocaleString('ar-EG'));return;}
+   if(typeof db==='undefined'){alert('قاعدة البيانات غير متاحة.');return;}
+   try{
+     const openSnap=await db.collection('employee_shifts').where('employeeName','==',name).get();
+     const openDocs=openSnap.docs.filter(d=>(d.data()||{}).status==='open');
+     if(openDocs.length){
+       const doc=openDocs.sort((a,b)=>String(b.data().startAt||'').localeCompare(String(a.data().startAt||'')))[0];
+       const restored={id:doc.id,...doc.data()};
+       localStorage.setItem(key,JSON.stringify(restored));const shiftBtn=document.getElementById('startShiftBtn');if(shiftBtn)shiftBtn.style.display='none';
+       alert('تم العثور على شيفت مفتوح محفوظ بالفعل لهذا الموظف.');return;
+     }
+     const ref=db.collection('employee_shifts').doc();
+     const startedAt=new Date();const shift={id:ref.id,employeeId:employeeShiftUserId||'',employeeName:name,status:'open',startAt:startedAt.toISOString(),startTimestamp:startedAt.getTime(),plannedHours:employeeShiftHours||6,plannedEndAt:new Date(startedAt.getTime()+(employeeShiftHours||6)*3600000).toISOString(),createdAt:startedAt.toISOString()};
+     await ref.set(shift);
+     localStorage.setItem(key,JSON.stringify(shift));
+     const btn=document.getElementById('startShiftBtn');if(btn)btn.style.display='none';
+     window.loadFinancialStats?.();
+     alert('تم بدء الشيفت لمدة '+(employeeShiftHours||6)+' ساعات وحفظه للموظف: '+name);
+   }catch(e){alert('تعذر بدء الشيفت: '+(e.message||e));}
+ };
+ window.printEmployeeShiftReport=function(report,targetWindow){
+   const rows=(arr,cols)=>arr.length?arr.map((x,i)=>'<tr><td>'+(i+1)+'</td>'+cols.map(c=>'<td>'+shiftEsc(c(x))+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+(cols.length+1)+'">لا توجد حركات مسجلة</td></tr>';
+   const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير تقفيل الشيفت</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Tahoma,Arial;color:#111}h2{text-align:center;margin:0 0 12px}.meta,.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.meta div,.totals div{border:1px solid #aaa;padding:8px;border-radius:5px}h3{margin:14px 0 6px;background:#e9eef5;padding:7px}table{width:100%;border-collapse:collapse;font-size:10px}td,th{border:1px solid #777;padding:6px;text-align:right}th{background:#eee}.amount{font-weight:bold}</style></head><body><h2>مركز أوتو نون — تقرير تقفيل الشيفت</h2><p style="text-align:center;font-weight:bold">رقم تقفيل اليومية: '+Number(report.closingNumber||1000)+'</p><div class="meta"><div><b>الموظف:</b> '+shiftEsc(report.employeeName)+'</div><div><b>بداية الشيفت:</b> '+shiftEsc(new Date(report.startAt).toLocaleString('ar-EG'))+'</div><div><b>نهاية الشيفت:</b> '+shiftEsc(new Date(report.endAt).toLocaleString('ar-EG'))+'</div></div><div class="totals"><div>إجمالي الإيداع<br><b>'+Number(report.totalDeposits||0).toLocaleString('ar-EG')+' جنيه</b></div><div>إجمالي السحب<br><b>'+Number(report.totalWithdrawals||0).toLocaleString('ar-EG')+' جنيه</b></div><div>إجمالي المصروفات<br><b>'+Number(report.totalExpenses||0).toLocaleString('ar-EG')+' جنيه</b></div><div>صافي درج الشيفت<br><b>'+Number(report.drawerTotal||0).toLocaleString('ar-EG')+' جنيه</b></div></div><h3>الإيداعات</h3><table><tr><th>م</th><th>التاريخ</th><th>الخزينة</th><th>البيان</th><th>المبلغ</th></tr>'+rows(report.deposits||[],[x=>new Date(shiftRecordTime(x)).toLocaleString('ar-EG'),x=>x.treasuryName||'',x=>x.notes||x.type||x.invoiceSerial||'',x=>Number(x.amount??x.paidAmount??0).toLocaleString('ar-EG')])+'</table><h3>السحوبات</h3><table><tr><th>م</th><th>التاريخ</th><th>الخزينة</th><th>البيان</th><th>المبلغ</th></tr>'+rows(report.withdrawals||[],[x=>new Date(shiftRecordTime(x)).toLocaleString('ar-EG'),x=>x.treasuryName||'',x=>x.notes||x.type||x.invoiceSerial||'',x=>Number(x.amount??x.expenseAmount??x.paidAmount??0).toLocaleString('ar-EG')])+'</table><h3>المصروفات</h3><table><tr><th>م</th><th>التاريخ</th><th>البند</th><th>الخزينة</th><th>الملاحظات</th><th>المبلغ</th></tr>'+((report.expenses||[]).length?(report.expenses||[]).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+shiftEsc(new Date(shiftRecordTime(x)).toLocaleString('ar-EG'))+'</td><td>'+shiftEsc(x.title||x.type||'مصروف')+'</td><td>'+shiftEsc(x.treasuryName||'')+'</td><td>'+shiftEsc(x.notes||'')+'</td><td>'+Number(x.amount||0).toLocaleString('ar-EG')+'</td></tr>').join(''):'<tr><td colspan="6">لا توجد مصروفات مسجلة</td></tr>')+'</table><p style="margin-top:30px">توقيع الموظف: ..............................　 توقيع المسؤول: ..............................</p><script>window.onload=()=>window.print()<\/script></body></html>';
+   const w=targetWindow||window.open('','_blank','width=1100,height=850');if(!w){alert('تم حفظ التقرير، لكن المتصفح منع نافذة الطباعة. اسمح بالنوافذ المنبثقة وأعد طباعة التقرير من أرشيف الشيفتات.');return;}w.document.open();w.document.write(html);w.document.close();
+ };
+ window.closeDailyRoutine=async function(){
+   const shift=readActiveEmployeeShift();
+   if(!shift||shift.status!=='open'){alert('لا يوجد شيفت مفتوح لهذا الموظف. اضغط «بدء شيفت» أولاً.');return;}
+   if(!confirm('تأكيد تقفيل يومية الموظف '+shift.employeeName+'؟ سيتم حفظ الشيفت في الأرشيف وفتح تقرير الطباعة.'))return;
+   const reportWindow=window.open('','_blank','width=1100,height=850');
+   try{
+     const endAt=new Date().toISOString(), endMs=Date.now(), startMs=Number(shift.startTimestamp)||Date.parse(shift.startAt)||0;
+     const [txSnap,expSnap]=await Promise.all([db.collection('treasury_transactions').get(),db.collection('expenses').get()]);
+     const belongs=d=>{
+       const t=shiftRecordTime(d);if(!t||t<startMs||t>endMs)return false;
+       if(String(d.shiftId||'')===String(shift.id))return true;
+       const who=shiftRecordEmployee(d);
+       return !who||who.toLocaleLowerCase('ar')===String(shift.employeeName).toLocaleLowerCase('ar');
+     };
+     const transactions=[];txSnap.forEach(doc=>{const d={id:doc.id,...(doc.data()||{})};if(belongs(d))transactions.push(d);});
+     const expenses=[];expSnap.forEach(doc=>{const d={id:doc.id,...(doc.data()||{})};if(belongs(d))expenses.push(d);});
+     const deposits=[],withdrawals=[];let drawerTotal=0;
+     transactions.forEach(d=>{
+       const direction=String(d.direction||d.type||'');
+       const amount=Number(d.amount??d.paidAmount??d.paymentAmount??d.expenseAmount)||0;
+       const isOut=/out|سحب|صرف|مصروف|سداد|دفع|مرتجع|تالف/i.test(direction)||Number(d.expenseAmount)>0;
+       if(isOut)withdrawals.push(d);
+       else if(/in|إيداع|تحصيل|قبض|دفعة مقدمة/i.test(direction)||Number(d.paidAmount)>0)deposits.push(d);
+       const method=String(d.method||d.paymentMethod||'').toLowerCase();
+       if(/نقد|كاش|cash/.test(method))drawerTotal+=(isOut?-1:1)*amount;
+     });
+     let closingNumber=1000;try{const counterRef=db.collection('daily_closing_counters').doc('main');await db.runTransaction(async tx=>{const snap=await tx.get(counterRef);const current=Number(snap.exists?snap.data().lastNumber:999)||999;closingNumber=Math.max(1000,current+1);tx.set(counterRef,{lastNumber:closingNumber,updatedAt:endAt},{merge:true});});}catch(counterErr){const localNum=Math.max(999,Number(localStorage.getItem('daily_closing_last_number')||999));closingNumber=localNum+1;localStorage.setItem('daily_closing_last_number',String(closingNumber));}
+     const report={
+       id:shift.id,closingNumber:Number(closingNumber),employeeName:shift.employeeName,startAt:shift.startAt,endAt,
+       deposits,withdrawals,expenses,
+       totalDeposits:deposits.reduce((a,x)=>a+(Number(x.amount??x.paidAmount??x.paymentAmount)||0),0),
+       totalWithdrawals:withdrawals.reduce((a,x)=>a+(Number(x.amount??x.expenseAmount??x.paidAmount)||0),0),
+       totalExpenses:expenses.reduce((a,x)=>a+(Number(x.amount)||0),0),
+       drawerTotal,transactionCount:transactions.length,expenseCount:expenses.length
+     };
+     await db.collection('employee_shifts').doc(shift.id).set({...report,status:'closed',closedAt:endAt},{merge:true});
+     const old=JSON.parse(localStorage.getItem('daily_closings')||'[]');old.push({id:shift.id,employeeName:shift.employeeName,date:endAt,totalDeposits:report.totalDeposits,totalWithdrawals:report.totalWithdrawals,totalExpenses:report.totalExpenses,drawerTotal:report.drawerTotal});localStorage.setItem('daily_closings',JSON.stringify(old));
+     localStorage.removeItem(employeeShiftStorageKey());
+     const btn=document.getElementById('startShiftBtn');if(btn)btn.innerHTML='<i class="fa-solid fa-play"></i> بدء شيفت';
+     window.loadFinancialStats?.();
+     alert('تم تقفيل اليومية رقم '+closingNumber+' وحفظها. سيتم طباعة التقرير ثم العودة لتسجيل الدخول.');
+     window.printEmployeeShiftReport(report,reportWindow);
+     setTimeout(()=>{try{localStorage.removeItem('currentUser');localStorage.removeItem('currentRolePage');sessionStorage.removeItem('non_admin_unlocked');window.location.href='login.html';}catch(_){window.location.href='login.html';}},1800);
+   }catch(e){alert('تعذر تقفيل اليومية: '+(e.message||e));}
+ };
 })();
 </script>
 
@@ -5231,8 +5357,8 @@ window.addEventListener('load', function () {
       <div class="form-field"><label>ملاحظات</label><input id="collectionNotes" placeholder="اختياري"></div>
      </div>
      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-      <button class="btn-action btn-green" onclick="saveClientCollection('partial')"><i class="fa-solid fa-coins"></i> تحصيل جزء</button>
-      <button class="btn-action btn-purple" onclick="saveClientCollection('full')"><i class="fa-solid fa-check-double"></i> سداد كامل</button>
+      <button type="button" class="btn-action btn-green" onclick="saveClientCollection('partial')"><i class="fa-solid fa-coins"></i> تحصيل جزء</button>
+      <button type="button" class="btn-action btn-purple" onclick="saveClientCollection('full')"><i class="fa-solid fa-check-double"></i> سداد كامل</button>
       <button class="btn-action btn-blue" onclick="printCollectionReceipt()"><i class="fa-solid fa-print"></i> إصدار / طباعة فاتورة سداد</button>
       <button class="btn-action btn-green" onclick="sendCollectionWhatsApp()"><i class="fa-brands fa-whatsapp"></i> رسالة واتساب</button>
      </div>
@@ -5280,20 +5406,19 @@ window.addEventListener('load', function () {
   $('collectionHistory').innerHTML=`<div class="card-box"><b>ملخص العميل:</b> إجمالي المديونية ${money(selected.total)}  — المسدد سابقاً ${money(selected.paid)}  — المتبقي ${money(selected.remaining)} </div>`;
  };
  async function nextReceiptSerial(){
-  const ref=db.collection('settings').doc('invoice_counter');
-  return await db.runTransaction(async tx=>{const d=await tx.get(ref);const n=d.exists?Math.max(99,Number((d.data()||{}).lastSerial)||99)+1:100;tx.set(ref,{lastSerial:n},{merge:true});return n;});
+  const ref=db.collection('settings').doc('collection_receipt_counter');
+  return await db.runTransaction(async tx=>{const d=await tx.get(ref);const last=d.exists?Number((d.data()||{}).lastSerial)||999:999;const next=Math.max(999,last)+1;tx.set(ref,{lastSerial:next},{merge:true});return next;});
  }
  window.saveClientCollection=async function(mode){
   if(!selected){alert('اختر العميل أولاً');return}
   const amount=num($('collectionAmount').value), treasuryId=$('collectionTreasury').value, method=$('collectionMethod').value;
   if(!treasuryId){alert('اختر الخزينة التي ستستقبل المبلغ');return}
   if(amount<=0){alert('أدخل مبلغاً صحيحاً');return}
-  if(amount>selected.remaining+0.001){alert('مبلغ التحصيل أكبر من المديونية المتبقية');return}
-  if(mode==='full' && Math.abs(amount-selected.remaining)>0.01){if(!confirm('المبلغ المدخل أقل من إجمالي المتبقي. هل تريد تحصيل المبلغ المدخل فقط؟'))return}
   if(mode==='full') $('collectionAmount').value=selected.remaining.toFixed(2);
   const paid=mode==='full'?selected.remaining:amount;
+  if(paid>selected.remaining+0.001){alert('مبلغ التحصيل أكبر من المديونية المتبقية');return}
   const treasury=$('collectionTreasury'), treasuryName=treasury.options[treasury.selectedIndex]?.text.split(' — ')[0]||'الخزينة';
-  const receipt={invoiceSerial:null,date:new Date().toISOString(),dateFormatted:new Date().toLocaleString('en-US'),clientName:selected.name,clientPhone:selected.phone,carInfo:selected.cars.join('، '),totalAmount:selected.remaining,paidAmount:paid,remainingAmount:Math.max(0,selected.remaining-paid),method,treasuryId,treasuryName,notes:$('collectionNotes').value,type:'تحصيل من حساب عميل',direction:'in',cashier:(JSON.parse(localStorage.getItem('currentUser')||'{}').name||'مسؤول الحسابات')};
+  const receipt={invoiceSerial:null,date:new Date().toISOString(),dateFormatted:new Date().toLocaleString('en-US'),clientName:selected.name,clientPhone:selected.phone,carInfo:selected.cars.join('، '),totalAmount:selected.remaining,paidAmount:paid,remainingAmount:Math.max(0,selected.remaining-paid),method,treasuryId,treasuryName,notes:$('collectionNotes').value,type:'تحصيل من حساب عميل',direction:'in',cashier:(window.nonGetCurrentUser?.().name||window.nonGetCurrentUser?.().fullName||window.nonGetCurrentUser?.().username||'مسؤول الحسابات')};
   try{
    receipt.invoiceSerial=await nextReceiptSerial();
    const batch=db.batch();
@@ -5304,7 +5429,11 @@ window.addEventListener('load', function () {
    batch.set(db.collection('treasury_transactions').doc(),{...receipt,amount:paid,paidAmount:paid,remainingAmount:receipt.remainingAmount});
    batch.set(db.collection('client_collection_receipts').doc(String(receipt.invoiceSerial)),receipt);
    await batch.commit();lastReceipt=receipt;
-   alert('تم تسجيل التحصيل بنجاح. رقم فاتورة السداد: '+receipt.invoiceSerial);
+   await Promise.all([
+     window.loadFinancialStats?.(),
+     window.loadSalesDaily?.()
+   ]);
+   alert('تم تسجيل التحصيل بنجاح وتحديث الخزينة والملخص المالي ويومية البيع. رقم فاتورة السداد: '+receipt.invoiceSerial);
    await window.openCollectionsModal();$('collectionSearch').value=receipt.clientName;window.renderCollectionCustomers();
    const match=customers.find(c=>c.name===receipt.clientName&&c.phone===receipt.clientPhone);if(match)window.selectCollectionCustomer(encodeURIComponent(match.key));
    printCollectionReceipt();
@@ -5379,14 +5508,16 @@ function printClientLifeStatement(){const content=document.getElementById('clien
      <div class="card-box" style="margin:0;text-align:center"><small>عدد الفواتير</small><div id="salesDailyCount" style="font-size:21px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي البيع</small><div id="salesDailyTotal" style="font-size:21px;font-weight:900">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>ربح قطع الغيار (حسب سعر شراء المخزن)</small><div id="salesDailyPartsProfit" style="font-size:21px;font-weight:900">0 </div></div>
-     <div class="card-box" style="margin:0;text-align:center"><small>إجمالي الخدمات</small><div id="salesDailyServicesProfit" style="font-size:21px;font-weight:900">0 </div></div>
+     <div class="card-box" style="margin:0;text-align:center"><small>مصنعية التركيب</small><div id="salesDailyInstallationLabor" style="font-size:21px;font-weight:900">0 </div></div>
+      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي الخدمات</small><div id="salesDailyServicesProfit" style="font-size:21px;font-weight:900">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي الربح شامل المصنعية والخدمات</small><div id="salesDailyGross" style="font-size:21px;font-weight:900">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>مصروفات الفترة</small><div id="salesDailyExpensesTotal" style="font-size:21px;font-weight:900">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>صافي الربح بعد المصروفات</small><div id="salesDailyNetProfit" style="font-size:21px;font-weight:900;color:#16845f">0 </div></div>
+     <div class="card-box" style="margin:0;text-align:center"><small>تحصيلات مديونيات سابقة</small><div id="salesDailyCollectionsTotal" style="font-size:21px;font-weight:900;color:#16845f">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي المدفوع</small><div id="salesDailyPaid" style="font-size:21px;font-weight:900">0 </div></div>
      <div class="card-box" style="margin:0;text-align:center"><small>إجمالي المتبقي</small><div id="salesDailyRemaining" style="font-size:21px;font-weight:900">0 </div></div>
     </div>
-    <div class="table-responsive"><table style="min-width:900px;width:100%"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>العميل</th><th>السيارة / اللوحة</th><th>البيان</th><th>إجمالي المبيع</th><th>ربح قطع الغيار</th><th>ربح الخدمات</th><th>إجمالي الربح شامل المصنعية</th><th>المدفوع</th><th>المتبقي</th></tr></thead><tbody id="salesDailyBody"><tr><td colspan="10">جاري التحميل...</td></tr></tbody></table></div>
+    <div class="table-responsive"><table style="min-width:900px;width:100%"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>العميل</th><th>السيارة / اللوحة</th><th>البيان</th><th>إجمالي المبيع</th><th>ربح قطع الغيار</th><th>مصنعية التركيب</th><th>ربح الخدمات</th><th>إجمالي الربح شامل المصنعية</th><th>المدفوع</th><th>المتبقي</th></tr></thead><tbody id="salesDailyBody"><tr><td colspan="13">جاري التحميل...</td></tr></tbody></table></div>
    </div>
   </div>
  </div>
@@ -5928,10 +6059,208 @@ function printClientLifeStatement(){const content=document.getElementById('clien
       editing = false;
       const btn = document.querySelector('[onclick="toggleManagerInvoiceEdit()"]');
       if(btn) btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> تعديل الفاتورة (المدير)';
+      (async()=>{try{
+        const serial=(document.getElementById('printInvoiceSerial')?.textContent||currentSelectedQueueItem?.invoiceSerial||'').trim();
+        const patch={clientName:document.getElementById('clientName')?.value||'',clientPhone:document.getElementById('clientPhone')?.value||'',carInfo:document.getElementById('carInfo')?.value||'',carPlate:document.getElementById('carPlate')?.value||'',updatedAt:new Date().toISOString(),managerEdited:true};
+        const paid=Number(document.getElementById('amountPaidInput')?.value);if(Number.isFinite(paid))patch.paidAmount=paid;
+        const totalEl=document.getElementById('grandTotalSum');if(totalEl){const total=Number(String(totalEl.textContent||'').replace(/[^0-9.]/g,''));if(Number.isFinite(total)&&total>0)patch.totalAmount=total;}
+        if(serial&&typeof db!=='undefined'){const snap=await db.collection('invoices_archive').where('invoiceSerial','==',serial).limit(1).get();if(!snap.empty)await snap.docs[0].ref.set(patch,{merge:true});else console.warn('لم يتم العثور على نسخة الأرشيف لحفظ تعديلات الفاتورة',serial);}
+        if(currentSelectedQueueItem)currentSelectedQueueItem={...currentSelectedQueueItem,...patch};
+        alert('تم إنهاء تعديل الفاتورة. تم حفظ بيانات العميل والمبالغ في الأرشيف عند العثور على رقم الفاتورة.');
+      }catch(e){alert('تم إنهاء التعديل على الشاشة، لكن تعذر حفظه في الأرشيف: '+e.message);}})();
     }
   };
 })();
 </script>
 
+
+<script id="autonon-role-permissions-and-final-print">
+(function(){
+ const $=id=>document.getElementById(id);
+ const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ window.nonGetCurrentUser=function(){
+   const raw=localStorage.getItem('currentUser')||'المحاسب';
+   try{const u=JSON.parse(raw);return u&&typeof u==='object'?u:{name:String(raw),username:String(raw)};}
+   catch(_){return {name:String(raw),username:String(raw)};}
+ };
+ const user=window.nonGetCurrentUser();
+ const identity=String(user.username||user.userName||user.email||user.fullName||user.name||'المحاسب').trim().toLowerCase();
+ const readRoles=()=>{try{return JSON.parse(localStorage.getItem('nonAutoRoles')||'{}')||{}}catch(_){return {}}};
+ const roles=readRoles();
+ const assignment=roles[identity]||null;
+ let role=String(assignment?.role||user.role||user.accountType||'cashier').toLowerCase();
+ if(['admin','administrator','مدير','مدير النظام'].includes(role))role='manager';
+ if(['viewer','مشاهد','مشاهد فقط','view'].includes(role))role='viewer';
+ if(['cashier','كاشير','محاسب','accountant'].includes(role))role='cashier';
+ if(!['manager','cashier','viewer'].includes(role))role='cashier';
+ window.nonCurrentRole=role;
+ window.nonHasPermission=function(action){
+   if(window.nonCurrentRole==='manager')return true;
+   const cashierAllowed=new Set(['expenses','clients','advance-payment','client-statement','collections','suppliers','invoices','shift','daily-close','invoice-pay','invoice-whatsapp','print','view']);
+   const viewerAllowed=new Set(['clients','client-statement','archive','invoices','view','print']);
+   return (window.nonCurrentRole==='cashier'?cashierAllowed:viewerAllowed).has(action);
+ };
+ function pinManager(){
+   const expected=localStorage.getItem('nonManagerPin')||localStorage.getItem('nonQuickActionsPin')||'123';
+   const entered=prompt('أدخل كلمة سر المدير لتعديل الصلاحيات:');
+   if(entered===null)return false;
+   if(entered!==expected){alert('كلمة سر المدير غير صحيحة.');return false;}
+   return true;
+ }
+ window.openNonPermissionsManager=function(){
+   if(!pinManager())return;
+   const target=prompt('اكتب اسم المستخدم أو اسم الحساب الذي تريد تعيين صلاحية له:',identity);
+   if(target===null||!target.trim())return;
+   const key=target.trim().toLowerCase();
+   const roleChoice=prompt('اختر نوع الحساب بكتابة الرقم:\n1 = مدير (كل الصلاحيات)\n2 = كاشير / محاسب\n3 = مشاهد فقط','2');
+   if(roleChoice===null)return;
+   const selectedRole=({'1':'manager','2':'cashier','3':'viewer'})[roleChoice.trim()];
+   if(!selectedRole){alert('اختيار غير صحيح.');return;}
+   const all=readRoles();
+   const record={role:selectedRole,updatedAt:new Date().toISOString(),updatedBy:identity};
+   if(selectedRole==='cashier'){
+     const cashierPin=prompt('حدد كلمة سر الكاشير لهذا الحساب (اتركها فارغة لاستخدام 1234):','1234');
+     if(cashierPin===null)return;
+     record.cashierPin=cashierPin.trim()||'1234';
+   }
+   all[key]=record;localStorage.setItem('nonAutoRoles',JSON.stringify(all));
+   // حفظ نوع الحساب والصلاحيات في سجل المستخدم إن كان موجوداً في Firestore.
+   (async()=>{
+     try{
+       if(typeof db!=='undefined'){
+         let q=await db.collection('users').where('username','==',target.trim()).limit(1).get();
+         if(q.empty)q=await db.collection('users').where('userName','==',target.trim()).limit(1).get();
+         if(!q.empty){
+           const perms=selectedRole==='manager'?{view:true,add:true,edit:true,delete:true,print:true,manage:true}:
+             selectedRole==='cashier'?{view:true,add:true,edit:false,delete:false,print:true,manage:false}:
+             {view:true,add:false,edit:false,delete:false,print:true,manage:false};
+           await q.docs[0].ref.set({role:selectedRole,accountType:selectedRole,permissions:perms,updatedAt:new Date().toISOString()},{merge:true});
+         }
+       }
+     }catch(e){console.warn('تعذر حفظ الدور في Firestore:',e);}
+   })();
+   alert('تم تعيين الصلاحية محليًا لهذا الجهاز. إذا كان المستخدم موجودًا في قاعدة users فتمت محاولة تحديث نوع الحساب والصلاحيات هناك.');
+   if(key===identity){window.nonCurrentRole=selectedRole;applyRoleUI();}
+ };
+ window.changeNonManagerPin=function(){
+   if(!pinManager())return;
+   const next=prompt('أدخل كلمة سر المدير الجديدة:');
+   if(next===null)return;
+   if(!next.trim()){alert('كلمة السر لا يمكن أن تكون فارغة.');return;}
+   localStorage.setItem('nonManagerPin',next.trim());
+   alert('تم تغيير كلمة سر المدير على هذا الجهاز.');
+ };
+ function applyRoleUI(){
+   const r=window.nonCurrentRole;
+   const hide=(sel)=>document.querySelectorAll(sel).forEach(el=>el.style.display='none');
+   const show=(sel)=>document.querySelectorAll(sel).forEach(el=>el.style.display='');
+   const managerBtn=$('managePermissionsBtn');if(managerBtn)managerBtn.style.display=r==='manager'?'':'none';
+   const pinBtn=$('changeManagerPinBtn');if(pinBtn)pinBtn.style.display=r==='manager'?'':'none';
+   if(r==='manager')return;
+   if(r==='cashier'){
+     ['maintenance','treasury','workers','archive'].forEach(k=>hide('[data-quick="'+k+'"]'));
+     hide('[onclick="openSalesDaily()"],[onclick="openAccountsProfits()"],[onclick="openSummaryTransfers()"],#customizeQuickActionsBtn');
+     hide('[onclick="toggleManagerInvoiceEdit()"]');
+     return;
+   }
+   // المشاهد: عرض وطباعة فقط.
+   ['maintenance','treasury','expenses','workers','advance-payment','collections','suppliers'].forEach(k=>hide('[data-quick="'+k+'"]'));
+   hide('[onclick="openSalesDaily()"],[onclick="openAccountsProfits()"],[onclick="openSummaryTransfers()"],#customizeQuickActionsBtn,#managePermissionsBtn,#startShiftBtn');
+   document.querySelectorAll('button').forEach(b=>{
+     const a=b.getAttribute('onclick')||'';
+     const allow=/openArchiveModal|openClientAccountsModal|openClientLifeStatement|openServiceModal\\('invoicesServiceModal'\\)|openArchivedInvoice|print|close|logout|toggleDarkMode/.test(a);
+     if(!allow)b.style.display='none';
+   });
+ }
+ document.addEventListener('click',function(e){
+   const b=e.target.closest('button,[role="button"]');if(!b)return;
+   const action=b.getAttribute('onclick')||'';
+   const r=window.nonCurrentRole;
+   if(r==='viewer'){
+     const allowed=/openArchiveModal|openClientAccountsModal|openClientLifeStatement|openServiceModal\\('invoicesServiceModal'\\)|openArchivedInvoice|print|close|logout|toggleDarkMode/.test(action);
+     if(!allowed){e.preventDefault();e.stopImmediatePropagation();alert('حساب المشاهد يسمح بالعرض والطباعة فقط.');}
+   }else if(r==='cashier' && /openTreasuryManagementModal|openWorkersModal|openSalesDaily|openAccountsProfits|openSummaryTransfers|openQuickActionsSettings|toggleManagerInvoiceEdit/.test(action)){
+     e.preventDefault();e.stopImmediatePropagation();alert('هذه الصلاحية متاحة للمدير فقط.');
+   }
+ },true);
+ function showRoleEntryGate(){
+   // اختيار الدور في كل دخول، مع تحقق منفصل قبل فتح واجهة المدير أو الكاشير.
+   document.body.classList.add('non-role-locked');
+   const gate=document.createElement('div');
+   gate.id='nonRoleEntryGate';
+   gate.style.cssText='position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(135deg,#0b1c2d,#173753);';
+   gate.innerHTML=`<div style="width:min(520px,96vw);background:#fff;color:#17283a;border-radius:22px;padding:28px;box-shadow:0 25px 80px #0006;text-align:center;font-family:Tahoma,Arial">
+     <div style="width:64px;height:64px;margin:0 auto 12px;border-radius:18px;background:#10243a;color:#ffab52;display:grid;place-items:center;font-size:28px"><i class="fa-solid fa-user-shield"></i></div>
+     <h2 style="margin:0 0 8px;font-size:22px">مرحباً بك في حسابات أوتو نون</h2>
+     <p style="margin:0 0 22px;color:#64748b">حدد نوع الدخول لعرض الوظائف والصلاحيات المناسبة</p>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+       <button type="button" id="nonEnterManager" style="border:0;border-radius:14px;padding:18px 10px;background:#10243a;color:white;font-weight:900;font-size:17px;cursor:pointer"><i class="fa-solid fa-user-tie" style="display:block;font-size:26px;margin-bottom:8px;color:#ffab52"></i>دخول المدير</button>
+       <button type="button" id="nonEnterCashier" style="border:0;border-radius:14px;padding:18px 10px;background:#17856f;color:white;font-weight:900;font-size:17px;cursor:pointer"><i class="fa-solid fa-cash-register" style="display:block;font-size:26px;margin-bottom:8px"></i>دخول الكاشير</button>
+     </div>
+     <small style="display:block;margin-top:16px;color:#64748b">يتم طلب كلمة المرور قبل فتح الوظائف.</small>
+   </div>`;
+   document.body.appendChild(gate);
+   const enter=(chosen)=>{
+     let expected,caption;
+     if(chosen==='manager'){
+       expected=String(localStorage.getItem('nonManagerPin')||localStorage.getItem('nonQuickActionsPin')||'123');
+       caption='أدخل كلمة سر المدير';
+     }else{
+       expected=String(assignment?.cashierPin||user.cashierPin||'1234');
+       caption='أدخل كلمة سر الكاشير';
+     }
+     const entered=prompt(caption+':');
+     if(entered===null)return;
+     if(entered!==expected){alert('كلمة المرور غير صحيحة.');return;}
+     window.nonCurrentRole=chosen;
+     if(chosen==='cashier')sessionStorage.setItem('nonCashierAuthenticated_'+identity,'1');
+     else sessionStorage.removeItem('nonCashierAuthenticated_'+identity);
+     document.body.classList.remove('non-role-locked');
+     gate.remove();
+     applyRoleUI();
+     const badge=$('userBadge');
+     if(badge)badge.innerHTML=chosen==='manager'?'<i class="fa-solid fa-user-tie"></i> المدير: '+safe(user.name||user.fullName||identity):'<i class="fa-solid fa-cash-register"></i> الكاشير: '+safe(user.name||user.fullName||identity);
+   };
+   gate.querySelector('#nonEnterManager').addEventListener('click',()=>enter('manager'));
+   gate.querySelector('#nonEnterCashier').addEventListener('click',()=>enter('cashier'));
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showRoleEntryGate,{once:true});else showRoleEntryGate();
+})();
+</script>
+<style id="autonon-single-a4-invoice-final">
+@media print{
+ @page{size:A4 portrait;margin:5mm}
+ html,body{width:210mm!important;min-width:0!important;margin:0!important;padding:0!important;background:#fff!important}
+ body.print-a4 *{visibility:hidden!important}
+ body.print-a4 #printableInvoiceArea,body.print-a4 #printableInvoiceArea *{visibility:visible!important}
+ body.print-a4 .main-grid{display:block!important;width:100%!important;margin:0!important;padding:0!important}
+ body.print-a4 .main-grid>div:first-child{display:none!important}
+ body.print-a4 .main-grid>div:last-child{display:block!important;width:100%!important;margin:0!important;padding:0!important}
+ body.print-a4 #printableInvoiceArea{
+   display:flex!important;position:relative!important;left:auto!important;top:auto!important;
+   width:200mm!important;max-width:200mm!important;height:287mm!important;min-height:0!important;max-height:287mm!important;
+   margin:0 auto!important;padding:5mm!important;overflow:hidden!important;box-sizing:border-box!important;
+   border:1px solid #243653!important;background:#fff!important;color:#111!important;
+   font-family:Arial,Tahoma,sans-serif!important;font-size:8px!important;zoom:1!important;
+   break-after:avoid!important;page-break-after:avoid!important;break-inside:avoid!important;page-break-inside:avoid!important;
+ }
+ body.print-a4 #printableInvoiceArea *{box-sizing:border-box!important}
+ body.print-a4 #printableInvoiceArea .card-box{margin:2mm 0!important;padding:2mm!important;break-inside:avoid!important;page-break-inside:avoid!important}
+ body.print-a4 #printableInvoiceArea table{width:100%!important;min-width:0!important;table-layout:fixed!important;font-size:7px!important;margin:1mm 0!important}
+ body.print-a4 #printableInvoiceArea th,body.print-a4 #printableInvoiceArea td{font-size:7px!important;padding:1.2mm!important;line-height:1.15!important;white-space:normal!important;word-break:break-word!important}
+ body.print-a4 #printableInvoiceArea .form-grid{gap:1mm!important;margin:0 0 1mm!important}
+ body.print-a4 #printableInvoiceArea .form-field{gap:1px!important}
+ body.print-a4 #printableInvoiceArea .form-field label{font-size:7px!important}
+ body.print-a4 #printableInvoiceArea input{font-size:8px!important;padding:0!important;height:auto!important;min-height:0!important}
+ body.print-a4 #printableInvoiceArea .invoice-summary-box{width:65%!important;margin:2mm 0 0 auto!important;padding:2mm!important}
+ body.print-a4 #printableInvoiceArea .summary-row{font-size:7px!important;min-height:0!important;padding:1mm 0!important}
+ body.print-a4 #printableInvoiceArea .summary-row:last-child{font-size:9px!important}
+ body.print-a4 #printableInvoiceArea .invoice-footer-notes{margin-top:auto!important;padding-top:2mm!important;font-size:7px!important}
+ body.print-a4 #printableInvoiceArea .invoice-signatures{margin-top:2mm!important;gap:2mm!important}
+ body.print-a4 #printableInvoiceArea .invoice-footer-notes div{margin-top:2mm!important}
+ body.print-a4 #printableInvoiceCenterCopy,body.print-a4 #carDeliveryReceiptPrint{display:none!important}
+ body.print-a4 #printableInvoiceArea .no-print,body.print-a4 #originalDepartmentBox,body.print-a4 #advancePaymentAlertBox{display:none!important}
+}
+</style>
 </body>
 </html>
