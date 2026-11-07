@@ -2013,6 +2013,8 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     }
 
     function logout() {
+      // تسجيل الخروج اليدوي يمسح الدور المحفوظ لهذا الجهاز.
+      Object.keys(localStorage).filter(k => k.startsWith('nonRememberedRole_')).forEach(k => localStorage.removeItem(k));
       localStorage.removeItem('currentUser');
       localStorage.removeItem('currentRolePage');
       window.location.href = 'login.html';
@@ -6709,7 +6711,18 @@ function printClientLifeStatement(){const content=document.getElementById('clien
    }
  },true);
  function showRoleEntryGate(){
-   // اختيار الدور في كل دخول، مع تحقق منفصل قبل فتح واجهة المدير أو الكاشير.
+   // استعادة آخر دور تم التحقق منه على نفس الجهاز حتى لا تظهر شاشة الاختيار بعد كل تحديث.
+   const rememberedRole=localStorage.getItem('nonRememberedRole_'+identity);
+   if(rememberedRole==='manager'||rememberedRole==='cashier'){
+     window.nonCurrentRole=rememberedRole;
+     applyRoleUI();
+     const badge=$('userBadge');
+     if(badge)badge.innerHTML=rememberedRole==='manager'
+       ? '<i class="fa-solid fa-user-tie"></i> المدير: '+safe(user.name||user.fullName||identity)
+       : '<i class="fa-solid fa-cash-register"></i> الكاشير: '+safe(user.name||user.fullName||identity);
+     return;
+   }
+   // عند عدم وجود دور محفوظ، نطلب التحقق أول مرة.
    document.body.classList.add('non-role-locked');
    const gate=document.createElement('div');
    gate.id='nonRoleEntryGate';
@@ -6738,6 +6751,7 @@ function printClientLifeStatement(){const content=document.getElementById('clien
      if(entered===null)return;
      if(entered!==expected){alert('كلمة المرور غير صحيحة.');return;}
      window.nonCurrentRole=chosen;
+     localStorage.setItem('nonRememberedRole_'+identity,chosen);
      if(chosen==='cashier')sessionStorage.setItem('nonCashierAuthenticated_'+identity,'1');
      else sessionStorage.removeItem('nonCashierAuthenticated_'+identity);
      document.body.classList.remove('non-role-locked');
