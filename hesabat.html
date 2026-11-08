@@ -938,6 +938,8 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 #salesDailyModal .sales-daily-row-one .sales-daily-paid-stat{background:#fff0df!important;border:1px solid #f0ad65!important}
 #salesDailyModal .sales-daily-row-one .sales-daily-paid-stat small,#salesDailyModal .sales-daily-row-one .sales-daily-paid-stat div{color:#a64b08!important}
 #salesDailyModal .sales-daily-row-two .sales-daily-total-stat{background:#eaf2ff!important;border:1px solid #91b5ed!important}
+#salesDailyModal .sales-daily-row-two .sales-daily-treasury-stat{background:#f3e8ff!important;border:2px solid #b58be8!important}
+#salesDailyModal .sales-daily-row-two .sales-daily-treasury-stat small,#salesDailyModal .sales-daily-row-two .sales-daily-treasury-stat div{color:#6b21a8!important}
 #salesDailyModal .sales-daily-row-two .sales-daily-total-stat small,#salesDailyModal .sales-daily-row-two .sales-daily-total-stat div{color:#1d4f91!important}
 #salesDailyModal .sales-daily-row-two .sales-daily-profit-stat{background:#e8f7ee!important;border:1px solid #86c99e!important}
 #salesDailyModal .sales-daily-row-two .sales-daily-profit-stat small,#salesDailyModal .sales-daily-row-two .sales-daily-profit-stat div{color:#167443!important}
@@ -2546,6 +2548,8 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       const title='مراجعة بيانات العميل - '+(currentSelectedQueueItem.invoiceSerial||'فاتورة');
       w.document.open();
       w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'+returnReviewSafe(title)+'</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Tahoma,Arial;color:#111;font-size:11px}h3,h4{margin:8px 0}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #555;padding:5px;text-align:right}th{background:#eee}.card-box{border:1px solid #bbb;padding:8px;margin:6px 0;border-radius:5px}button{display:none!important}#returnReviewCustomerGrid,#returnReviewExtraInfo{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-top:25px;text-align:center}.line{height:32px;border-bottom:1px solid #111}.stamp{border:2px dashed #555;border-radius:50%;height:55px;width:85px;margin:auto;display:grid;place-items:center;font-weight:bold}</style></head><body><h2 style="text-align:center">مركز أوتو نون لصيانة السيارات</h2><h3 style="text-align:center">مراجعة بيانات العميل قبل إرجاعه للحسابات</h3>'+content.innerHTML+'<div class="signatures"><div>توقيع مسئول الحسابات<div class="line"></div></div><div>ختم المركز<div class="stamp">أوتو نون</div></div><div>توقيع العميل<div class="line"></div></div></div><script>window.onload=()=>window.print()<\/script></body></html>');
+
+
       w.document.close();
     };
     function closeReturnCustomerReview(){ document.getElementById('returnCustomerReviewModal').style.display='none'; }
@@ -3409,11 +3413,19 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       status.style.background = '#e5e7eb';
       status.style.color = '#374151';
 
+      // مهلة واضحة حتى لا تظل الرسالة معلقة إلى ما لا نهاية عند انقطاع الشبكة.
+      let timeoutId;
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('انتهت مهلة الاتصال بعد 12 ثانية. تحقق من الإنترنت وإعدادات Firebase.')), 12000);
+      });
       try {
         // اختبار قراءة فقط؛ لا تتم إضافة أو تعديل أو حذف أي بيانات.
-        await Promise.all([
-          db.collection('treasuries').limit(1).get(),
-          db.collection('treasury_transactions').limit(1).get()
+        await Promise.race([
+          Promise.all([
+            db.collection('treasuries').limit(1).get(),
+            db.collection('treasury_transactions').limit(1).get()
+          ]),
+          timeout
         ]);
         status.textContent = 'قاعدة البيانات متصلة';
         status.title = 'نجح اختبار القراءة من treasuries و treasury_transactions';
@@ -3421,10 +3433,13 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         status.style.color = '#166534';
       } catch (e) {
         console.error('فشل اختبار اتصال Firebase/Firestore:', e);
-        status.textContent = 'فشل اتصال قاعدة البيانات';
-        status.title = String(e && e.message ? e.message : e);
+        const message = String(e && e.message ? e.message : e);
+        status.textContent = message.includes('مهلة الاتصال') ? 'تعذر تأكيد الاتصال (انتهت المهلة)' : 'فشل اتصال قاعدة البيانات';
+        status.title = message;
         status.style.background = '#fee2e2';
         status.style.color = '#991b1b';
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
     }
 
@@ -4453,7 +4468,9 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       const amountWords = amount + ' جنيه';
       return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إيصال استلام نقدية - دفعة مقدمة ${e(payment.id)}</title><style>
       @page{size:${paper} portrait;margin:${paper === 'A6' ? '4mm' : '7mm'}}*{box-sizing:border-box}body{margin:0;background:#fff;color:#10243a;font-family:Tahoma,Arial,sans-serif;direction:rtl}.receipt{width:100%;min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')};border:2px solid #173b67;border-radius:14px;padding:${paper === 'A6' ? '4mm' : '9mm'};position:relative;overflow:hidden;background:linear-gradient(135deg,#fff 65%,#f3f6fb)}.top{display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #f28c28;padding-bottom:7mm}.brand{font-size:${paper === 'A6' ? '15px' : '25px'};font-weight:900;color:#173b67}.brand small{display:block;font-size:11px;color:#e87919;margin-top:4px}.center{text-align:center}.center h1{font-size:${paper === 'A6' ? '17px' : '27px'};margin:0;color:#173b67}.center p{margin:5px 0 0;color:#52647b;font-weight:bold}.tag{background:#173b67;color:#fff;border-radius:8px;padding:${paper === 'A6' ? '5px 10px' : '10px 22px'};font-weight:bold;font-size:${paper === 'A6' ? '13px' : '20px'};margin:7mm auto;width:max-content}.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:5mm 0}.meta div,.field{border:1px solid #b9c9dc;border-radius:8px;padding:10px;background:#fff}.meta b,.field b{display:block;color:#63758a;font-size:${paper === 'A6' ? '9px' : '12px'};margin-bottom:5px}.meta strong,.field strong{font-size:${paper === 'A6' ? '11px' : '16px'}}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.payment{margin-top:7mm;border:2px solid #f28c28;border-radius:10px;overflow:hidden}.payment h3{margin:0;background:#173b67;color:#fff;padding:10px 14px}.payment .amount{background:#fff4e8;color:#173b67;font-size:${paper === 'A6' ? '18px' : '27px'};font-weight:900;padding:14px;text-align:center}.bottom{display:flex;justify-content:space-between;align-items:end;margin-top:${paper === 'A6' ? '3mm' : '9mm'};border-top:1px solid #ccd6e2;padding-top:7mm}.thanks{font-size:${paper === 'A6' ? '14px' : '22px'};font-weight:900;color:#173b67}.stamp{border:2px solid #64748b;color:transparent;border-radius:50%;width:${paper === 'A6' ? '54px' : '105px'};height:${paper === 'A6' ? '54px' : '105px'};display:block;flex:0 0 auto;background:transparent;transform:none}.foot{position:absolute;bottom:0;left:0;right:0;background:#102b4d;color:#fff;padding:9px 15px;text-align:center;font-size:12px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.receipt{min-height:${paper === 'A6' ? '140mm' : (paper === 'A5' ? '190mm' : '275mm')}}}
-      </style></head><body><main class="receipt"><header class="top"><div class="brand">AUTO NON <small>CAR SERVICE CENTER • خدمة أفضل لسيارتك</small></div><div class="center"><h1>مركز أوتو نون</h1><p>صيانة - تشخيص - قطع غيار</p></div><div style="font-size:28px;color:#f28c28">⚙</div></header><div style="display:flex;justify-content:space-between;align-items:center;gap:${paper === 'A6' ? '5px' : '12px'};margin-top:${paper === 'A6' ? '2mm' : '5mm'}"><div class="tag" style="margin:0">إيصال استلام نقدية - دفعة مقدمة</div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div id="customerQr" title="QR يحتوي على بيانات العميل والإيصال" style="width:${paper === 'A6' ? '88px' : '120px'};height:${paper === 'A6' ? '88px' : '120px'};background:#fff;padding:4px;border:1px solid #64748b;border-radius:6px"></div><small style="font-size:${paper === 'A6' ? '8px' : '11px'};font-weight:bold;color:#173b67">QR بيانات العميل</small></div></div><section class="meta"><div><b>رقم الإيصال</b><strong>${e(payment.id)}</strong></div><div><b>التاريخ</b><strong>${e(dateText)}</strong></div><div><b>الوقت</b><strong>${e(timeText)}</strong></div></section><section class="grid"><div class="field"><b>اسم العميل</b><strong>${e(payment.clientName||'---')}</strong></div><div class="field"><b>رقم التليفون</b><strong>${e(payment.clientPhone||'---')}</strong></div><div class="field"><b>السيارة</b><strong>${e(payment.carInfo||'---')}</strong></div><div class="field"><b>رقم اللوحة</b><strong>${e(payment.carPlate||'---')}</strong></div><div class="field"><b>طريقة الدفع</b><strong>${e(payment.method||'---')}</strong></div><div class="field"><b>الخزينة المستلمة</b><strong>${e(payment.treasuryName||'---')}</strong></div></section><section class="payment"><h3>بيان الدفعة المقدمة</h3><div class="amount">${amount} جنيه مصري</div></section><div class="field" style="margin-top:7mm"><b>المبلغ بالحروف / ملاحظات</b><strong>${e(amountWords)}${payment.notes?' — '+e(payment.notes):''}</strong></div><section class="bottom"><div class="stamp" aria-label="مكان الختم فارغ"></div><div class="thanks">شكراً لثقتكم بنا<br><small style="font-size:13px">نتمنى لكم رحلة آمنة</small></div><div style="text-align:left;font-weight:bold">توقيع المستلم<br><br>........................</div></section><footer class="foot">مركز أوتو نون لصيانة السيارات　 |　 تليفون المركز: 01556004991　 |　 إيصال دفعة مقدمة</footer></main><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>window.addEventListener('load',function(){var q=document.getElementById('customerQr');if(window.QRCode&&q){var data={center:'مركز أوتو نون',centerPhone:'01556004991',receipt:${JSON.stringify(payment.id)},client:${JSON.stringify(payment.clientName||'')},clientPhone:${JSON.stringify(payment.clientPhone||'')},car:${JSON.stringify(payment.carInfo||'')},plate:${JSON.stringify(payment.carPlate||'')},amount:${Number(payment.amount)||0},date:${JSON.stringify(payment.dateStr||'')}};new QRCode(q,{text:JSON.stringify(data),width:${paper === 'A6' ? '80' : '110'},height:${paper === 'A6' ? '80' : '110'},correctLevel:QRCode.CorrectLevel.M});}});<\/script></body></html>`;
+      </style></head><body><main class="receipt"><header class="top"><div class="brand">AUTO NON <small>CAR SERVICE CENTER • خدمة أفضل لسيارتك</small></div><div class="center"><h1>مركز أوتو نون</h1><p>صيانة - تشخيص - قطع غيار</p></div><div style="font-size:28px;color:#f28c28">⚙</div></header><div style="display:flex;justify-content:space-between;align-items:center;gap:${paper === 'A6' ? '5px' : '12px'};margin-top:${paper === 'A6' ? '2mm' : '5mm'}"><div class="tag" style="margin:0">إيصال استلام نقدية - دفعة مقدمة</div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div id="customerQr" title="QR يحتوي على بيانات العميل والإيصال" style="width:${paper === 'A6' ? '88px' : '120px'};height:${paper === 'A6' ? '88px' : '120px'};background:#fff;padding:4px;border:1px solid #64748b;border-radius:6px"></div><small style="font-size:${paper === 'A6' ? '8px' : '11px'};font-weight:bold;color:#173b67">QR بيانات العميل</small></div></div><section class="meta"><div><b>رقم الإيصال</b><strong>${e(payment.id)}</strong></div><div><b>التاريخ</b><strong>${e(dateText)}</strong></div><div><b>الوقت</b><strong>${e(timeText)}</strong></div></section><section class="grid"><div class="field"><b>اسم العميل</b><strong>${e(payment.clientName||'---')}</strong></div><div class="field"><b>رقم التليفون</b><strong>${e(payment.clientPhone||'---')}</strong></div><div class="field"><b>السيارة</b><strong>${e(payment.carInfo||'---')}</strong></div><div class="field"><b>رقم اللوحة</b><strong>${e(payment.carPlate||'---')}</strong></div><div class="field"><b>طريقة الدفع</b><strong>${e(payment.method||'---')}</strong></div><div class="field"><b>الخزينة المستلمة</b><strong>${e(payment.treasuryName||'---')}</strong></div></section><section class="payment"><h3>بيان الدفعة المقدمة</h3><div class="amount">${amount} جنيه مصري</div></section><div class="field" style="margin-top:7mm"><b>المبلغ بالحروف / ملاحظات</b><strong>${e(amountWords)}${payment.notes?' — '+e(payment.notes):''}</strong></div><section class="bottom"><div class="stamp" aria-label="مكان الختم فارغ"></div><div class="thanks">شكراً لثقتكم بنا<br><small style="font-size:13px">نتمنى لكم رحلة آمنة</small></div><div style="text-align:left;font-weight:bold">توقيع المستلم<br><br>........................</div></section><footer class="foot">مركز أوتو نون لصيانة السيارات　 |　 تليفون المركز: 01556004991　 |　 إيصال دفعة مقدمة</footer></main><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>window.addEventListener('load',function(){var q=document.getElementById('customerQr');if(window.QRCode&&q){var data={center:'مركز أوتو نون',centerPhone:'01556004991',receipt:${JSON.stringify(payment.id)},client:${JSON.stringify(payment.clientName||'')},clientPhone:${JSON.stringify(payment.clientPhone||'')},car:${JSON.stringify(payment.carInfo||'')},plate:${JSON.stringify(payment.carPlate||'')},amount:${Number(payment.amount)||0},date:${JSON.stringify(payment.dateStr||'')}};new QRCode(q,{text:JSON.stringify(data),width:${paper === 'A6' ? '80' : '110'},height:${paper === 'A6' ? '80' : '110'},correctLevel:QRCode.CorrectLevel.M});}});<\/script>
+
+</body></html>`;
     }
     function printLastAdvancePaymentReceipt(paper='A4'){ if(!lastAdvancePaymentReceipt)return; const w=window.open('','_blank'); if(!w){alert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.');return;} w.document.open();w.document.write(buildAdvancePaymentReceiptHtml(lastAdvancePaymentReceipt,paper));w.document.close();setTimeout(()=>{w.focus();w.print();},900); }
     function buildAdvancePaymentWhatsAppUrl(p){
@@ -4800,7 +4817,9 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     const el=document.getElementById(id); if(!el){alert('❌ لم يتم العثور على بيانات الطباعة');return;}
     const clone=el.cloneNode(true); clone.classList.add('professional-print'); hideEmptyBlocks(clone);
     const w=window.open('','_blank','width=900,height=700'); if(!w){window.print();return;}
-    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title||'طباعة')}</title><style>@page{size:A4 portrait;margin:8mm}body{font-family:Arial,sans-serif;direction:rtl;margin:0;color:#111}.professional-print{background:#fff;padding:0}.professional-print table{width:100%;border-collapse:collapse;font-size:9px}.professional-print th,.professional-print td{border:1px solid #cbd5e1;padding:4px;text-align:right}.professional-print th{background:#f1f5f9;font-weight:900}.professional-print .print-only-empty-hide{display:none!important}.professional-print .no-print{display:none!important}.professional-print .summary-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #cbd5e1}.professional-print .card-box{margin:5px 0;padding:6px;border:1px solid #cbd5e1;border-radius:4px}.professional-print h3,.professional-print h4{margin:0 0 6px}.print-head{border-bottom:2px solid #111;margin-bottom:8px;padding-bottom:5px;font-weight:900;font-size:15px}</style></head><body><div class="print-head">${esc(title||'تقرير')}</div>${clone.outerHTML}</body></html>`);
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title||'طباعة')}</title><style>@page{size:A4 portrait;margin:8mm}body{font-family:Arial,sans-serif;direction:rtl;margin:0;color:#111}.professional-print{background:#fff;padding:0}.professional-print table{width:100%;border-collapse:collapse;font-size:9px}.professional-print th,.professional-print td{border:1px solid #cbd5e1;padding:4px;text-align:right}.professional-print th{background:#f1f5f9;font-weight:900}.professional-print .print-only-empty-hide{display:none!important}.professional-print .no-print{display:none!important}.professional-print .summary-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #cbd5e1}.professional-print .card-box{margin:5px 0;padding:6px;border:1px solid #cbd5e1;border-radius:4px}.professional-print h3,.professional-print h4{margin:0 0 6px}.print-head{border-bottom:2px solid #111;margin-bottom:8px;padding-bottom:5px;font-weight:900;font-size:15px}</style></head><body><div class="print-head">${esc(title||'تقرير')}</div>${clone.outerHTML}
+
+</body></html>`);
     w.document.close(); w.focus(); setTimeout(()=>{w.print();setTimeout(()=>w.close(),500)},250);
   }
   window.printNode=printNode;
@@ -4901,6 +4920,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
      const snap=await db.collection('treasury_transactions').get();
      snap.forEach(doc=>txRows.push({id:doc.id,...(doc.data()||{})}));
    }catch(e){console.warn('تعذر تحميل حركات الخزائن:',e);}
+   window.accountsProfitTreasuryTransactions=tx;window.accountsProfitTreasuryTransfers=transfers;
    let deposits=0,withdrawals=0;
    txRows.forEach(d=>{
      const amount=n(d.amount??d.paidAmount??d.amountPaid??d.paymentAmount??d.expenseAmount??d.value);
@@ -5285,7 +5305,9 @@ window.showClientStatement=async function(clientName){
     const rows=docs.map((x,i)=>{const total=num(x.totalAmount||x.grandTotal),paid=num(x.paidAmount),rem=num(x.remainingAmount||(total-paid));return '<tr><td>'+(i+1)+'</td><td>'+esc(x.date||x.timestamp||x.createdAt||'')+'</td><td>'+esc(x.invoiceSerial||x.invoiceNumber||'')+'</td><td>'+esc(x.carInfo||'')+'</td><td>'+money(total)+'</td><td>'+money(paid)+'</td><td>'+money(rem)+'</td></tr>';}).join('');
     const total=docs.reduce((a,x)=>a+num(x.totalAmount||x.grandTotal),0),paid=docs.reduce((a,x)=>a+num(x.paidAmount),0),rem=docs.reduce((a,x)=>a+num(x.remainingAmount||(num(x.totalAmount||x.grandTotal)-num(x.paidAmount))),0);
     const w=window.open('','_blank','width=1000,height=750');if(!w)return;
-    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف حساب ${esc(clientName)}</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;color:#111}.head{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:10px}.meta div{border:1px solid #cbd5e1;padding:6px}.bank{width:100%;border-collapse:collapse;font-size:10px}.bank th,.bank td{border:1px solid #cbd5e1;padding:5px}.bank th{background:#0f172a;color:#fff}.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.tot div{border:1px solid #cbd5e1;padding:7px;font-weight:900}</style></head><body><div class="head"><div><h2 style="margin:0">كشف حساب عميل</h2><div>حركة مالية تفصيلية</div></div><div>${new Date().toLocaleDateString('en-US')}</div></div><div class="meta"><div><b>العميل:</b> ${esc(clientName)}</div><div><b>عدد الزيارات:</b> ${docs.length}</div><div><b>الرصيد:</b> ${money(rem)}</div></div><table class="bank"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>البيان / السيارة</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div>إجمالي المدين<br>${money(total)}</div><div>إجمالي المدفوع<br>${money(paid)}</div><div>الرصيد المستحق<br>${money(rem)}</div></div></body></html>`);
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف حساب ${esc(clientName)}</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;color:#111}.head{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}.meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;margin-bottom:10px}.meta div{border:1px solid #cbd5e1;padding:6px}.bank{width:100%;border-collapse:collapse;font-size:10px}.bank th,.bank td{border:1px solid #cbd5e1;padding:5px}.bank th{background:#0f172a;color:#fff}.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.tot div{border:1px solid #cbd5e1;padding:7px;font-weight:900}</style></head><body><div class="head"><div><h2 style="margin:0">كشف حساب عميل</h2><div>حركة مالية تفصيلية</div></div><div>${new Date().toLocaleDateString('en-US')}</div></div><div class="meta"><div><b>العميل:</b> ${esc(clientName)}</div><div><b>عدد الزيارات:</b> ${docs.length}</div><div><b>الرصيد:</b> ${money(rem)}</div></div><table class="bank"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>البيان / السيارة</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>${rows}</tbody></table><div class="tot"><div>إجمالي المدين<br>${money(total)}</div><div>إجمالي المدفوع<br>${money(paid)}</div><div>الرصيد المستحق<br>${money(rem)}</div></div>
+
+</body></html>`);
     w.document.close();setTimeout(()=>{w.print();setTimeout(()=>w.close(),500)},250);
   };
 })();
@@ -5600,7 +5622,7 @@ window.addEventListener('load', function () {
  window.closeSalesDaily=function(){document.getElementById('salesDailyModal').classList.remove('is-open');};
   window.salesDailyRows=[];
   window.salesDailyExpenses=[];
-  window.loadSalesDaily=async function(){const body=document.getElementById('salesDailyBody');body.innerHTML='<tr><td colspan="14" style="text-align:center;padding:24px">جاري تحميل يومية البيع والتحصيلات...</td></tr>';try{if(typeof db==='undefined')throw new Error('قاعدة البيانات غير متاحة');const [snap,expenseSnap,stockSnap,collectionSnap,advanceSnap]=await Promise.all([db.collection('invoices_archive').get(),db.collection('expenses').get(),db.collection('inventory').get(),db.collection('client_collection_receipts').get(),db.collection('client_advance_payments').get()]);window.salesDailyRows=[];snap.forEach(doc=>{const d=doc.data()||{};window.salesDailyRows.push({id:doc.id,...d});});window.salesDailyCollections=[];collectionSnap.forEach(doc=>{const d=doc.data()||{};window.salesDailyCollections.push({id:doc.id,...d,entryType:'collection'});});window.salesDailyAdvancePayments=[];advanceSnap.forEach(doc=>{const d=doc.data()||{};window.salesDailyAdvancePayments.push({id:doc.id,...d});});window.salesDailyExpenses=[];expenseSnap.forEach(doc=>window.salesDailyExpenses.push({id:doc.id,...(doc.data()||{})}));const stockRows=[];stockSnap.forEach(doc=>stockRows.push({id:doc.id,...(doc.data()||{})}));window.accountsProfitCache=window.accountsProfitCache||{};window.accountsProfitCache.invoices=window.salesDailyRows.slice();window.accountsProfitCache.expenses=window.salesDailyExpenses.slice();window.accountsProfitCache.inventory=stockRows;renderSalesDaily();}catch(e){body.innerHTML='<tr><td colspan="14" style="text-align:center;color:#b91c1c">تعذر تحميل يومية البيع: '+salesDailyEsc(e.message)+'</td></tr>';}};
+  window.loadSalesDaily=async function(){const body=document.getElementById('salesDailyBody');body.innerHTML='<tr><td colspan="14" style="text-align:center;padding:24px">جاري تحميل يومية البيع والتحصيلات...</td></tr>';try{if(typeof db==='undefined')throw new Error('قاعدة البيانات غير متاحة');const [snap,expenseSnap,stockSnap,collectionSnap,advanceSnap,treasurySnap]=await Promise.all([db.collection('invoices_archive').get(),db.collection('expenses').get(),db.collection('inventory').get(),db.collection('client_collection_receipts').get(),db.collection('client_advance_payments').get(),db.collection('treasuries').get()]);window.salesDailyRows=[];snap.forEach(doc=>{const d=doc.data()||{};window.salesDailyRows.push({id:doc.id,...d});});window.salesDailyTreasuries=[];treasurySnap.forEach(doc=>{const d=doc.data()||{};window.salesDailyTreasuries.push({id:doc.id,...d});});window.salesDailyCollections=[];collectionSnap.forEach(doc=>{const d=doc.data()||{};window.salesDailyCollections.push({id:doc.id,...d,entryType:'collection'});});window.salesDailyAdvancePayments=[];advanceSnap.forEach(doc=>{const d=doc.data()||{};window.salesDailyAdvancePayments.push({id:doc.id,...d});});window.salesDailyExpenses=[];expenseSnap.forEach(doc=>window.salesDailyExpenses.push({id:doc.id,...(doc.data()||{})}));const stockRows=[];stockSnap.forEach(doc=>stockRows.push({id:doc.id,...(doc.data()||{})}));window.accountsProfitCache=window.accountsProfitCache||{};window.accountsProfitCache.invoices=window.salesDailyRows.slice();window.accountsProfitCache.expenses=window.salesDailyExpenses.slice();window.accountsProfitCache.inventory=stockRows;renderSalesDaily();}catch(e){body.innerHTML='<tr><td colspan="14" style="text-align:center;color:#b91c1c">تعذر تحميل يومية البيع: '+salesDailyEsc(e.message)+'</td></tr>';}};
  window.salesDailyEsc=function(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));};
   window.salesDailyLocalDate=function(value){const d=value instanceof Date?value:new Date(value);if(Number.isNaN(d.getTime()))return String(value||'').slice(0,10);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
  window.renderSalesDaily=function(){
@@ -5696,7 +5718,7 @@ window.addEventListener('load', function () {
    const cashTotal=Math.max(0,total-advanceTotal-adjustedRemaining);
 
    const supplierRows=(()=>{try{return JSON.parse(localStorage.getItem('supplier_payment_archive')||'[]').filter(x=>{const raw=x.dateStr||x.date||x.createdAt||x.timestamp||'';const dt=new Date(raw);const day=!Number.isNaN(dt.getTime())?salesDailyLocalDate(dt):String(raw).slice(0,10);return(!from||!day||day>=from)&&(!to||!day||day<=to);});}catch(_){return[];}})();
-   const details={count:[],sales:[],transfers:[],cash:[],advance:[],goods:[],remaining:[],paid:[],collections:[],supplier:[],expenses:[],partsProfit:[],labor:[],services:[],gross:[],net:[]};
+   const details={count:[],sales:[],transfers:[],cash:[],advance:[],goods:[],remaining:[],paid:[],treasury:[],collections:[],supplier:[],expenses:[],partsProfit:[],labor:[],services:[],gross:[],net:[]};
    const push=(k,x)=>details[k].push(x);
    rows.forEach(d=>{
      const day=parseDate(d),name=d.clientName||d.customerName||'—',ref=d.invoiceSerial||d.invoiceNumber||d.id||'—';
@@ -5717,6 +5739,10 @@ window.addEventListener('load', function () {
    expenseRows.forEach(x=>push('expenses',{date:x.dateFormatted||x.date||x.createdAt||'—',ref:x.id||'—',name:x.category||x.expenseType||'مصروف',description:x.description||x.notes||x.name||'مصروفات الفترة',amount:Number(x.amount??x.value??x.expenseAmount)||0}));
    supplierRows.forEach(x=>push('supplier',{date:x.dateFormatted||x.date||x.createdAt||'—',ref:x.paymentNumber||x.id||'—',name:x.supplierName||x.name||x.traderName||'—',description:x.notes||x.method||'تسديد مورد',amount:Number(x.amount)||0}));
    const supplierTotal=supplierRows.reduce((a,x)=>a+(Number(x.amount)||0),0);
+   // مجموع أرصدة جميع الخزائن الحالية؛ التحويلات بين الخزائن منعكسة بالفعل في رصيد المصدر والوجهة ولا تُضاف مرة ثانية.
+   const treasuryRows=window.salesDailyTreasuries||[];
+   const treasuryGrandTotal=treasuryRows.reduce((sum,t)=>sum+(Number(t.balance)||0),0);
+   treasuryRows.forEach(t=>details.treasury.push({date:'الرصيد الحالي',ref:t.id,name:t.name||'خزينة',description:'الرصيد شامل حركات الإيداع والصرف والتحويلات بين الخزائن',amount:Number(t.balance)||0}));
    const transferTotal=details.transfers.reduce((a,x)=>a+(Number(x.amount)||0),0);
    details.cash=[{date:'إجمالي الفترة',ref:'—',name:'—',description:'إجمالي النقدي حسب معادلة اليومية',amount:cashTotal}];
    details.net=[{date:'إجمالي الفترة',ref:'—',name:'—',description:'إجمالي الربح شامل المصنعية والخدمات − مصروفات الفترة',amount:netProfit}];
@@ -5736,11 +5762,12 @@ window.addEventListener('load', function () {
    const expenseEl=document.getElementById('salesDailyExpensesTotal');if(expenseEl)expenseEl.textContent=expenseTotal.toLocaleString('en-US')+' ';
    const netEl=document.getElementById('salesDailyNetProfit');if(netEl)netEl.textContent=netProfit.toLocaleString('en-US')+' ';
    document.getElementById('salesDailyPaid').textContent=paid.toLocaleString('en-US')+' ';
+   const treasuryGrandEl=document.getElementById('salesDailyTreasuryGrand');if(treasuryGrandEl)treasuryGrandEl.textContent=treasuryGrandTotal.toLocaleString('en-US')+' ';
  };
  window.printSalesDaily=function(){const area=document.getElementById('salesDailyPrintArea');const w=window.open('','_blank','width=1200,height=850');if(!w){alert('اسمح بفتح النوافذ المنبثقة للطباعة');return;}w.document.write('<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>يومية البيع - مركز أوتو نون</title><style>body{font-family:Tahoma,Arial;padding:18px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #555;padding:6px;text-align:center}th{background:#e8e8e8}.stats{display:flex;gap:18px;margin:12px 0;font-weight:bold}@page{size:A4 landscape;margin:8mm}</style><h2>مركز أوتو نون لصيانة السيارات — يومية البيع</h2><p>الفترة: '+salesDailyEsc(document.getElementById('salesDailyFrom').value)+' إلى '+salesDailyEsc(document.getElementById('salesDailyTo').value)+'</p>'+area.innerHTML+'<script>window.onload=()=>window.print()<\/script></html>');w.document.close();};
 
  window.salesDailyShowDetail=function(key){
-   const titles={count:'عدد الفواتير',sales:'إجمالي البيع',transfers:'إجمالي التحويلات',cash:'إجمالي النقدي',advance:'إجمالي المقدم',goods:'إجمالي سعر مال البضاعة',remaining:'إجمالي المتبقي',paid:'إجمالي المدفوع',collections:'تحصيلات مديونيات سابقة',supplier:'دفع تسديد مورد',expenses:'مصروفات الفترة',partsProfit:'ربح قطع الغيار (حسب سعر شراء)',labor:'مصنعية التركيب',services:'إجمالي الخدمات',gross:'إجمالي الربح شامل المصنعية والخدمات',net:'صافي الربح بعد المصروفات'};
+   const titles={count:'عدد الفواتير',sales:'إجمالي البيع',transfers:'إجمالي التحويلات',cash:'إجمالي النقدي',advance:'إجمالي المقدم',goods:'إجمالي سعر مال البضاعة',remaining:'إجمالي المتبقي',paid:'إجمالي المدفوع',treasury:'الإجمالي العام للخزائن شامل التحويلات',collections:'تحصيلات مديونيات سابقة',supplier:'دفع تسديد مورد',expenses:'مصروفات الفترة',partsProfit:'ربح قطع الغيار (حسب سعر شراء)',labor:'مصنعية التركيب',services:'إجمالي الخدمات',gross:'إجمالي الربح شامل المصنعية والخدمات',net:'صافي الربح بعد المصروفات'};
    const data=(window.salesDailyCurrentDetails||{})[key]||[];
    const esc=window.salesDailyEsc;
    const total=data.reduce((a,x)=>a+(Number(x.amount)||0),0);
@@ -5811,6 +5838,8 @@ window.addEventListener('load', function () {
  window.printEmployeeShiftReport=function(report,targetWindow){
    const rows=(arr,cols)=>arr.length?arr.map((x,i)=>'<tr><td>'+(i+1)+'</td>'+cols.map(c=>'<td>'+shiftEsc(c(x))+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+(cols.length+1)+'">لا توجد حركات مسجلة</td></tr>';
    const html='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير تقفيل الشيفت</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Tahoma,Arial;color:#111}h2{text-align:center;margin:0 0 12px}.meta,.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.meta div,.totals div{border:1px solid #aaa;padding:8px;border-radius:5px}h3{margin:14px 0 6px;background:#e9eef5;padding:7px}table{width:100%;border-collapse:collapse;font-size:10px}td,th{border:1px solid #777;padding:6px;text-align:right}th{background:#eee}.amount{font-weight:bold}</style></head><body><h2>مركز أوتو نون — تقرير تقفيل الشيفت</h2><p style="text-align:center;font-weight:bold">رقم تقفيل اليومية: '+Number(report.closingNumber||1000)+'</p><div class="meta"><div><b>الموظف:</b> '+shiftEsc(report.employeeName)+'</div><div><b>بداية الشيفت:</b> '+shiftEsc(new Date(report.startAt).toLocaleString('ar-EG'))+'</div><div><b>نهاية الشيفت:</b> '+shiftEsc(new Date(report.endAt).toLocaleString('ar-EG'))+'</div></div><div class="totals"><div>إجمالي الإيداع<br><b>'+Number(report.totalDeposits||0).toLocaleString('ar-EG')+' جنيه</b></div><div>إجمالي السحب<br><b>'+Number(report.totalWithdrawals||0).toLocaleString('ar-EG')+' جنيه</b></div><div>إجمالي المصروفات<br><b>'+Number(report.totalExpenses||0).toLocaleString('ar-EG')+' جنيه</b></div><div>صافي درج الشيفت<br><b>'+Number(report.drawerTotal||0).toLocaleString('ar-EG')+' جنيه</b></div></div><h3>الإيداعات</h3><table><tr><th>م</th><th>التاريخ</th><th>الخزينة</th><th>البيان</th><th>المبلغ</th></tr>'+rows(report.deposits||[],[x=>new Date(shiftRecordTime(x)).toLocaleString('ar-EG'),x=>x.treasuryName||'',x=>x.notes||x.type||x.invoiceSerial||'',x=>Number(x.amount??x.paidAmount??0).toLocaleString('ar-EG')])+'</table><h3>السحوبات</h3><table><tr><th>م</th><th>التاريخ</th><th>الخزينة</th><th>البيان</th><th>المبلغ</th></tr>'+rows(report.withdrawals||[],[x=>new Date(shiftRecordTime(x)).toLocaleString('ar-EG'),x=>x.treasuryName||'',x=>x.notes||x.type||x.invoiceSerial||'',x=>Number(x.amount??x.expenseAmount??x.paidAmount??0).toLocaleString('ar-EG')])+'</table><h3>المصروفات</h3><table><tr><th>م</th><th>التاريخ</th><th>البند</th><th>الخزينة</th><th>الملاحظات</th><th>المبلغ</th></tr>'+((report.expenses||[]).length?(report.expenses||[]).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+shiftEsc(new Date(shiftRecordTime(x)).toLocaleString('ar-EG'))+'</td><td>'+shiftEsc(x.title||x.type||'مصروف')+'</td><td>'+shiftEsc(x.treasuryName||'')+'</td><td>'+shiftEsc(x.notes||'')+'</td><td>'+Number(x.amount||0).toLocaleString('ar-EG')+'</td></tr>').join(''):'<tr><td colspan="6">لا توجد مصروفات مسجلة</td></tr>')+'</table><p style="margin-top:30px">توقيع الموظف: ..............................　 توقيع المسؤول: ..............................</p><script>window.onload=()=>window.print()<\/script></body></html>';
+
+
    const w=targetWindow||window.open('','_blank','width=1100,height=850');if(!w){alert('تم حفظ التقرير، لكن المتصفح منع نافذة الطباعة. اسمح بالنوافذ المنبثقة وأعد طباعة التقرير من أرشيف الشيفتات.');return;}w.document.open();w.document.write(html);w.document.close();
  };
  window.closeDailyRoutine=async function(){
@@ -6013,7 +6042,9 @@ async function searchClientLifeStatement(){
  }catch(e){out.innerHTML='<p style="color:#b91c1c">تعذر تحميل كشف العميل: '+clientLifeEsc(e.message)+'</p>'}
 }
 function printClientLifeStatement(){const content=document.getElementById('clientLifeStatementContent');if(!content||!content.innerText.trim()){alert('اعرض بيانات العميل أولاً قبل الطباعة');return}const w=window.open('','_blank','width=1100,height=800');if(!w){alert('اسمح بفتح النوافذ المنبثقة حتى تتمكن من الطباعة');return}w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>كشف العميل</title><style>body{font-family:Tahoma,Arial;padding:20px;color:#111}h2{text-align:center}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #777;padding:6px;text-align:right;vertical-align:top;word-break:break-word}th{background:#eee}.card-box{border:1px solid #aaa;padding:10px;margin-bottom:12px}.table-responsive{overflow:visible}small{font-size:10px}@page{size:A4 landscape;margin:10mm}</style></head><body><h2>مركز أوتو نون — كشف العميل</h2>${content.innerHTML}
-\n</body></html>`);w.document.close();w.focus();}
+\n
+
+</body></html>`);w.document.close();w.focus();}
 </script>
 
 
@@ -6029,7 +6060,7 @@ function printClientLifeStatement(){const content=document.getElementById('clien
    </div>
    <div id="salesDailyPrintArea">
     <div class="sales-daily-stats-row sales-daily-row-one"><div class="card-box sales-daily-total-stat" data-sales-detail="count" onclick="salesDailyShowDetail('count')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('count')}"><small>عدد الفواتير</small><div id="salesDailyCount" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="sales" onclick="salesDailyShowDetail('sales')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('sales')}"><small>إجمالي البيع</small><div id="salesDailyTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="transfers" onclick="salesDailyShowDetail('transfers')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('transfers')}"><small>إجمالي التحويلات</small><div id="salesDailyTransfersTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="cash" onclick="salesDailyShowDetail('cash')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('cash')}"><small>إجمالي النقدي</small><div id="salesDailyCashTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="advance" onclick="salesDailyShowDetail('advance')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('advance')}"><small>إجمالي المقدم</small><div id="salesDailyAdvanceTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="goods" onclick="salesDailyShowDetail('goods')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('goods')}"><small>إجمالي سعر مال البضاعة</small><div id="salesDailyGoodsValue" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="remaining" onclick="salesDailyShowDetail('remaining')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('remaining')}"><small>إجمالي المتبقي</small><div id="salesDailyRemaining" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-paid-stat" data-sales-detail="paid" onclick="salesDailyShowDetail('paid')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('paid')}"><small>إجمالي المدفوع</small><div id="salesDailyPaid" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div></div>
-    <div class="sales-daily-stats-row sales-daily-row-two"><div class="card-box sales-daily-total-stat" data-sales-detail="collections" onclick="salesDailyShowDetail('collections')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('collections')}"><small>تحصيلات مديونيات سابقة</small><div id="salesDailyCollectionsTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="supplier" onclick="salesDailyShowDetail('supplier')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('supplier')}"><small>دفع تسديد مورد</small><div id="salesDailySupplierPaymentsTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="expenses" onclick="salesDailyShowDetail('expenses')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('expenses')}"><small>مصروفات الفترة</small><div id="salesDailyExpensesTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="partsProfit" onclick="salesDailyShowDetail('partsProfit')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('partsProfit')}"><small>ربح قطع الغيار (حسب سعر شراء)</small><div id="salesDailyPartsProfit" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="labor" onclick="salesDailyShowDetail('labor')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('labor')}"><small>مصنعية التركيب</small><div id="salesDailyInstallationLabor" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="services" onclick="salesDailyShowDetail('services')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('services')}"><small>إجمالي الخدمات</small><div id="salesDailyServicesProfit" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="gross" onclick="salesDailyShowDetail('gross')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('gross')}"><small>إجمالي الربح شامل المصنعية والخدمات</small><div id="salesDailyGross" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="net" onclick="salesDailyShowDetail('net')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('net')}"><small>صافي الربح بعد المصروفات</small><div id="salesDailyNetProfit" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div></div>
+    <div class="sales-daily-stats-row sales-daily-row-two"><div class="card-box sales-daily-treasury-stat" data-sales-detail="treasury" onclick="salesDailyShowDetail('treasury')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('treasury')}"><small>الإجمالي العام للخزائن شامل التحويلات</small><div id="salesDailyTreasuryGrand" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض أرصدة كل الخزائن</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="collections" onclick="salesDailyShowDetail('collections')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('collections')}"><small>تحصيلات مديونيات سابقة</small><div id="salesDailyCollectionsTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="supplier" onclick="salesDailyShowDetail('supplier')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('supplier')}"><small>دفع تسديد مورد</small><div id="salesDailySupplierPaymentsTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-total-stat" data-sales-detail="expenses" onclick="salesDailyShowDetail('expenses')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('expenses')}"><small>مصروفات الفترة</small><div id="salesDailyExpensesTotal" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="partsProfit" onclick="salesDailyShowDetail('partsProfit')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('partsProfit')}"><small>ربح قطع الغيار (حسب سعر شراء)</small><div id="salesDailyPartsProfit" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="labor" onclick="salesDailyShowDetail('labor')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('labor')}"><small>مصنعية التركيب</small><div id="salesDailyInstallationLabor" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="services" onclick="salesDailyShowDetail('services')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('services')}"><small>إجمالي الخدمات</small><div id="salesDailyServicesProfit" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="gross" onclick="salesDailyShowDetail('gross')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('gross')}"><small>إجمالي الربح شامل المصنعية والخدمات</small><div id="salesDailyGross" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div><div class="card-box sales-daily-profit-stat" data-sales-detail="net" onclick="salesDailyShowDetail('net')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();salesDailyShowDetail('net')}"><small>صافي الربح بعد المصروفات</small><div id="salesDailyNetProfit" style="font-size:18px;font-weight:900">0</div><em>اضغط لعرض البيان والطباعة</em></div></div>
     <div class="table-responsive"><table style="min-width:900px;width:100%"><thead><tr><th>م</th><th>التاريخ</th><th>رقم الفاتورة</th><th>العميل</th><th>السيارة / اللوحة</th><th>البيان</th><th>إجمالي المبيع شامل المقدم</th><th>الدفعة المقدمة</th><th>ربح قطع الغيار</th><th>مصنعية التركيب</th><th>ربح الخدمات</th><th>إجمالي الربح شامل المصنعية</th><th>المدفوع</th><th>المتبقي</th></tr></thead><tbody id="salesDailyBody"><tr><td colspan="14">جاري التحميل...</td></tr></tbody></table></div>
    </div>
   </div>
@@ -6100,11 +6131,15 @@ function printClientLifeStatement(){const content=document.getElementById('clien
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:10px">
      <div class="card-box" style="margin:0;text-align:center"><b>عدد الأصناف</b><div id="apStockCount" style="font-size:20px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>إجمالي قيمة المخزون بسعر الشراء</b><div id="apStockValue" style="font-size:20px;font-weight:900">0</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>إجمالي قيمة المخزون بسعر البيع</b><div id="apStockSellValue" style="font-size:20px;font-weight:900">0</div></div>
     </div>
     <div id="apStockWarning" style="margin-top:7px;color:#9a3412;font-size:13px"></div>
    </section>
    <section style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:12px">
     <h3 style="margin:0 0 10px;font-size:16px">أرصدة الخزائن</h3>
+    <label style="display:block;margin-bottom:8px;font-weight:bold">اختيار الخزينة
+      <select id="apTreasuryPicker" onchange="renderAccountsProfitTreasury()" style="width:100%;max-width:400px;padding:9px;border:1px solid #aaa;border-radius:5px"><option value="">كل الخزائن</option></select>
+    </label>
     <div style="overflow:auto"><table style="width:100%;min-width:450px;border-collapse:collapse"><thead><tr><th style="padding:7px;border:1px solid #aaa">الخزينة</th><th style="padding:7px;border:1px solid #aaa">الرصيد الحالي</th></tr></thead><tbody id="apTreasuryRows"><tr><td colspan="2">جاري التحميل...</td></tr></tbody></table></div>
     <div style="text-align:left;font-weight:900;margin-top:8px">إجمالي أرصدة الخزائن: <span id="apTreasuryTotal">0</span> </div>
    </section>
@@ -6115,7 +6150,7 @@ function printClientLifeStatement(){const content=document.getElementById('clien
      <div class="card-box" style="margin:0;text-align:center"><b>إجمالي الربح</b><div id="apTodayGross" style="font-size:20px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>إجمالي المصروفات</b><div id="apTodayExpenses" style="font-size:20px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>صافي الربح</b><div id="apTodayNet" style="font-size:20px;font-weight:900">0</div></div>
-     <div class="card-box" style="margin:0;text-align:center"><b>التاريخ</b><div id="apTodayDate" style="font-weight:900">---</div></div>
+     <div class="card-box" style="margin:0;text-align:center"><b>التاريخ</b><input id="apTodayDatePicker" type="date" onchange="renderAccountsProfitSelectedDay()" style="display:block;width:100%;margin-top:5px;padding:7px;border:1px solid #aaa;border-radius:5px;font-weight:900"></div>
      <div class="card-box" style="margin:0;text-align:center"><b>عدد فواتير اليوم</b><div id="apTodayInvoiceCount" style="font-size:20px;font-weight:900">0</div></div>
      <div class="card-box" style="margin:0;text-align:center"><b>مبيعات اليوم</b><div id="apTodaySales" style="font-size:20px;font-weight:900">0</div></div>
     </div>
@@ -6280,7 +6315,9 @@ function printClientLifeStatement(){const content=document.getElementById('clien
    clone.querySelectorAll('section').forEach(el=>el.classList.add('report-section'));
    const w=window.open('','_blank','width=1100,height=850');if(!w){alert('اسمح بفتح النوافذ المنبثقة للطباعة.');return;}
    const css='<style>@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{font-family:Tahoma,Arial;color:#17243a;margin:0;font-size:11px;line-height:1.55}.head{border-bottom:3px solid #173753;padding:0 0 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:end}.head h1{font-size:21px;margin:0;color:#173753}.head p{margin:3px 0;color:#64748b}.report-section{border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin:0 0 11px;break-inside:avoid;page-break-inside:avoid;background:#fff!important}.report-section h3{font-size:13px;color:#173753;border-bottom:1px solid #dbe4ee;padding-bottom:6px;margin:0 0 9px}.card-box{box-shadow:none!important;border:1px solid #d5dee8!important;border-radius:6px!important;padding:8px!important;background:#f8fafc!important;color:#17243a!important}table{width:100%;border-collapse:collapse!important;font-size:10px}th{background:#e8eef5!important;color:#173753!important;font-weight:900}th,td{border:1px solid #cbd5e1!important;padding:6px!important;text-align:right}b,strong{color:#173753}.foot{border-top:2px solid #173753;padding-top:7px;margin-top:15px;text-align:center;color:#64748b;font-size:9px}</style>';
-    w.document.open();w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملخص الحسابات والأرباح</title>${css}</head><body><header class="head"><div><h1>مركز أوتو نون (NON)</h1><p>ملخص الحسابات والأرباح</p></div><b>تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</b></header>${clone.innerHTML}<footer class="foot">مركز أوتو نون لصيانة السيارات — تقرير داخلي للحسابات والأرباح</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\\/script></body></html>`);w.document.close();
+    w.document.open();w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>ملخص الحسابات والأرباح</title>${css}</head><body><header class="head"><div><h1>مركز أوتو نون (NON)</h1><p>ملخص الحسابات والأرباح</p></div><b>تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</b></header>${clone.innerHTML}<footer class="foot">مركز أوتو نون لصيانة السيارات — تقرير داخلي للحسابات والأرباح</footer><script>window.onload=()=>setTimeout(()=>window.print(),250)<\\/script>
+
+</body></html>`);w.document.close();
   };
 })();
 </script>
@@ -6801,6 +6838,7 @@ function printClientLifeStatement(){const content=document.getElementById('clien
  body.print-a4 #printableInvoiceArea .no-print,body.print-a4 #originalDepartmentBox,body.print-a4 #advancePaymentAlertBox{display:none!important}
 }
 </style>
+
 </body>
 </html>
 
@@ -7110,7 +7148,9 @@ body.archive-invoice-print #printableInvoiceArea{
     #printableInvoiceArea{width:100%!important;max-width:none!important;margin:0 auto!important;background:white!important;padding:5mm!important;zoom:${size==='A4'?'1':size==='A5'?'.72':'.52'};overflow:visible!important}
     #printableInvoiceArea .no-print{display:none!important}#printableInvoiceArea input{border:0;background:transparent}
     @media print{body{padding:0;background:#fff}.preview-toolbar{display:none!important}#printableInvoiceArea{width:100%!important;zoom:1!important;box-shadow:none!important}}
-   </style></head><body><div class="preview-toolbar"><b>معاينة ${size}</b><button onclick="window.print()">طباعة ${size}</button><button onclick="window.close()">إغلاق</button></div>${clone.outerHTML}</body></html>`);
+   </style></head><body><div class="preview-toolbar"><b>معاينة ${size}</b><button onclick="window.print()">طباعة ${size}</button><button onclick="window.close()">إغلاق</button></div>${clone.outerHTML}
+
+</body></html>`);
    w.document.close();
  };
 
@@ -7266,3 +7306,127 @@ body.archive-invoice-print #printableInvoiceArea{
 })();
 </script>
 
+<script id="accounts-profits-daily-and-filters-v2">
+(function(){
+ const $=id=>document.getElementById(id), n=v=>{const x=Number(v);return Number.isFinite(x)?x:0;};
+ const fmt=v=>n(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const localDay=x=>{let raw=x instanceof Date?x:(x?.dateStr??x?.date??x?.createdAt??x?.timestamp??'');if(!raw)return '';let d=new Date(raw);if(Number.isNaN(d.getTime()))return String(raw).slice(0,10);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+ const inventory=()=>Array.isArray(window.accountsProfitCache?.inventory)?window.accountsProfitCache.inventory:[];
+ const warehouses=()=>Array.isArray(window.accountsProfitCache?.warehouses)?window.accountsProfitCache.warehouses:[];
+ function stockValue(rows){
+   const chosen=$('apWarehouse')?.value||'';
+   const filtered=chosen?rows.filter(x=>String(x.warehouseId??x.storeId??x.warehouseName??x.warehouse??x.storeName??'')===chosen):rows;
+   const qty=x=>n(x.quantity??x.qty??x.stock??x.balance??x.currentQty);
+   const buy=x=>n(x.buyPrice??x.purchasePrice??x.costPrice??x.averageCost??x.lastBuyPrice??x.unitCost);
+   const sell=x=>n(x.sellPrice??x.salePrice??x.sellingPrice??x.price??x.unitPrice);
+   if($('apStockCount'))$('apStockCount').textContent=filtered.length;
+   if($('apStockValue'))$('apStockValue').textContent=fmt(filtered.reduce((a,x)=>a+qty(x)*buy(x),0));
+   if($('apStockSellValue'))$('apStockSellValue').textContent=fmt(filtered.reduce((a,x)=>a+qty(x)*sell(x),0));
+   if($('apStockWarning'))$('apStockWarning').textContent=filtered.length?'القيم حسب كمية كل صنف مضروبة في سعر الشراء أو البيع المسجل بالمخزن.':'لا توجد أصناف للمخزن المحدد.';
+ }
+ const oldStock=window.renderAccountsProfitStock;
+ window.renderAccountsProfitStock=function(){stockValue(inventory());};
+ function renderTreasury(){
+   const rows=window.accountsProfitCache?.treasuries||[], id=$('apTreasuryPicker')?.value||'';
+   const filtered=id?rows.filter(t=>String(t.id)===id):rows;
+   const balance=t=>n(t.balance??t.currentBalance??t.current_balance??t.amount??t.balanceAmount);
+   const body=$('apTreasuryRows');
+   if(body)body.innerHTML=filtered.length?filtered.map(t=>`<tr><td>${esc(t.name||'خزينة')}</td><td style="text-align:center">${fmt(balance(t))}</td></tr>`).join(''):'<tr><td colspan="2" style="text-align:center">لا توجد خزائن مسجلة</td></tr>';
+   if($('apTreasuryTotal'))$('apTreasuryTotal').textContent=fmt(filtered.reduce((a,t)=>a+balance(t),0));
+ }
+ window.renderAccountsProfitTreasury=renderTreasury;
+
+ let advanceRows=[];
+ const clientNorm=v=>String(v||'').trim().toLocaleLowerCase('ar').replace(/[\sـ]+/g,' ');
+ const phoneNorm=v=>String(v||'').replace(/\D/g,'');
+ function advanceFor(inv){
+   const saved=Math.max(0,n(inv.advancePayment??inv.downPayment??inv.bookingDeposit??0));
+   if(saved>0)return saved;
+   const name=clientNorm(inv.clientName||inv.customerName),phone=phoneNorm(inv.clientPhone||inv.customerPhone||inv.phone),car=String(inv.sourceCarId||inv.carId||'');
+   if(!name&&!car)return 0;
+   return advanceRows.reduce((sum,p)=>{
+     const sameCar=car&&String(p.carId||'')===car;
+     const pn=clientNorm(p.clientName||p.customerName),pp=phoneNorm(p.clientPhone||p.phone);
+     const sameClient=name&&pn===name&&(!phone||!pp||phone===pp);
+     return sum+((sameCar||sameClient)?Math.max(0,n(p.amount)):0);
+   },0);
+ }
+ function rangeSales(rows){return rows.reduce((a,x)=>a+n(x.totalAmount??x.grandTotal)+advanceFor(x),0);}
+ window.calculateAccountsProfits=function(){
+   const from=$('apFrom').value,to=$('apTo').value;
+   if(from&&to&&from>to){alert('تاريخ البداية يجب أن يكون قبل تاريخ النهاية.');return;}
+   const r=window.accountsProfitCache||{}, invoices=(r.invoices||[]).filter(x=>{const d=localDay(x);return !!d&&(!from||d>=from)&&(!to||d<=to);});
+   const expenses=(r.expenses||[]).filter(x=>{const d=localDay(x);return !!d&&(!from||d>=from)&&(!to||d<=to);});
+   const profits=invoices.map(x=>window.accountsProfitCalculateInvoiceProfit?.(x)||{gross:0,cost:0,unknown:0});
+   const gross=profits.reduce((a,x)=>a+n(x.gross),0),cost=profits.reduce((a,x)=>a+n(x.cost),0),expense=expenses.reduce((a,x)=>a+n(x.amount??x.value??x.expenseAmount),0);
+   $('apRangeSales').textContent=fmt(rangeSales(invoices));$('apRangeCost').textContent=fmt(cost);$('apRangeGross').textContent=fmt(gross);$('apRangeExpenses').textContent=fmt(expense);$('apRangeNet').textContent=fmt(gross-expense);
+   if($('apRangeWarning'))$('apRangeWarning').textContent=profits.reduce((a,x)=>a+n(x.unknown),0)?'تنبيه: توجد قطع غيار بدون سعر شراء؛ الربح المعروض مبدئي.':'تم احتساب الربح من بيانات أسعار الشراء المتاحة.';
+ };
+ window.calculateAccountsSalesPeriod=function(){
+   const from=$('apSalesFrom').value,to=$('apSalesTo').value;
+   if(from&&to&&from>to){alert('تاريخ البداية يجب أن يكون قبل تاريخ النهاية.');return;}
+   const rows=(window.accountsProfitCache?.invoices||[]).filter(x=>{const d=localDay(x);return !!d&&(!from||d>=from)&&(!to||d<=to);});
+   if($('apInvoiceCount'))$('apInvoiceCount').textContent=String(rows.length);
+   if($('apSalesTotal'))$('apSalesTotal').textContent=fmt(rangeSales(rows));
+ };
+ function renderDay(){
+   const day=$('apTodayDatePicker')?.value||localDay(new Date());
+   const cache=window.accountsProfitCache||{}, invoices=cache.invoices||[], expenses=cache.expenses||[];
+   const inv=invoices.filter(x=>localDay(x)===day), exp=expenses.filter(x=>localDay(x)===day);
+   const gross=inv.reduce((a,x)=>a+(window.accountsProfitCalculateInvoiceProfit?.(x)?.gross||0),0);
+   const expense=exp.reduce((a,x)=>a+n(x.amount??x.value??x.expenseAmount),0);
+   const sales=rangeSales(inv);
+   if($('apTodayGross'))$('apTodayGross').textContent=fmt(gross);
+   if($('apTodayExpenses'))$('apTodayExpenses').textContent=fmt(expense);
+   if($('apTodayNet'))$('apTodayNet').textContent=fmt(gross-expense);
+   if($('apTodayDatePicker'))$('apTodayDatePicker').value=day;
+   if($('apTodayInvoiceCount'))$('apTodayInvoiceCount').textContent=String(inv.length);
+   if($('apTodaySales'))$('apTodaySales').textContent=fmt(sales);
+   if($('apDailyStatus'))$('apDailyStatus').textContent='البيانات المعروضة حسب التاريخ المختار من فواتير ومصروفات يومية البيع. أزرار التقفيل تحفظ تقفيل اليوم الحالي.';
+ }
+ window.renderAccountsProfitSelectedDay=renderDay;
+ async function updateTotals(){
+   const cache=window.accountsProfitCache||{};
+   // تحميل الحركات والتحويلات من نفس مجموعات Firebase المستخدمة في إدارة الخزائن.
+   let tx=[], transfers=[];
+   try{const snap=await db.collection('treasury_transactions').get();snap.forEach(d=>tx.push({id:d.id,...(d.data()||{})}));}catch(e){console.warn(e);}
+   try{const snap=await db.collection('treasury_transfers').get();snap.forEach(d=>transfers.push({id:d.id,...(d.data()||{})}));}catch(e){console.warn(e);}
+   window.accountsProfitTreasuryTransactions=tx;window.accountsProfitTreasuryTransfers=transfers;
+   let deposits=0,withdrawals=0;
+   tx.forEach(d=>{
+     const amount=Math.abs(n(d.amount??d.paidAmount??d.amountPaid??d.paymentAmount??d.expenseAmount??d.value));
+     const dir=String(d.direction??d.type??d.transactionType??d.operation??'').toLowerCase();
+     if(/out|withdraw|صرف|سحب|مصروف|سداد|دفع|مرتجع|تالف/.test(dir)||n(d.expenseAmount)>0)withdrawals+=amount;
+     else deposits+=amount;
+   });
+   // التحويل بين الخزن يضاف كصرف من المصدر وإيداع للوجهة، دون تغيير إجمالي الأرصدة.
+   transfers.forEach(d=>{const a=Math.abs(n(d.amount));deposits+=a;withdrawals+=a;});
+   if($('apDepositsTotal'))$('apDepositsTotal').textContent=fmt(deposits);
+   if($('apWithdrawalsTotal'))$('apWithdrawalsTotal').textContent=fmt(withdrawals);
+   const trs=cache.treasuries||[], bal=trs.reduce((a,t)=>a+n(t.balance??t.currentBalance??t.current_balance??t.amount??t.balanceAmount),0);
+   if($('apCurrentTreasuries'))$('apCurrentTreasuries').textContent=fmt(bal);
+   let clientDebt=0,supplierDebt=0;
+   try{const snap=await db.collection('client_accounts').get();snap.forEach(doc=>{const d=doc.data()||{};clientDebt+=Math.max(0,n(d.remainingAmount??d.balance??(n(d.totalAmount??d.grandTotal??d.total??d.invoiceTotal)-n(d.paidAmount??d.amountPaid??d.paid??d.receivedAmount))));});}catch(e){console.warn(e);}
+   try{const snap=await db.collection('supplier_issue_orders').get();snap.forEach(doc=>{const d=doc.data()||{};supplierDebt+=Math.max(0,n(d.remainingAmount??d.balance??(n(d.total??d.totalAmount??d.grandTotal??d.amount)-n(d.paid??d.paidAmount??d.amountPaid))));});}catch(e){console.warn(e);}
+   if($('apClientCredit'))$('apClientCredit').textContent=fmt(clientDebt);
+   if($('apSupplierDebit'))$('apSupplierDebit').textContent=fmt(supplierDebt);
+   if($('apNetDebitCredit'))$('apNetDebitCredit').textContent=fmt(clientDebt-supplierDebt);
+   const rows=inventory(), q=x=>n(x.quantity??x.qty??x.stock??x.balance??x.currentQty), buy=x=>n(x.buyPrice??x.purchasePrice??x.costPrice??x.averageCost??x.lastBuyPrice??x.unitCost);
+   if($('apAllStockValue'))$('apAllStockValue').textContent=fmt(rows.reduce((a,x)=>a+q(x)*buy(x),0));
+   renderTreasury();
+   if($('apStatus'))$('apStatus').textContent=`تم تحديث الحسابات: ${tx.length} حركة خزينة و${transfers.length} تحويل و${rows.length} صنف مخزون.`;
+ }
+ const oldOpen=window.openAccountsProfits;
+ window.openAccountsProfits=async function(){
+   await oldOpen();
+   try{const snap=await db.collection('client_advance_payments').get();advanceRows=[];snap.forEach(d=>advanceRows.push({id:d.id,...(d.data()||{})}));}catch(e){advanceRows=[];}
+   const today=localDay(new Date());
+   if($('apTodayDatePicker')&&!$('apTodayDatePicker').value)$('apTodayDatePicker').value=today;
+   // إعادة بناء اختيار الخزائن بعد تحميل بيانات Firebase.
+   const trs=window.accountsProfitCache?.treasuries||[];
+   if($('apTreasuryPicker'))$('apTreasuryPicker').innerHTML='<option value="">كل الخزائن</option>'+trs.map(t=>`<option value="${esc(t.id)}">${esc(t.name||'خزينة')}</option>`).join('');
+   renderTreasury();renderDay();stockValue(inventory());window.calculateAccountsProfits?.();window.calculateAccountsSalesPeriod?.();await updateTotals();
+ };
+})();
+</script>
