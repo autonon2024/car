@@ -5913,11 +5913,83 @@ window.addEventListener('load', function () {
 <script id="supplier-accounting-link-v2">
 (function(){
  const read=(k)=>{try{const x=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(x)?x:[]}catch(e){return[]}};
- const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+ // تخزين محلي مؤقت للعرض، مع مزامنة سجل الموردين والتجار على Firestore.
+ let supplierServerReady=false, supplierSyncBusy=false, supplierSyncQueued=false;
+ const supplierCollection=()=>window.db && typeof window.db.collection==='function' ? window.db.collection('suppliers') : null;
+ async function persistSuppliersToServer(list){
+   const col=supplierCollection();
+   if(!col) throw new Error('اتصال Firebase غير مهيأ');
+   // كتابة/تحديث السجلات الحالية وحذف ما أزيل من القائمة صراحةً.
+   const existing=await col.get();
+   const wanted=new Set(list.map(x=>String(x.id)));
+   let batch=window.db.batch(), count=0;
+   for(const item of list){
+     if(!item || !item.id) continue;
+     const data={...item, updatedAt:new Date().toISOString()};
+     batch.set(col.doc(String(item.id)),data,{merge:true}); count++;
+     if(count>=400){await batch.commit();batch=window.db.batch();count=0;}
+   }
+   for(const doc of existing.docs){
+     if(!wanted.has(String(doc.id))){
+       batch.delete(doc.ref);count++;
+       if(count>=400){await batch.commit();batch=window.db.batch();count=0;}
+     }
+   }
+   if(count) await batch.commit();
+ }
+ function queueSupplierServerSave(list){
+   if(!supplierServerReady) return;
+   supplierSyncQueued=true;
+   if(supplierSyncBusy) return;
+   supplierSyncBusy=true;
+   (async()=>{
+     try{
+       while(supplierSyncQueued){
+         supplierSyncQueued=false;
+         await persistSuppliersToServer(read('suppliers_list'));
+       }
+     }catch(err){
+       console.error('تعذر مزامنة الموردين مع Firestore:',err);
+       alert('لم يتم تأكيد حفظ بيانات الموردين على السيرفر. تحقق من اتصال الإنترنت وصلاحيات Firestore ثم أعد المحاولة.\\n'+(err.message||err));
+     }finally{supplierSyncBusy=false;}
+   })();
+ }
+ const write=(k,v)=>{
+   localStorage.setItem(k,JSON.stringify(v));
+   if(k==='suppliers_list') queueSupplierServerSave(v);
+ };
  const n=(v)=>Number(v)||0;
  const money=(v)=>n(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
  const esc=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const suppliers=()=>read('suppliers_list'), orders=()=>read('supplier_issue_orders'), returns=()=>read('supplier_returns'), ledger=()=>read('supplier_ledger'), inventory=()=>read('inventory'), issueOrders=()=>read('issue_orders');
+ // تحميل الموردين من السيرفر ومزامنتهم فورياً بين الأجهزة.
+ (function connectSupplierDirectory(){
+   const col=supplierCollection();
+   if(!col){console.error('Firestore غير متاح لقائمة الموردين');return;}
+   col.onSnapshot(async snapshot=>{
+     try{
+       const serverRows=snapshot.docs.map(doc=>({...doc.data(),id:doc.id}));
+       const localRows=read('suppliers_list');
+       // ترحيل البيانات المحلية القديمة مرة واحدة إذا كانت مجموعة السيرفر فارغة.
+       if(snapshot.empty && localRows.length){
+         supplierServerReady=true;
+         await persistSuppliersToServer(localRows);
+         return;
+       }
+       localStorage.setItem('suppliers_list',JSON.stringify(serverRows));
+       supplierServerReady=true;
+       if(typeof window.renderAccountsSupplierDirectory==='function') window.renderAccountsSupplierDirectory();
+       if(selectedSupplier) selectedSupplier=serverRows.find(x=>String(x.id)===String(selectedSupplier.id))||null;
+     }catch(err){
+       console.error('خطأ تحميل دليل الموردين من السيرفر:',err);
+     }
+   },err=>{
+     supplierServerReady=false;
+     console.error('فشل الاتصال بقائمة الموردين على Firestore:',err);
+     const host=document.getElementById('accountSupplierDirectoryResult');
+     if(host) host.innerHTML='<p style="color:#b91c1c;font-weight:bold">تعذر الاتصال بسيرفر الموردين. تحقق من الإنترنت وصلاحيات قاعدة البيانات.</p>';
+   });
+ })();
  let selectedSupplier=null, selectedOrder=null;
  function supplierTotals(s){let os=orders().filter(o=>o.supplierId===s.id),rs=returns().filter(r=>r.supplierId===s.id),ls=ledger().filter(l=>l.supplierId===s.id);let total=os.reduce((a,o)=>a+n(o.total),0),paid=os.reduce((a,o)=>a+n(o.paid),0);let ret=rs.filter(r=>String(r.type||'').includes('مرتجع')).reduce((a,r)=>a+n(r.value||n(r.qty)*n(r.buyPrice||r.price)),0);let damaged=rs.filter(r=>String(r.type||'').includes('تالف')).reduce((a,r)=>a+n(r.value||n(r.qty)*n(r.buyPrice||r.price)),0);let paidLedger=ls.filter(l=>/سداد|دفع|دفعة|payment/i.test(String(l.type||''))).reduce((a,l)=>a+n(l.value||l.amount),0);paid=Math.max(paid,paidLedger);return {orders:os,returns:rs,ledger:ls,total,paid,ret,damaged,due:Math.max(0,total-ret-damaged-paid)};}
  function showSupplier(s){selectedSupplier=s||null;let name=document.getElementById('accountSupplierName'),code=document.getElementById('accountSupplierCode');if(name)name.value=s?.name||'';if(code)code.value=s?.code||'';renderAccountsSupplierDirectory();}
@@ -5984,6 +6056,62 @@ window.addEventListener('load', function () {
   window.openSupplierAccountStatement=function(){if(!selectedSupplier){alert('ابحث بكود المورد أو اختره من القائمة أولاً.');return;}let s=selectedSupplier,t=supplierTotals(s),os=t.orders,rs=t.returns,ls=t.ledger;let html=`<h2>كشف حساب المورد — مركز أوتو نون (NON)</h2><p>كود المورد: ${esc(s.code)} | الاسم: ${esc(s.name)} | الهاتف: ${esc(s.phone||'—')}</p><p>إجمالي التوريدات: ${money(t.total)} | المرتجعات: ${money(t.ret)} | التالف: ${money(t.damaged)} | المدفوع: ${money(t.paid)} | المتبقي: ${money(t.due)} </p><h3>أذونات التوريد</h3><table><tr><th>رقم الإذن</th><th>التاريخ</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th></tr>${os.map(o=>`<tr><td>${esc(o.orderNo||o.id)}</td><td>${esc(o.date?new Date(o.date).toLocaleDateString('en-US'):'—')}</td><td>${money(o.total)}</td><td>${money(o.paid)}</td><td>${money(o.remaining??n(o.total)-n(o.paid))}</td></tr>`).join('')}</table><h3>سجل الحركات والمدفوعات</h3><table><tr><th>التاريخ</th><th>النوع</th><th>الإذن</th><th>التفاصيل</th><th>القيمة</th></tr>${ls.map(l=>`<tr><td>${esc(l.date?new Date(l.date).toLocaleString('en-US'):'—')}</td><td>${esc(l.type||'—')}</td><td>${esc(l.orderNo||'—')}</td><td>${esc(l.itemName||l.notes||'—')}</td><td>${money(l.value||l.amount)}</td></tr>`).join('')}</table><h3>المرتجعات والتالف</h3><table><tr><th>التاريخ</th><th>النوع</th><th>الصنف</th><th>الكمية</th><th>القيمة</th></tr>${rs.map(r=>`<tr><td>${esc(r.date?new Date(r.date).toLocaleDateString('en-US'):'—')}</td><td>${esc(r.type||'—')}</td><td>${esc(r.itemName||'—')}</td><td>${money(r.qty)}</td><td>${money(r.value||n(r.qty)*n(r.buyPrice||r.price))}</td></tr>`).join('')}</table>`;let w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة لفتح كشف الحساب.');return;}w.document.write('<html lang="ar" dir="rtl"><meta charset="utf-8"><title>كشف حساب المورد</title><style>body{font-family:Tahoma,Arial;padding:20px}table{width:100%;border-collapse:collapse;margin:10px 0}td,th{border:1px solid #999;padding:6px;text-align:right}th{background:#eee}</style>'+html+'</html>');w.document.close();};
  window.printSupplierAccountReport=function(){if(!selectedSupplier){alert('اختر المورد أولاً.');return;}openSupplierAccountStatement();};
  document.addEventListener('DOMContentLoaded',()=>{renderAccountsSupplierDirectory();});
+})();
+</script>
+
+<!-- مزامنة جميع حركات الموردين والتجار مع Firestore -->
+<script id="supplier-transactions-firestore-sync-v1">
+(function(){
+  if(window.__supplierTransactionsSyncInstalled) return;
+  window.__supplierTransactionsSyncInstalled=true;
+  const keys=['supplier_issue_orders','supplier_returns','supplier_ledger','supplier_payment_archive'];
+  const nativeSet=Storage.prototype.setItem;
+  const nativeRemove=Storage.prototype.removeItem;
+  const nativeGet=Storage.prototype.getItem;
+  const states={};
+  const db=()=>window.db&&typeof window.db.collection==='function'?window.db:null;
+  const readArray=k=>{try{const v=JSON.parse(nativeGet.call(localStorage,k)||'[]');return Array.isArray(v)?v:[];}catch(_){return[];}};
+  const docId=(x,i)=>String(x?.id||x?.orderId||x?.paymentId||x?.returnId||x?.orderNo||x?.invoiceNo||x?.code||`${x?.supplierId||'supplier'}_${String(x?.date||x?.dateStr||x?.createdAt||'').replace(/[^0-9A-Za-z_-]/g,'')}_${x?.itemId||x?.itemCode||i}`);
+  function setLocal(k,arr){states[k].applying=true;try{nativeSet.call(localStorage,k,JSON.stringify(arr));}finally{states[k].applying=false;}}
+  async function saveCollection(k,arr){
+    const d=db(); if(!d) throw Error('Firebase/Firestore غير متاح');
+    const col=d.collection(k), snap=await col.get(), wanted=new Set();
+    let batch=d.batch(), count=0;
+    for(let i=0;i<arr.length;i++){
+      const item=arr[i]; if(!item||typeof item!=='object') continue;
+      const id=docId(item,i); wanted.add(id);
+      batch.set(col.doc(id),{...item,_syncIndex:i,_syncedAt:new Date().toISOString()},{merge:true});
+      if(++count>=400){await batch.commit();batch=d.batch();count=0;}
+    }
+    snap.docs.forEach(doc=>{if(!wanted.has(String(doc.id))){batch.delete(doc.ref);count++;}});
+    if(count) await batch.commit();
+  }
+  function queueSave(k){
+    const st=states[k]; if(!st||!st.ready||st.applying) return;
+    st.queued=true; if(st.busy)return; st.busy=true;
+    (async()=>{try{while(st.queued){st.queued=false;await saveCollection(k,readArray(k));}}
+      catch(e){console.error('فشل مزامنة حركة الموردين '+k,e);const el=document.getElementById('accountSupplierDirectoryResult');if(el)el.insertAdjacentHTML('afterbegin','<div style="color:#b91c1c;font-weight:bold;margin:6px 0">تعذر حفظ إحدى حركات الموردين على السيرفر: '+String(e.message||e).replace(/[<>]/g,'')+'</div>');}
+      finally{st.busy=false;}
+    })();
+  }
+  keys.forEach(k=>{
+    states[k]={ready:false,busy:false,queued:false,applying:false};
+    const col=db()?.collection(k);
+    if(!col){console.error('Firestore غير متاح لمجموعة '+k);return;}
+    col.onSnapshot(async snap=>{
+      const st=states[k];
+      try{
+        const serverRows=snap.docs.map(doc=>{const x=doc.data()||{};delete x._syncIndex;delete x._syncedAt;return {...x,id:x.id||doc.id};});
+        const localRows=readArray(k);
+        if(snap.empty&&localRows.length){st.ready=true;await saveCollection(k,localRows);return;}
+        serverRows.sort((a,b)=>0);
+        setLocal(k,serverRows);st.ready=true;
+        if(typeof window.renderAccountsSupplierDirectory==='function')window.renderAccountsSupplierDirectory();
+      }catch(e){console.error('خطأ تحميل '+k+' من Firestore',e);}
+    },e=>{states[k].ready=false;console.error('انقطع اتصال '+k+' مع Firestore',e);});
+  });
+  Storage.prototype.setItem=function(key,value){nativeSet.call(this,key,value);if(this===localStorage&&keys.includes(String(key))&&!states[key]?.applying)queueSave(String(key));};
+  Storage.prototype.removeItem=function(key){nativeRemove.call(this,key);if(this===localStorage&&keys.includes(String(key))&&!states[key]?.applying)queueSave(String(key));};
 })();
 </script>
 
