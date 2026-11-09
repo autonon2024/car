@@ -802,7 +802,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 
 <style id="non-role-entry-lock">body.non-role-locked>*:not(#nonRoleEntryGate){visibility:hidden!important}body.non-role-locked{overflow:hidden!important}</style>\n
 <style id="hesabat-archive-and-single-page-print-fix">
-/* أزرار عرض وطباعة الأرشيف */
+/* أزرار عرض ومعاينة الأرشيف */
 #archiveModal .archive-actions,
 #archiveModal td button[data-archive-id]{
   white-space:nowrap;
@@ -815,7 +815,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 #archiveModal td button[onclick^="openArchivedInvoiceById"]{
   background:#0f766e!important;color:#fff!important;border:1px solid #0f766e!important;
 }
-#archiveModal td button[onclick^="printArchivedInvoiceById"]{
+#archiveModal td button[onclick^="previewArchivedInvoiceById"]{
   background:#1d4ed8!important;color:#fff!important;border:1px solid #1d4ed8!important;
 }
 #archiveModal td button[onclick^="openArchivedReturnReviewById"]{
@@ -848,6 +848,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     border-bottom:1.5px solid #243653!important;text-align:center!important;
   }
   body.print-a4 #printableInvoiceArea #printInvoiceHeader::before{display:none!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark,body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark:before,body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark:after{display:none!important;content:none!important}
   body.print-a4 #printableInvoiceArea #printInvoiceHeader h2{
     margin:0 0 1mm!important;padding:0!important;font-size:13pt!important;color:#243653!important;
   }
@@ -951,6 +952,330 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 @media print{.sales-daily-detail-print{font-family:Tahoma,Arial,sans-serif;direction:rtl}}
 </style>
 
+<!-- ===== تصميم الفاتورة الكلاسيكي رقم 3 - A4 متعدد الصفحات + QR ===== -->
+<style id="hesabat-classic-invoice-design-3">
+@media print {
+  @page { size: A4 portrait; margin: 9mm; }
+  html, body { margin:0!important; padding:0!important; background:#fff!important; }
+  body.print-a4 * { visibility:hidden!important; }
+  body.print-a4 #printableInvoiceArea,
+  body.print-a4 #printableInvoiceArea * { visibility:visible!important; }
+  body.print-a4 #printableInvoiceArea {
+    display:block!important; position:relative!important; inset:auto!important;
+    width:100%!important; max-width:none!important; min-height:0!important;
+    height:auto!important; max-height:none!important; overflow:visible!important;
+    margin:0!important; padding:5mm!important; zoom:1!important;
+    box-sizing:border-box!important; border:1.5px solid #173753!important;
+    border-top:5px solid #173753!important; border-bottom:4px solid #f28c28!important;
+    border-radius:2mm!important; box-shadow:none!important;
+    background:#fff!important; color:#17283a!important;
+    font:9pt Tahoma,Arial,sans-serif!important; direction:rtl!important;
+    break-after:auto!important; page-break-after:auto!important;
+  }
+  body.print-a4 #printableInvoiceArea * { box-sizing:border-box!important; }
+  body.print-a4 #printInvoiceHeader {
+    display:block!important; position:relative!important; text-align:center!important;
+    margin:0 0 4mm!important; padding:0 0 3mm!important;
+    border-bottom:2px solid #f28c28!important;
+  }
+  body.print-a4 #printInvoiceHeader:before { display:none!important; }
+  body.print-a4 #printInvoiceHeader .classic-brand-mark, body.print-a4 #printInvoiceHeader .classic-brand-mark:before, body.print-a4 #printInvoiceHeader .classic-brand-mark:after { display:none!important; content:none!important; }
+  body.print-a4 #printInvoiceHeader h2 {
+    margin:0 0 1.5mm!important; padding:0!important; color:#173753!important;
+    font-size:17pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printInvoiceHeader p {
+    margin:1mm 0!important; color:#334155!important;
+    font-size:8pt!important; line-height:1.45!important;
+  }
+  body.print-a4 #printInvoiceHeader > div:not(.classic-invoice-title):not(.classic-invoice-meta):not(.classic-invoice-brandline) { display:none!important; }
+  body.print-a4 #printInvoiceHeader .classic-invoice-brandline {
+    display:flex!important; align-items:center!important; justify-content:space-between!important;
+    gap:4mm!important; margin:0 0 2mm!important;
+  }
+  body.print-a4 #printInvoiceHeader .classic-invoice-brandline .classic-brand-mark {
+    color:#f28c28!important; font-size:22pt!important; font-weight:900!important;
+    white-space:nowrap!important;
+  }
+  body.print-a4 #printInvoiceHeader .classic-invoice-qr {
+    display:flex!important; align-items:center!important; gap:2mm!important;
+    text-align:center!important; color:#173753!important; font-size:7pt!important;
+  }
+  body.print-a4 #printInvoiceHeader .classic-invoice-qr canvas,
+  body.print-a4 #printInvoiceHeader .classic-invoice-qr img {
+    width:23mm!important; height:23mm!important; image-rendering:pixelated!important;
+  }
+  body.print-a4 #printInvoiceHeader .classic-invoice-title {
+    display:block!important; margin:2mm 0!important; padding:2mm!important;
+    background:#173753!important; color:#fff!important; border-right:3mm solid #f28c28!important;
+    font-size:12pt!important; font-weight:900!important; text-align:center!important;
+  }
+  body.print-a4 #printInvoiceHeader .classic-invoice-meta {
+    display:flex!important; justify-content:space-between!important; flex-wrap:wrap!important;
+    gap:2mm!important; padding:2mm 1mm!important; border-top:1px solid #cbd5e1!important;
+    border-bottom:1px solid #cbd5e1!important; color:#173753!important;
+    font-size:8pt!important; font-weight:800!important;
+  }
+  body.print-a4 #printableInvoiceArea .form-grid:not(.no-print) {
+    display:grid!important; grid-template-columns:1fr 1fr!important;
+    gap:1mm 4mm!important; margin:2mm 0!important;
+  }
+  body.print-a4 #printableInvoiceArea .form-field {
+    display:flex!important; flex-direction:row!important; align-items:center!important;
+    gap:2mm!important; padding:1mm 0!important; min-height:0!important;
+    border-bottom:1px dotted #b8c3d1!important;
+  }
+  body.print-a4 #printableInvoiceArea .form-field label,
+  body.print-a4 #printableInvoiceArea .form-field input {
+    font-size:8pt!important; padding:0!important; margin:0!important;
+    border:0!important; background:transparent!important; color:#17283a!important;
+    min-height:0!important; height:auto!important; font-weight:700!important;
+  }
+  body.print-a4 #printableInvoiceArea .card-box {
+    margin:2mm 0!important; padding:2mm!important;
+    border:1px solid #d5dee8!important; border-radius:1.5mm!important;
+    background:#fff!important; box-shadow:none!important;
+    break-inside:auto!important; page-break-inside:auto!important;
+  }
+  body.print-a4 #printableInvoiceArea .card-box > div:first-child {
+    margin:0 0 1.5mm!important; padding:1.5mm 2mm!important;
+    color:#173753!important; border-bottom:1px solid #f28c28!important;
+    font-size:9pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printableInvoiceArea table {
+    width:100%!important; min-width:0!important; table-layout:auto!important;
+    margin:1mm 0!important; border-collapse:collapse!important;
+    font-size:8pt!important; break-inside:auto!important; page-break-inside:auto!important;
+  }
+  body.print-a4 #printableInvoiceArea thead { display:table-header-group!important; }
+  body.print-a4 #printableInvoiceArea tfoot { display:table-footer-group!important; }
+  body.print-a4 #printableInvoiceArea tr {
+    break-inside:avoid!important; page-break-inside:avoid!important;
+  }
+  body.print-a4 #printableInvoiceArea th {
+    padding:2mm 1.5mm!important; border:1px solid #173753!important;
+    background:#173753!important; color:#fff!important;
+    font-size:8pt!important; font-weight:900!important; text-align:center!important;
+  }
+  body.print-a4 #printableInvoiceArea td {
+    padding:1.8mm 1.5mm!important; border:1px solid #c3ceda!important;
+    color:#17283a!important; font-size:8pt!important; line-height:1.3!important;
+    white-space:normal!important; overflow-wrap:anywhere!important;
+  }
+  body.print-a4 #printableInvoiceArea tbody tr:nth-child(even) td { background:#f5f8fb!important; }
+  body.print-a4 #printableInvoiceArea .invoice-summary-box {
+    width:70%!important; margin:3mm 0 0 auto!important; padding:2mm 3mm!important;
+    border:1.5px solid #173753!important; border-right:3px solid #f28c28!important;
+    background:#fff!important; break-inside:avoid!important; page-break-inside:avoid!important;
+  }
+  body.print-a4 #printableInvoiceArea .summary-row {
+    display:flex!important; justify-content:space-between!important; gap:4mm!important;
+    padding:1.2mm 0!important; border-bottom:1px solid #e2e8f0!important;
+    font-size:8pt!important; line-height:1.3!important; color:#17283a!important;
+  }
+  body.print-a4 #printableInvoiceArea .summary-row:last-child {
+    border:0!important; color:#173753!important; font-size:11pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printableInvoiceArea .invoice-footer-notes {
+    display:block!important; margin-top:3mm!important; padding-top:2mm!important;
+    border-top:1px solid #f28c28!important; color:#334155!important;
+    font-size:7.5pt!important; line-height:1.5!important;
+  }
+  body.print-a4 #printableInvoiceArea .invoice-signatures {
+    display:grid!important; grid-template-columns:1fr 1fr 1fr!important;
+    gap:3mm!important; margin-top:3mm!important; padding-top:2mm!important;
+    border-top:1px dashed #9aa9ba!important; break-inside:avoid!important;
+    page-break-inside:avoid!important;
+  }
+  body.print-a4 #printableInvoiceArea .invoice-signatures>div { text-align:center!important; }
+  body.print-a4 #printableInvoiceArea .no-print,
+  body.print-a4 #printableInvoiceArea #originalDepartmentBox,
+  body.print-a4 #printableInvoiceArea #advancePaymentAlertBox,
+  body.print-a4 #printableInvoiceCenterCopy,
+  body.print-a4 #carDeliveryReceiptPrint { display:none!important; }
+  body.print-a4 #hesabatCombinedCarReceipt {
+    display:block!important; visibility:visible!important; margin:4mm 0 0!important;
+    padding:3mm!important; border:1.5px dashed #173753!important;
+    border-radius:2mm!important; background:#f8fafc!important; color:#17283a!important;
+    break-inside:avoid!important; page-break-inside:avoid!important;
+  }
+  body.print-a4 #hesabatCombinedCarReceipt * { visibility:visible!important; }
+  body.print-a4 #hesabatCombinedCarReceipt .receipt-title {
+    display:flex!important; justify-content:space-between!important; align-items:center!important;
+    gap:3mm!important; padding-bottom:2mm!important; margin-bottom:2mm!important;
+    border-bottom:1.5px solid #f28c28!important;
+  }
+  body.print-a4 #hesabatCombinedCarReceipt h3 {
+    margin:0!important; color:#173753!important; font-size:11pt!important;
+  }
+  body.print-a4 #hesabatCombinedCarReceipt .receipt-no {
+    color:#b45309!important; font-size:9pt!important; font-weight:900!important;
+  }
+  body.print-a4 #hesabatCombinedCarReceipt .receipt-grid {
+    display:grid!important; grid-template-columns:1fr 1fr 1fr!important; gap:2mm 4mm!important;
+  }
+  body.print-a4 #hesabatCombinedCarReceipt .receipt-field {
+    display:flex!important; flex-direction:column!important; gap:1mm!important;
+    padding:1mm!important; border-bottom:1px dotted #aab6c4!important;
+    font-size:8pt!important;
+  }
+  body.print-a4 #hesabatCombinedCarReceipt .receipt-field b { color:#173753!important; }
+  body.print-a4 #hesabatCombinedCarReceipt .receipt-note {
+    margin-top:2mm!important; padding:2mm!important; border:1px solid #d5dee8!important;
+    font-size:7.5pt!important; line-height:1.5!important;
+  }
+  body.print-a4 #hesabatCombinedCarReceipt .receipt-signatures {
+    display:flex!important; justify-content:space-between!important; gap:4mm!important;
+    margin-top:3mm!important; padding-top:2mm!important; border-top:1px dashed #9aa9ba!important;
+    font-size:7.5pt!important; font-weight:800!important;
+  }
+}
+</style>
+
+<style id="hesabat-print-layout-final">
+@media print {
+  @page { size: A4 portrait; margin: 8mm; }
+  html, body { width:auto!important; min-width:0!important; min-height:0!important; margin:0!important; padding:0!important; background:#fff!important; }
+  body.print-a4 { color:#17283a!important; font-family:Arial,Tahoma,sans-serif!important; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  body.print-a4 * { visibility:hidden!important; }
+  body.print-a4 #printableInvoiceArea,
+  body.print-a4 #printableInvoiceArea * { visibility:visible!important; }
+  body.print-a4 .main-grid { display:block!important; width:100%!important; margin:0!important; padding:0!important; }
+  body.print-a4 .main-grid > div:first-child { display:none!important; }
+  body.print-a4 .main-grid > div:last-child { display:block!important; width:100%!important; max-width:none!important; margin:0!important; padding:0!important; }
+  body.print-a4 #printableInvoiceArea {
+    display:block!important; position:static!important; float:none!important;
+    width:100%!important; max-width:none!important; min-width:0!important;
+    height:auto!important; min-height:0!important; max-height:none!important;
+    margin:0!important; padding:0!important; overflow:visible!important;
+    box-sizing:border-box!important; zoom:1!important; transform:none!important;
+    border:0!important; border-radius:0!important; box-shadow:none!important;
+    background:#fff!important; color:#111827!important; direction:rtl!important;
+    font:9pt/1.35 Arial,Tahoma,sans-serif!important;
+    break-inside:auto!important; page-break-inside:auto!important;
+  }
+  body.print-a4 #printableInvoiceArea * { box-sizing:border-box!important; }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader {
+    display:block!important; position:relative!important; margin:0 0 4mm!important;
+    padding:0 0 3mm!important; text-align:right!important;
+    border-bottom:1.2px solid #243653!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader:before { content:none!important; display:none!important; }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-brandline {
+    display:flex!important; align-items:center!important; justify-content:space-between!important;
+    gap:4mm!important; margin:0 0 2mm!important; direction:rtl!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark {
+    display:block!important; color:#f28c28!important; font-size:18pt!important;
+    font-weight:900!important; white-space:nowrap!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark:before,
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark:after { content:none!important; display:none!important; }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-qr {
+    display:flex!important; align-items:center!important; gap:2mm!important;
+    text-align:center!important; color:#173753!important; font-size:7pt!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-qr canvas,
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-qr img {
+    width:22mm!important; height:22mm!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader h2 {
+    display:block!important; margin:1mm 0!important; color:#173753!important;
+    font-size:15pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader p {
+    display:block!important; margin:1mm 0!important; color:#334155!important;
+    font-size:8pt!important; line-height:1.35!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-title {
+    display:block!important; margin:2mm 0!important; padding:2mm!important;
+    background:#173753!important; color:#fff!important; text-align:center!important;
+    font-size:12pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-meta {
+    display:flex!important; justify-content:space-between!important; flex-wrap:wrap!important;
+    gap:2mm!important; margin-top:2mm!important; padding:2mm 1mm!important;
+    border-top:1px solid #cbd5e1!important; border-bottom:1px solid #cbd5e1!important;
+    color:#173753!important; font-size:8pt!important; font-weight:800!important;
+  }
+  body.print-a4 #printableInvoiceArea .form-grid:not(.no-print) {
+    display:grid!important; grid-template-columns:1fr 1fr!important;
+    gap:1.5mm 5mm!important; margin:2mm 0!important;
+  }
+  body.print-a4 #printableInvoiceArea .form-field {
+    display:flex!important; flex-direction:row!important; align-items:center!important;
+    gap:2mm!important; min-width:0!important; padding:1mm 0!important;
+    border-bottom:1px dotted #b8c3d1!important;
+  }
+  body.print-a4 #printableInvoiceArea .form-field label {
+    flex:0 0 auto!important; color:#243653!important; font-size:8pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printableInvoiceArea .form-field input {
+    flex:1 1 auto!important; min-width:0!important; height:auto!important; min-height:0!important;
+    margin:0!important; padding:0!important; border:0!important; outline:0!important;
+    background:transparent!important; color:#111827!important; font-size:8pt!important;
+  }
+  body.print-a4 #printableInvoiceArea .card-box {
+    display:block!important; margin:2mm 0!important; padding:2mm!important;
+    border:1px solid #cbd5e1!important; border-radius:1.5mm!important;
+    background:#fff!important; box-shadow:none!important;
+    break-inside:auto!important; page-break-inside:auto!important;
+  }
+  body.print-a4 #printableInvoiceArea .card-box > div:first-child {
+    margin:0 0 1.5mm!important; padding:1.5mm 2mm!important;
+    background:#f1f5f9!important; color:#243653!important;
+    border-right:2px solid #f28c28!important; font-size:8.5pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printableInvoiceArea table {
+    width:100%!important; min-width:0!important; margin:1mm 0!important;
+    border-collapse:collapse!important; table-layout:fixed!important;
+    direction:rtl!important; font-size:8pt!important;
+  }
+  body.print-a4 #printableInvoiceArea thead { display:table-header-group!important; }
+  body.print-a4 #printableInvoiceArea tfoot { display:table-footer-group!important; }
+  body.print-a4 #printableInvoiceArea tr { break-inside:avoid!important; page-break-inside:avoid!important; }
+  body.print-a4 #printableInvoiceArea th,
+  body.print-a4 #printableInvoiceArea td {
+    padding:1.5mm 1mm!important; border:1px solid #aab7c7!important;
+    font-size:7.8pt!important; line-height:1.25!important; text-align:center!important;
+    vertical-align:middle!important; white-space:normal!important; overflow-wrap:anywhere!important;
+  }
+  body.print-a4 #printableInvoiceArea th { background:#243653!important; color:#fff!important; font-weight:900!important; }
+  body.print-a4 #printableInvoiceArea td { background:#fff!important; color:#111827!important; }
+  body.print-a4 #printableInvoiceArea .invoice-summary-box {
+    width:72%!important; max-width:100%!important; margin:3mm 0 0 auto!important;
+    padding:2mm 3mm!important; border:1px solid #aab7c7!important;
+    background:#fff!important; break-inside:avoid!important; page-break-inside:avoid!important;
+  }
+  body.print-a4 #printableInvoiceArea .summary-row {
+    display:flex!important; justify-content:space-between!important; gap:4mm!important;
+    min-height:0!important; padding:1.2mm 0!important; border-bottom:1px solid #d8dee6!important;
+    color:#334155!important; font-size:8pt!important;
+  }
+  body.print-a4 #printableInvoiceArea .summary-row:last-child {
+    border-bottom:0!important; color:#243653!important; font-size:10pt!important; font-weight:900!important;
+  }
+  body.print-a4 #printableInvoiceArea .invoice-footer-notes {
+    display:block!important; margin:3mm 0 0!important; padding:2mm 0 0!important;
+    border-top:1px solid #243653!important; color:#243653!important;
+  }
+  body.print-a4 #printableInvoiceArea .invoice-footer-notes p { margin:0 0 2mm!important; font-size:7.5pt!important; }
+  body.print-a4 #printableInvoiceArea .invoice-footer-notes > div {
+    display:flex!important; justify-content:space-between!important; gap:4mm!important;
+    margin:0!important; padding:2mm!important; font-size:8pt!important;
+  }
+  body.print-a4 #printableInvoiceArea #hesabatCombinedCarReceipt {
+    display:block!important; margin:4mm 0 0!important; padding:3mm!important;
+    border:1px dashed #243653!important; background:#f8fafc!important;
+    color:#17283a!important; break-inside:avoid!important; page-break-inside:avoid!important;
+  }
+  body.print-a4 #printableInvoiceArea .no-print,
+  body.print-a4 #originalDepartmentBox,
+  body.print-a4 #advancePaymentAlertBox,
+  body.print-a4 #printableInvoiceCenterCopy,
+  body.print-a4 #carDeliveryReceiptPrint { display:none!important; visibility:hidden!important; }
+}
+</style>
 </head>
 <body id="pageBody">
 
@@ -1288,12 +1613,13 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         </div>
 
         <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;" class="no-print">
-          <button class="btn-action btn-purple" onclick="finalizePaymentAndPrint()"><i class="fa-solid fa-print"></i> تحصيل المبلغ وطباعة الفاتورة واذن استلام السياره</button>
+          <button type="button" class="btn-action btn-purple" onclick="previewInvoiceSize('A4')"><i class="fa-solid fa-eye"></i> معاينة الفاتورة</button>
+          <button type="button" class="btn-action btn-green" id="collectInvoiceBtn" onclick="finalizePaymentAndPrint()"><i class="fa-solid fa-cash-register"></i> تحصيل الفاتورة</button>
           <button class="btn-action btn-blue" onclick="sendInvoiceWhatsApp()"><i class="fa-brands fa-whatsapp"></i> إرسال الفاتورة واتساب</button>
           <button id="returnToDepartmentBtn" class="btn-action btn-danger" onclick="openReturnCustomerReview('department')"><i class="fa-solid fa-arrow-rotate-left"></i> إرجاع للقسم</button>
-          <button type="button" id="previewInvoiceA4Btn" class="btn-action btn-blue" onclick="previewInvoiceSize('A4')"><i class="fa-solid fa-eye"></i> مشاهدة A4</button>
-          <button type="button" id="previewInvoiceA5Btn" class="btn-action btn-blue" onclick="previewInvoiceSize('A5')"><i class="fa-solid fa-eye"></i> مشاهدة A5</button>
-          <button type="button" id="previewInvoiceA6Btn" class="btn-action btn-blue" onclick="previewInvoiceSize('A6')"><i class="fa-solid fa-eye"></i> مشاهدة A6</button>
+          
+          
+          
         </div>
 
       </div>
@@ -1470,7 +1796,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
             </div>
           </div>
           <button class="btn-action btn-orange" style="width:100%; justify-content:center; margin-top:10px;" onclick="executeQuickMaintenanceCheckout()">
-            <i class="fa-solid fa-cash-register"></i> تنفيذ وتحصيل صيانة سريعة وطباعة الفاتورة
+            <i class="fa-solid fa-cash-register"></i> تنفيذ وتحصيل صيانة سريعة ومعاينة الفاتورة
           </button>
         </div>
       </div>
@@ -1909,10 +2235,10 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         </div>
       </div>
       <div style="display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;margin-top:16px">
-        <button class="btn-action btn-green" type="button" onclick="saveDiagnosisAdvancePayment()"><i class="fa-solid fa-check"></i> حفظ الدفعة المقدمة وطباعة الإيصال</button>
+        <button class="btn-action btn-green" type="button" onclick="saveDiagnosisAdvancePayment()"><i class="fa-solid fa-check"></i> حفظ الدفعة المقدمة ومعاينة الإيصال</button>
         <button class="btn-action btn-blue" type="button" onclick="loadDiagnosisCarsForAdvance()"><i class="fa-solid fa-rotate"></i> تحديث أسماء العملاء</button>
         <button id="advancePaymentWhatsAppBtn" class="btn-action btn-green" type="button" style="display:none;background:#16a34a" onclick="sendAdvancePaymentWhatsApp()"><i class="fa-brands fa-whatsapp"></i> إرسال إيصال واتساب</button>
-        <button id="advancePaymentPrintOtherBtn" class="btn-action btn-orange" type="button" style="display:none" onclick="printLastAdvancePaymentReceipt('A4')"><i class="fa-solid fa-print"></i> طباعة A4</button>
+        <button id="advancePaymentPrintOtherBtn" class="btn-action btn-orange" type="button" style="display:none" onclick="previewLastAdvancePaymentReceipt('A4')"><i class="fa-solid fa-eye"></i> معاينة الإيصال</button>
         <button id="advancePaymentArchiveBtn" class="btn-action btn-purple" type="button" onclick="openAdvancePaymentsArchive()"><i class="fa-solid fa-clock-rotate-left"></i> سجل الدفعات المدفوعة</button>
       </div>
       <div id="advancePaymentStatus" role="status" style="margin-top:10px;font-size:.82rem;color:#64748b"></div>
@@ -3288,23 +3614,46 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           document.getElementById('printInvoiceSerial').textContent = invoiceSerial;
           document.getElementById('printInvoiceDate').textContent = currentDateStr;
           document.getElementById('printCashierName').textContent = loggedUser;
+          // مزامنة المبلغ المدفوع مع حقل الدفع الرئيسي حتى لا تعيده دالة الحساب إلى صفر عند المعاينة.
+          const mainPaidInput = document.getElementById('amountPaidInput');
+          if (mainPaidInput) { mainPaidInput.value = amountPaid; mainPaidInput.dataset.manualEdited = 'true'; }
           document.getElementById('printAmountPaidSum').textContent = amountPaid;
+          document.getElementById('remainingBalanceSum').textContent = Math.max(0, totalSum - amountPaid);
+          document.getElementById('remainingBalanceRow').style.display = amountPaid < totalSum ? 'flex' : 'none';
+          document.getElementById('partsOnlyTotalSum').textContent = '0';
+          document.getElementById('partsLaborTotalSum').textContent = '0';
+          document.getElementById('quickServicesTotalSum').textContent = totalSum;
+          document.getElementById('servicesTotalSum').textContent = '0';
+          document.getElementById('invoiceGrossBeforeDiscountSum').textContent = totalSum;
+          document.getElementById('advanceDeductionSum').textContent = '0';
+          document.getElementById('managerDiscountSum').textContent = '0';
           document.getElementById('clientName').value = clientName;
           document.getElementById('clientPhone').value = clientPhone;
           document.getElementById('carInfo').value = carInfo;
           document.getElementById('carPlate').value = carPlate;
           document.getElementById('grandTotalSum').textContent = totalSum;
 
+          const partsBody = document.getElementById('partsTableBody');
+          const servicesBody = document.getElementById('servicesTableBody');
+          if (partsBody) partsBody.innerHTML = '';
+          if (servicesBody) servicesBody.innerHTML = '';
           const qsTbody = document.getElementById('invoiceQuickServicesTableBody');
           qsTbody.innerHTML = '';
-          servicesArr.forEach(qs => {
+          servicesArr.filter(qs => (Number(qs.price) || 0) * (Number(qs.qty) || 0) !== 0).forEach(qs => {
             qsTbody.innerHTML += `<tr><td>${qs.name}</td><td>${qs.qty}</td><td>${qs.price}</td><td><b>${qs.price * qs.qty}</b></td></tr>`;
           });
+          if (typeof window.onAmountPaidInput === 'function') window.onAmountPaidInput();
+          // تثبيت المدفوع والمتبقي في ملخص الفاتورة بعد أي إعادة حساب.
+          document.getElementById('printAmountPaidSum').textContent = amountPaid;
+          document.getElementById('remainingBalanceSum').textContent = Math.max(0, totalSum - amountPaid);
+          document.getElementById('remainingBalanceRow').style.display = amountPaid < totalSum ? 'flex' : 'none';
+          if (typeof window.syncInvoiceZeroRows === 'function') window.syncInvoiceZeroRows();
 
           alert(`✅ تم إتمام الفاتورة وصدرت برقم #${invoiceSerial} بنجاح.`);
           closeQuickMaintenanceModal();
-          // طباعة نسختين: نسخة العميل ونسخة المركز بنفس تنسيق الفاتورة المعتمد.
-          if (typeof window.printInvoiceBySize === 'function') window.printInvoiceBySize('A4');
+          // معاينة الفاتورة بنفس قالب الفاتورة الرئيسي قبل الطباعة.
+          if (typeof window.previewInvoiceSize === 'function') window.previewInvoiceSize('A4');
+          else if (typeof window.printInvoiceBySize === 'function') window.printInvoiceBySize('A4');
           else window.print();
         } catch (e) {
           alert("خطأ أثناء التنفيذ: " + e.message);
@@ -4042,6 +4391,13 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
     function findArchivedInvoiceByKey(key){return (archiveInvoicesList||[]).find(x=>String(x.id||x.invoiceSerial)===String(key));}
     window.openArchivedInvoiceById=function(key){const inv=findArchivedInvoiceByKey(key);if(inv)openArchivedInvoice(inv);};
     window.printArchivedInvoiceById=function(key){const inv=findArchivedInvoiceByKey(key);if(inv)printArchivedInvoice(inv,'A4');};
+    window.previewArchivedInvoiceById=function(key){
+      const inv=findArchivedInvoiceByKey(key);if(!inv)return;
+      prepareArchivedInvoice(inv);
+      document.getElementById('archiveModal').style.display='none';
+      if(typeof window.previewInvoiceSize==='function')window.previewInvoiceSize('A4');
+      else if(typeof window.printInvoiceBySize==='function')window.printInvoiceBySize('A4');
+    };
     window.openArchivedReturnReviewById=function(key){const inv=findArchivedInvoiceByKey(key);if(inv)openArchivedReturnReview(inv);};
     window.deleteArchivedInvoiceById=async function(key){
       const inv=findArchivedInvoiceByKey(key);
@@ -4100,7 +4456,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
           <td>المدفوع: ${moneyArchive(paid)}<br><span style="color:var(--danger-red)">آجل: ${moneyArchive(rem)}</span></td>
           <td>${escArchive(inv.dateFormatted || (inv.dateStr?new Date(inv.dateStr).toLocaleDateString('ar-EG'):'---'))}<br>
             <button class="btn-action btn-purple" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="openArchivedInvoiceById(this.dataset.archiveId)"><i class="fa-solid fa-eye"></i> عرض</button>
-            <button class="btn-action btn-green" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="printArchivedInvoiceById(this.dataset.archiveId)"><i class="fa-solid fa-print"></i> طباعة فاتورة</button>
+            <button class="btn-action btn-green" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="previewArchivedInvoiceById(this.dataset.archiveId)"><i class="fa-solid fa-eye"></i> معاينة الفاتورة</button>
             <button class="btn-action btn-blue" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="openArchivedReturnReviewById(this.dataset.archiveId)"><i class="fa-solid fa-arrow-right-to-bracket"></i> إرجاع</button>
             <button class="btn-action btn-danger" style="padding:4px 8px;font-size:.72rem" data-archive-id="${escArchive(inv.id||inv.invoiceSerial)}" onclick="deleteArchivedInvoiceById(this.dataset.archiveId)"><i class="fa-solid fa-trash"></i> حذف</button>
           </td></tr>`;
@@ -4284,7 +4640,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
         <td style="white-space:nowrap">
           <button class="btn-action btn-blue" onclick="editAdvancePayment('${advancePaymentEsc(p.docId)}')">تعديل</button>
           <button class="btn-action btn-danger" onclick="deleteAdvancePayment('${advancePaymentEsc(p.docId)}')">حذف</button>
-          <button class="btn-action btn-orange" onclick="printArchivedAdvancePayment('${advancePaymentEsc(p.docId)}','A4')">طباعة A4</button>
+          <button class="btn-action btn-orange" onclick="previewArchivedAdvancePayment('${advancePaymentEsc(p.docId)}','A4')">معاينة الإيصال</button>
         </td></tr>`).join('');
     }
     function printArchivedAdvancePayment(docId,paper='A4'){
@@ -4472,7 +4828,21 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
 
 </body></html>`;
     }
-    function printLastAdvancePaymentReceipt(paper='A4'){ if(!lastAdvancePaymentReceipt)return; const w=window.open('','_blank'); if(!w){alert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.');return;} w.document.open();w.document.write(buildAdvancePaymentReceiptHtml(lastAdvancePaymentReceipt,paper));w.document.close();setTimeout(()=>{w.focus();w.print();},900); }
+    function previewAdvancePaymentReceipt(payment,paper='A4'){
+      if(!payment)return;
+      const w=window.open('','_blank');if(!w){alert('اسمح بفتح النوافذ المنبثقة لمعاينة الإيصال.');return;}
+      let html=buildAdvancePaymentReceiptHtml(payment,paper);
+      html=html.replace('</head>',`<style>body{background:#eef2f7!important;padding:18px 0 30px!important}.preview-toolbar{position:sticky;top:0;z-index:9999;display:flex;justify-content:center;gap:10px;padding:12px;background:#173753;margin:-18px 0 18px}.preview-toolbar button{border:0;border-radius:7px;padding:10px 20px;font-weight:900;cursor:pointer}.preview-print{background:#f28c28;color:#fff}.preview-close{background:#fff;color:#173753}.receipt{position:relative;margin:0 auto 20px!important;box-shadow:0 5px 24px #0002!important;background:#fff}@media print{body{background:#fff!important;padding:0!important}.preview-toolbar{display:none!important}.receipt{margin:0!important;box-shadow:none!important}}</style></head>`)
+       .replace('<body>','<body><div class="preview-toolbar"><button class="preview-print" onclick="window.focus();window.print()">طباعة الإيصال</button><button class="preview-close" onclick="window.close()">إغلاق المعاينة</button></div>')
+       .replace(/<script>window.onload=\(\)=>window.print\(\)<\/script>/,'');
+      w.document.open();w.document.write(html);w.document.close();
+    }
+    function previewLastAdvancePaymentReceipt(paper='A4'){previewAdvancePaymentReceipt(lastAdvancePaymentReceipt,paper);}
+    function printLastAdvancePaymentReceipt(paper='A4'){previewLastAdvancePaymentReceipt(paper);}
+    function previewArchivedAdvancePayment(docId,paper='A4'){const p=advancePaymentsArchiveCache.find(x=>x.docId===docId);if(p)previewAdvancePaymentReceipt(p,paper);}
+    window.previewLastAdvancePaymentReceipt=previewLastAdvancePaymentReceipt;
+    window.printLastAdvancePaymentReceipt=printLastAdvancePaymentReceipt;
+    window.previewArchivedAdvancePayment=previewArchivedAdvancePayment;
     function buildAdvancePaymentWhatsAppUrl(p){
       let phone=String(p.clientPhone||'').replace(/\\D/g,'');
       if(phone.startsWith('0')) phone='20'+phone.slice(1); else if(!phone.startsWith('20') && phone.length===10) phone='20'+phone;
@@ -5552,7 +5922,38 @@ window.addEventListener('load', function () {
  function supplierTotals(s){let os=orders().filter(o=>o.supplierId===s.id),rs=returns().filter(r=>r.supplierId===s.id),ls=ledger().filter(l=>l.supplierId===s.id);let total=os.reduce((a,o)=>a+n(o.total),0),paid=os.reduce((a,o)=>a+n(o.paid),0);let ret=rs.filter(r=>String(r.type||'').includes('مرتجع')).reduce((a,r)=>a+n(r.value||n(r.qty)*n(r.buyPrice||r.price)),0);let damaged=rs.filter(r=>String(r.type||'').includes('تالف')).reduce((a,r)=>a+n(r.value||n(r.qty)*n(r.buyPrice||r.price)),0);let paidLedger=ls.filter(l=>/سداد|دفع|دفعة|payment/i.test(String(l.type||''))).reduce((a,l)=>a+n(l.value||l.amount),0);paid=Math.max(paid,paidLedger);return {orders:os,returns:rs,ledger:ls,total,paid,ret,damaged,due:Math.max(0,total-ret-damaged-paid)};}
  function showSupplier(s){selectedSupplier=s||null;let name=document.getElementById('accountSupplierName'),code=document.getElementById('accountSupplierCode');if(name)name.value=s?.name||'';if(code)code.value=s?.code||'';renderAccountsSupplierDirectory();}
  window.renderAccountsSupplierDirectory=function(){let host=document.getElementById('accountSupplierDirectoryResult');if(!host)return;let a=suppliers(),s=selectedSupplier;if(!s){host.innerHTML='<div style="padding:10px;border:1px dashed var(--border-color);border-radius:8px">ابحث بكود المورد لعرض كشف حسابه، أو اختر موردًا من القائمة التالية.</div>';}else{let t=supplierTotals(s),inv=inventory().filter(i=>i.supplierId===s.id||i.supplierName===s.name),items=new Map();t.orders.forEach(o=>(o.lines||[]).forEach(l=>{let k=l.itemId||l.code||l.name,x=items.get(k)||{code:l.code||l.barcode||'',name:l.name||'',qty:0,buy:n(l.price),total:0};x.qty+=n(l.qty);x.total+=n(l.total||n(l.qty)*n(l.price));items.set(k,x)}));let rows=[...items.values()].map(x=>`<tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${money(x.qty)}</td><td>${money(x.buy)}</td><td>${money(x.total)}</td></tr>`).join('');let rr=t.returns.map(r=>`<tr><td>${esc(r.date?new Date(r.date).toLocaleDateString('en-US'):'—')}</td><td>${esc(r.type||'مرتجع/تالف')}</td><td>${esc(r.itemName||r.name||'—')}</td><td>${money(r.qty)}</td><td>${money(r.value||n(r.qty)*n(r.buyPrice||r.price))}</td></tr>`).join('');host.innerHTML=`<div class="invoice-summary-box"><div class="summary-row"><span>إجمالي التوريدات</span><span>${money(t.total)} </span></div><div class="summary-row"><span>المرتجعات</span><span>${money(t.ret)} </span></div><div class="summary-row"><span>التالف المسجل</span><span>${money(t.damaged)} </span></div><div class="summary-row"><span>إجمالي المدفوع</span><span>${money(t.paid)} </span></div><div class="summary-row"><span>المتبقي للمورد</span><span>${money(t.due)} </span></div></div><h4 style="margin:10px 0">الأصناف التي وردها المورد</h4><div style="overflow:auto"><table><thead><tr><th>كود الصنف</th><th>الصنف</th><th>إجمالي الكمية</th><th>سعر الشراء</th><th>إجمالي القيمة</th></tr></thead><tbody>${rows||'<tr><td colspan="5">لا توجد توريدات مسجلة</td></tr>'}</tbody></table></div><h4 style="margin:12px 0 6px">المرتجعات والتالف</h4><div style="overflow:auto"><table><thead><tr><th>التاريخ</th><th>نوع الحركة</th><th>الصنف</th><th>الكمية</th><th>القيمة</th></tr></thead><tbody>${rr||'<tr><td colspan="5">لا توجد حركات مرتجع أو تالف مسجلة</td></tr>'}</tbody></table></div><div style="margin-top:8px;color:#64748b">الأصناف الحالية المرتبطة بالمورد في المخزن: ${inv.length} صنف.</div>`;}
- if(!s && !(document.getElementById('accountSupplierNameSearch')?.value||'').trim()) host.insertAdjacentHTML('beforeend',`<h4 style="margin:12px 0 6px">دليل الموردين والتجار</h4><div style="overflow:auto;max-height:230px"><table><thead><tr><th>الكود</th><th>المورد</th><th>الهاتف</th><th>إجمالي التوريد</th><th>المدفوع</th><th>المتبقي</th><th>فتح</th></tr></thead><tbody>${a.map(x=>{let t=supplierTotals(x);return `<tr><td>${esc(x.code||'')}</td><td>${esc(x.name||'')}</td><td>${esc(x.phone||'')}</td><td>${money(t.total)}</td><td>${money(t.paid)}</td><td>${money(t.due)}</td><td><button type="button" class="btn-action btn-blue" onclick="selectAccountsSupplier('${esc(x.id)}')">عرض</button></td></tr>`}).join('')||'<tr><td colspan="7">لا يوجد موردون مسجلون</td></tr>'}</tbody></table></div>`);};
+ if(!s && !(document.getElementById('accountSupplierNameSearch')?.value||'').trim()) host.insertAdjacentHTML('beforeend',`<h4 style="margin:12px 0 6px">دليل الموردين والتجار</h4><div style="overflow:auto;max-height:230px"><table><thead><tr><th>الكود</th><th>المورد</th><th>الهاتف</th><th>إجمالي التوريد</th><th>المدفوع</th><th>المتبقي</th><th>الإجراءات</th></tr></thead><tbody>${a.map(x=>{let t=supplierTotals(x);return `<tr><td>${esc(x.code||'')}</td><td>${esc(x.name||'')}</td><td>${esc(x.phone||'')}</td><td>${money(t.total)}</td><td>${money(t.paid)}</td><td>${money(t.due)}</td><td style="white-space:nowrap"><button type="button" class="btn-action btn-blue" onclick="selectAccountsSupplier('${esc(x.id)}')">عرض</button> <button type="button" class="btn-action btn-orange" onclick="editAccountsSupplier('${esc(x.id)}')">تعديل</button> <button type="button" class="btn-action btn-danger" onclick="deleteAccountsSupplier('${esc(x.id)}')">حذف</button></td></tr>`}).join('')||'<tr><td colspan="7">لا يوجد موردون مسجلون في المخزن</td></tr>'}</tbody></table></div>`);};
+ 
+ // إدارة موحدة: نفس سجل الموردين suppliers_list المستخدم في صفحة المخزن والخزينة.
+ window.editAccountsSupplier=function(id){
+   const a=suppliers(),x=a.find(v=>String(v.id)===String(id));if(!x)return;
+   const name=prompt('اسم المورد / التاجر',x.name||'');if(name===null)return;
+   if(!name.trim()){alert('اسم المورد مطلوب.');return;}
+   if(a.some(v=>String(v.id)!==String(id)&&String(v.name||'').trim().toLocaleLowerCase('ar')===name.trim().toLocaleLowerCase('ar'))){alert('يوجد مورد آخر بنفس الاسم.');return;}
+   const phone=prompt('رقم الهاتف',x.phone||'');if(phone===null)return;
+   const section=prompt('القسم',x.section||'');if(section===null)return;
+   const address=prompt('العنوان',x.address||'');if(address===null)return;
+   const notes=prompt('ملاحظات',x.notes||'');if(notes===null)return;
+   const oldName=x.name;x.name=name.trim();x.phone=phone.trim();x.section=section.trim();x.address=address.trim();x.notes=notes.trim();
+   write('suppliers_list',a);
+   // تحديث أسماء الموردين المرتبطة به مع الحفاظ على أرقام التعريف والسجلات التاريخية.
+   ['inventory','supplier_issue_orders','supplier_returns','supplier_ledger'].forEach(key=>{
+     const rows=read(key);let changed=false;
+     rows.forEach(row=>{if(String(row.supplierId||'')===String(id)){row.supplierName=x.name;changed=true;}});
+     if(changed)write(key,rows);
+   });
+   selectedSupplier=x;showSupplier(x);alert('تم تعديل بيانات المورد في الحسابات والمخزن بنفس السجل.');
+ };
+ window.deleteAccountsSupplier=function(id){
+   const a=suppliers(),x=a.find(v=>String(v.id)===String(id));if(!x)return;
+   if(!confirm('تأكيد حذف المورد «'+(x.name||'')+'» من قائمة الموردين والتجار في الحسابات والمخزن؟\nسيتم الاحتفاظ بأذونات التوريد والمدفوعات والسجلات التاريخية.'))return;
+   write('suppliers_list',a.filter(v=>String(v.id)!==String(id)));
+   if(selectedSupplier&&String(selectedSupplier.id)===String(id)){selectedSupplier=null;const nm=document.getElementById('accountSupplierName'),cd=document.getElementById('accountSupplierCode');if(nm)nm.value='';if(cd)cd.value='';}
+   renderAccountsSupplierDirectory();alert('تم حذف المورد من القائمة المشتركة؛ ستختفي بياناته من صفحة المخزن أيضاً مع الاحتفاظ بالسجلات السابقة.');
+ };
+ // إذا تغيرت القائمة من صفحة المخزن في نافذة أخرى، حدّث دليل الحسابات تلقائياً.
+ window.addEventListener('storage',function(e){if(e.key==='suppliers_list'){if(selectedSupplier){selectedSupplier=suppliers().find(v=>String(v.id)===String(selectedSupplier.id))||null;}renderAccountsSupplierDirectory();}});
+
  window.selectAccountsSupplier=function(id){showSupplier(suppliers().find(s=>s.id===id)||null);};
  window.searchSupplierByCodeInAccounts=function(){let q=(document.getElementById('accountSupplierCodeSearch')?.value||'').trim().toLowerCase();if(!q)return;let s=suppliers().find(x=>String(x.code||'').toLowerCase()===q||String(x.id||'').toLowerCase()===q);if(!s)s=suppliers().find(x=>String(x.code||'').toLowerCase().includes(q));if(s){showSupplier(s);let search=document.getElementById('accountSupplierOrderSearch');if(search)search.value='';}else{selectedSupplier=null;document.getElementById('accountSupplierName').value='';document.getElementById('accountSupplierCode').value='';document.getElementById('accountSupplierOrderResult').innerHTML='<p style="color:#dc2626">لم يتم العثور على كود المورد.</p>';renderAccountsSupplierDirectory();}};
  window.searchSupplierByNameInAccounts=function(){let host=document.getElementById('accountSupplierDirectoryResult');let q=(document.getElementById('accountSupplierNameSearch')?.value||'').trim().toLocaleLowerCase('ar');let code=document.getElementById('accountSupplierCodeSearch');if(code)code.value='';let out=document.getElementById('accountSupplierOrderResult');selectedOrder=null;if(!q){selectedSupplier=null;showSupplier(null);if(out)out.innerHTML='';return;}let matches=suppliers().filter(x=>String(x.name||'').toLocaleLowerCase('ar').includes(q));if(matches.length===1){showSupplier(matches[0]);if(out)out.innerHTML='';}else if(matches.length>1){selectedSupplier=null;if(host)host.innerHTML='<div style="padding:8px;font-weight:bold">نتائج البحث عن المورد</div><table><thead><tr><th>الكود</th><th>اسم المورد</th><th>المتبقي</th><th>اختيار</th></tr></thead><tbody>'+matches.map(x=>{let t=supplierTotals(x);return `<tr><td>${esc(x.code||'')}</td><td>${esc(x.name)}</td><td>${money(t.due)} </td><td><button class="btn-action btn-blue" onclick="selectAccountsSupplier('${esc(x.id)}')">اختيار</button></td></tr>`}).join('')+'</tbody></table>';}else{selectedSupplier=null;showSupplier(null);if(host)host.innerHTML='<p style="color:#dc2626">لا يوجد مورد بهذا الاسم.</p>';}};
@@ -5912,7 +6313,7 @@ window.addEventListener('load', function () {
      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
       <button type="button" class="btn-action btn-green" onclick="saveClientCollection('partial')"><i class="fa-solid fa-coins"></i> تحصيل جزء</button>
       <button type="button" class="btn-action btn-purple" onclick="saveClientCollection('full')"><i class="fa-solid fa-check-double"></i> سداد كامل</button>
-      <button class="btn-action btn-blue" onclick="printCollectionReceipt()"><i class="fa-solid fa-print"></i> إصدار / طباعة فاتورة سداد</button>
+      <button class="btn-action btn-blue" onclick="previewCollectionReceipt()"><i class="fa-solid fa-eye"></i> معاينة إيصال السداد</button>
       <button class="btn-action btn-green" onclick="sendCollectionWhatsApp()"><i class="fa-brands fa-whatsapp"></i> رسالة واتساب</button>
      </div>
      <small style="display:block;margin-top:8px;color:#64748b">يتم تسجيل التحصيل في حساب العميل وحركة الخزينة، مع تحديث المديونية المتبقية.</small>
@@ -5987,17 +6388,58 @@ window.addEventListener('load', function () {
      window.loadSalesDaily?.()
    ]);
    alert('تم تسجيل التحصيل بنجاح وتحديث الخزينة والملخص المالي ويومية البيع. رقم فاتورة السداد: '+receipt.invoiceSerial);
-   await window.openCollectionsModal();$('collectionSearch').value=receipt.clientName;window.renderCollectionCustomers();
+   await window.openCollectionsModal();lastReceipt=receipt;$('collectionSearch').value=receipt.clientName;window.renderCollectionCustomers();
    const match=customers.find(c=>c.name===receipt.clientName&&c.phone===receipt.clientPhone);if(match)window.selectCollectionCustomer(encodeURIComponent(match.key));
    printCollectionReceipt();
   }catch(e){alert('تعذر حفظ التحصيل: '+e.message)}
  };
- window.printCollectionReceipt=function(){
-  const r=lastReceipt;if(!r){alert('سجل التحصيل أولاً لإصدار فاتورة سداد');return}
-  const w=window.open('','_blank','width=800,height=700');if(!w){alert('اسمح بفتح النوافذ المنبثقة لطباعة الفاتورة');return}
-  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>فاتورة سداد ${r.invoiceSerial}</title><style>body{font-family:Tahoma,Arial;padding:28px;color:#17283a}h2{text-align:center;border-bottom:2px solid #17283a;padding-bottom:12px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0}.line{padding:10px;border:1px solid #ddd}strong{color:#10243a}.paid{text-align:center;font-size:24px;font-weight:bold;margin:25px;padding:20px;border:2px solid #17856f}footer{margin-top:35px;display:flex;justify-content:space-between}@media print{button{display:none}}</style><h2>مركز أوتو نون لصيانة السيارات<br><small>فاتورة سداد حساب عميل</small></h2><div class="meta"><div class="line">رقم الفاتورة: <strong>${esc(r.invoiceSerial)}</strong></div><div class="line">التاريخ: ${esc(r.dateFormatted)}</div><div class="line">اسم العميل: ${esc(r.clientName)}</div><div class="line">رقم الهاتف: ${esc(r.clientPhone||'---')}</div><div class="line">السيارة / اللوحة: ${esc(r.carInfo||'---')}</div><div class="line">الخزينة: ${esc(r.treasuryName)}</div><div class="line">طريقة السداد: ${esc(r.method)}</div></div><div class="paid">المبلغ المستلم: ${money(r.paidAmount)} جنيه</div><div class="meta"><div class="line">المتبقي بعد السداد: <strong>${money(r.remainingAmount)} جنيه</strong></div><div class="line">مسؤول التحصيل: ${esc(r.cashier||'---')}</div></div><p>ملاحظات: ${esc(r.notes||'لا يوجد')}</p><footer><span>توقيع المحاسب: ....................</span><span>توقيع العميل: ....................</span></footer><script>window.onload=()=>window.print()<\/script></html>`);w.document.close();
- };
- window.sendCollectionWhatsApp=function(){
+   window.previewCollectionReceipt=function(){
+   const r=lastReceipt;
+   if(!r){alert('سجل التحصيل أولاً لمعاينة إيصال السداد');return}
+   const w=window.open('','_blank','width=900,height=800');
+   if(!w){alert('اسمح بفتح النوافذ المنبثقة لمعاينة إيصال السداد');return}
+   const receiptDate=r.dateFormatted||(r.date?new Date(r.date).toLocaleString('ar-EG'):'—');
+   w.document.open();
+   w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إيصال تحصيل رقم ${esc(r.invoiceSerial)}</title>
+<style>
+*{box-sizing:border-box}:root{--navy:#173753;--orange:#f28c28;--ink:#1e293b;--muted:#64748b;--line:#d8e0e9;--pale:#f4f7fb}
+body{margin:0;background:#edf1f6;color:var(--ink);font:13px Tahoma,Arial,sans-serif}
+.toolbar{position:sticky;top:0;z-index:10;display:flex;justify-content:center;gap:10px;padding:12px;background:var(--navy);box-shadow:0 3px 12px #0002}
+.toolbar button{border:0;border-radius:8px;padding:11px 24px;font:bold 14px Tahoma;cursor:pointer}.print{background:var(--orange);color:#fff}.close{background:#fff;color:var(--navy)}
+.sheet{width:min(148mm,calc(100% - 28px));min-height:205mm;margin:20px auto;padding:10mm;background:#fff;border:1px solid #d5dde7;border-top:6px solid var(--orange);box-shadow:0 8px 28px #17283a18}
+.brand{text-align:center;padding:2mm 0 5mm;border-bottom:2px solid var(--navy)}.brand h1{margin:0;color:var(--navy);font-size:22px;font-weight:900}.subtitle{margin:5px 0 0;color:var(--muted);font-size:12px;font-weight:bold}.contacts{margin-top:6px;color:#334155;font-size:11px;direction:ltr}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6mm 0 5mm}.heading h2{margin:0;color:var(--navy);font-size:19px}
+.serial{padding:8px 11px;border-radius:7px;background:#fff3e6;border:1px solid #f6c28e;color:#9a4d08;font-weight:900;white-space:nowrap}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field{min-height:43px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;overflow-wrap:anywhere}.field b{display:block;margin-bottom:5px;color:var(--navy);font-size:11px}.field span{font-weight:700;color:#172033}
+.amount-card{margin:7mm 0 5mm;padding:6mm 4mm;text-align:center;border:2px solid var(--orange);border-radius:9px;background:linear-gradient(135deg,#fffaf4,#fff1df)}.amount-card .label{display:block;color:#9a4d08;font-size:13px;font-weight:900}.amount-card strong{display:block;margin-top:5px;color:var(--navy);font-size:28px;font-weight:900}.amount-card small{font-size:13px}
+.balance-title{margin:5mm 0 2mm;color:var(--navy);font-size:13px;font-weight:900}.balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.balance{padding:10px;border-radius:6px;background:var(--pale);border:1px solid var(--line)}.balance b{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.balance strong{color:var(--navy);font-size:16px}
+.notes{margin-top:5mm;padding:11px;border:1px dashed #aebccc;border-radius:6px;min-height:42px;line-height:1.8}.notes b{color:var(--navy)}
+.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:17mm;padding-top:4mm;border-top:1px solid var(--line);text-align:center;font-size:11px;font-weight:bold;color:#334155}.signatures span{line-height:2}
+.footer{margin-top:9mm;padding:10px;text-align:center;background:var(--navy);color:#fff;border-radius:5px;font-size:11px}
+@page{size:A5 portrait;margin:7mm}@media print{html,body{background:#fff!important}.toolbar{display:none!important}.sheet{width:auto;min-height:0;margin:0;padding:5mm;border:0;border-top:4px solid var(--orange);box-shadow:none}}
+@media(max-width:520px){.sheet{padding:7mm}.heading{align-items:flex-start;flex-direction:column}}
+</style></head><body>
+<div class="toolbar"><button class="print" onclick="window.focus();window.print()">🖨 طباعة إيصال التحصيل</button><button class="close" onclick="window.close()">إغلاق المعاينة</button></div>
+<main class="sheet">
+<header class="brand"><h1>مركز أوتو نون لصيانة السيارات</h1><div class="subtitle">الإسكندرية - المعمورة البلد - طريق أبو قير - بجوار مسجد السادات</div><div class="contacts">01556004991&nbsp; | &nbsp;01004042250&nbsp; | &nbsp;035685586</div></header>
+<div class="heading"><h2>إيصال تحصيل من حساب عميل</h2><div class="serial">رقم الإيصال: ${esc(r.invoiceSerial)}</div></div>
+<section class="meta">
+<div class="field"><b>اسم العميل</b><span>${esc(r.clientName||'—')}</span></div><div class="field"><b>رقم الهاتف</b><span>${esc(r.clientPhone||'—')}</span></div>
+<div class="field"><b>السيارة / رقم اللوحة</b><span>${esc(r.carInfo||'—')}</span></div><div class="field"><b>تاريخ التحصيل</b><span>${esc(receiptDate)}</span></div>
+<div class="field"><b>الخزينة المستلمة</b><span>${esc(r.treasuryName||'—')}</span></div><div class="field"><b>طريقة السداد</b><span>${esc(r.method||'—')}</span></div>
+<div class="field"><b>مسؤول التحصيل</b><span>${esc(r.cashier||'—')}</span></div><div class="field"><b>نوع العملية</b><span>تحصيل مديونية عميل</span></div>
+</section>
+<section class="amount-card"><span class="label">إجمالي المبلغ المستلم</span><strong>${money(r.paidAmount)} <small>جنيه</small></strong></section>
+<div class="balance-title">ملخص حساب العميل بعد التحصيل</div>
+<section class="balance-grid"><div class="balance"><b>الرصيد قبل التحصيل</b><strong>${money(r.totalAmount)} جنيه</strong></div><div class="balance"><b>المتبقي بعد التحصيل</b><strong>${money(r.remainingAmount)} جنيه</strong></div></section>
+<div class="notes"><b>ملاحظات:</b> ${esc(r.notes||'لا توجد ملاحظات')}</div>
+<section class="signatures"><span>توقيع المحاسب<br>........................</span><span>توقيع العميل<br>........................</span><span>ختم المركز<br>........................</span></section>
+<footer class="footer">شكراً لثقتكم بمركز أوتو نون لصيانة السيارات</footer>
+</main></body></html>`);
+   w.document.close();
+  };
+  window.printCollectionReceipt=window.previewCollectionReceipt;
+window.sendCollectionWhatsApp=function(){
   if(!selected){alert('اختر العميل أولاً');return}
   let phone=String(selected.phone||'').replace(/\D/g,'');if(phone.startsWith('0'))phone='2'+phone;else if(phone.startsWith('1')&&phone.length===10)phone='20'+phone;
   if(!phone){alert('لا يوجد رقم هاتف مسجل للعميل');return}
@@ -6956,6 +7398,7 @@ body.archive-invoice-print #printableInvoiceArea{
  body.print-a4 #printableInvoiceArea *{box-sizing:border-box!important}
  body.print-a4 #printableInvoiceArea #printInvoiceHeader{display:block!important;text-align:center!important;margin:0 0 2mm!important;padding:0 0 2mm!important;border-bottom:1.5px solid #243653!important}
  body.print-a4 #printableInvoiceArea #printInvoiceHeader::before{display:none!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark,body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark:before,body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-brand-mark:after{display:none!important;content:none!important}
  body.print-a4 #printableInvoiceArea #printInvoiceHeader h2{margin:0 0 1mm!important;font-size:12pt!important;color:#243653!important}
  body.print-a4 #printableInvoiceArea #printInvoiceHeader p{margin:.5mm 0!important;font-size:6.5pt!important;line-height:1.15!important}
  body.print-a4 #printableInvoiceArea #printInvoiceHeader>div{margin:1mm 0 0!important;padding:1mm 0!important;font-size:7pt!important}
@@ -6994,7 +7437,7 @@ body.archive-invoice-print #printableInvoiceArea{
  const $=id=>document.getElementById(id), val=id=>String($(id)?.value??'').trim(), txt=id=>String($(id)?.textContent??'').trim();
  const safe=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  window.syncInvoiceZeroRows=function(){
-  ['partsOnlyTotalSum','partsLaborTotalSum','quickServicesTotalSum','servicesTotalSum','advanceDeductionSum','managerDiscountSum','printAmountPaidSum','remainingBalanceSum','invoiceGrossBeforeDiscountSum'].forEach(id=>{
+  ['partsOnlyTotalSum','partsLaborTotalSum','quickServicesTotalSum','servicesTotalSum','advanceDeductionSum','managerDiscountSum','printAmountPaidSum','remainingBalanceSum','invoiceGrossBeforeDiscountSum','grandTotalSum','previousCustomerDebtSum','customerCreditAppliedSum'].forEach(id=>{
    const n=$(id);if(!n)return;const v=Number(String(n.textContent||'0').replace(/,/g,''))||0;const row=n.closest('.summary-row');
    if(row)row.style.display=Math.abs(v)<.000001?'none':'flex';
   });
@@ -7428,5 +7871,267 @@ body.archive-invoice-print #printableInvoiceArea{
    if($('apTreasuryPicker'))$('apTreasuryPicker').innerHTML='<option value="">كل الخزائن</option>'+trs.map(t=>`<option value="${esc(t.id)}">${esc(t.name||'خزينة')}</option>`).join('');
    renderTreasury();renderDay();stockValue(inventory());window.calculateAccountsProfits?.();window.calculateAccountsSalesPeriod?.();await updateTotals();
  };
+})();
+</script>
+<script id="hesabat-classic-invoice-design-3-js">
+(function(){
+  const $ = id => document.getElementById(id);
+  const clean = v => String(v == null ? '' : v).trim();
+  const escapeHtml = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+  function invoiceQrPayload(){
+    const item = window.currentSelectedQueueItem || {};
+    return {
+      center:'مركز أوتو نون لصيانة السيارات',
+      centerAddress:'الإسكندرية - المعمورة البلد - طريق أبو قير - بجوار مسجد السادات',
+      centerPhones:['01556004991','01004042250','035685586'],
+      invoice:clean($('printInvoiceSerial')?.textContent),
+      date:clean($('printInvoiceDate')?.textContent),
+      customer:clean($('clientName')?.value || item.clientName),
+      customerPhone:clean($('clientPhone')?.value || item.phone || item.clientPhone),
+      car:clean($('carInfo')?.value || item.carInfo),
+      plate:clean($('carPlate')?.value || item.carPlate || item.plate),
+      receipt:clean($('printCarReceiptNo')?.textContent)
+    };
+  }
+  function addInvoiceBranding(){
+    const header = $('printInvoiceHeader');
+    if(!header) return Promise.resolve();
+    header.querySelector('.classic-invoice-brandline')?.remove();
+    header.querySelectorAll('.classic-brand-mark').forEach(el => el.remove());
+    header.querySelectorAll('*').forEach(el => { if (el.children.length === 0 && /^\s*n\\\s*$/.test(el.textContent || '')) el.remove(); });
+    header.querySelector('.classic-invoice-title')?.remove();
+    header.querySelector('.classic-invoice-meta')?.remove();
+    const brand = document.createElement('div');
+    brand.className = 'classic-invoice-brandline';
+    brand.innerHTML = `<div class="classic-invoice-qr"><div id="hesabatInvoiceQr" aria-label="QR بيانات العميل"></div><span>امسح الكود<br>لبيانات الفاتورة<br>والعميل والمركز</span></div>`;
+    header.insertBefore(brand, header.firstChild);
+    const title = document.createElement('div');
+    title.className = 'classic-invoice-title';
+    title.textContent = 'فاتورة صيانة وقطع غيار';
+    header.appendChild(title);
+    const meta = document.createElement('div');
+    meta.className = 'classic-invoice-meta';
+    meta.innerHTML = `<span class="classic-invoice-number"><b>رقم الفاتورة:</b> <strong>${escapeHtml(clean($('printInvoiceSerial')?.textContent)||'---')}</strong></span>
+      <span>التاريخ: ${escapeHtml(clean($('printInvoiceDate')?.textContent)||'---')}</span>
+      <span>مسؤول الحسابات: ${escapeHtml(clean($('printCashierName')?.textContent)||'---')}</span>`;
+    header.appendChild(meta);
+    const qrBox = $('hesabatInvoiceQr');
+    const draw = () => {
+      if(!qrBox || !window.QRCode) return;
+      qrBox.innerHTML = '';
+      try {
+        new window.QRCode(qrBox,{text:JSON.stringify(invoiceQrPayload()),width:112,height:112,correctLevel:window.QRCode.CorrectLevel.M});
+      } catch(e) { console.warn('تعذر إنشاء QR الفاتورة',e); }
+    };
+    if(window.QRCode) { draw(); return Promise.resolve(); }
+    return new Promise(resolve => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      script.onload = () => { draw(); resolve(); };
+      script.onerror = () => { if(qrBox) qrBox.textContent = 'QR غير متاح'; resolve(); };
+      document.head.appendChild(script);
+    });
+  }
+  function syncReceipt(){
+    const area = $('printableInvoiceArea');
+    if(!area || typeof window.syncInvoiceZeroRows !== 'function') return;
+    window.syncInvoiceZeroRows();
+    area.querySelector('#hesabatCombinedCarReceipt')?.remove();
+    const no = clean($('printCarReceiptNo')?.textContent);
+    if(!no || no === 'يصدر عند التحصيل') return;
+    const item = window.currentSelectedQueueItem || {};
+    const date = clean($('printInvoiceDate')?.textContent) || new Date().toLocaleString('ar-EG');
+    const receipt = document.createElement('section');
+    receipt.id = 'hesabatCombinedCarReceipt';
+    receipt.innerHTML = `<div class="receipt-title"><h3>إذن استلام السيارة</h3><div class="receipt-no">رقم الإذن: ${escapeHtml(no)}</div></div>
+      <div class="receipt-grid">
+       <div class="receipt-field"><b>اسم العميل</b><span>${escapeHtml(clean($('clientName')?.value||item.clientName)||'—')}</span></div>
+       <div class="receipt-field"><b>رقم الهاتف</b><span>${escapeHtml(clean($('clientPhone')?.value||item.phone||item.clientPhone)||'—')}</span></div>
+       <div class="receipt-field"><b>رقم الفاتورة</b><span>${escapeHtml(clean($('printInvoiceSerial')?.textContent)||'—')}</span></div>
+       <div class="receipt-field"><b>السيارة</b><span>${escapeHtml(clean($('carInfo')?.value||item.carInfo)||'—')}</span></div>
+       <div class="receipt-field"><b>رقم اللوحة</b><span>${escapeHtml(clean($('carPlate')?.value||item.carPlate||item.plate)||'—')}</span></div>
+       <div class="receipt-field"><b>تاريخ الإصدار</b><span>${escapeHtml(date)}</span></div>
+      </div><div class="receipt-note">أقر باستلام سيارتي من مركز أوتو نون لصيانة السيارات، وأتعهد بمطابقة بيانات السيارة ورقم إذن الاستلام.</div>
+      <div class="receipt-signatures"><span>اسم المستلم وتوقيعه: __________________</span><span>توقيع مسؤول التسليم: __________________</span><span>ختم المركز</span></div>`;
+    area.appendChild(receipt);
+  }
+  window.printInvoiceBySize = function(size){
+    const area = $('printableInvoiceArea');
+    if(!area){ window.print(); return; }
+    if(String(size||'A4').toUpperCase() !== 'A4'){
+      size = 'A4';
+    }
+    document.body.classList.remove('archive-invoice-print');
+    document.body.classList.add('print-a4');
+    area.style.removeProperty('zoom');
+    area.style.removeProperty('max-height');
+    area.style.removeProperty('height');
+    area.style.removeProperty('overflow');
+    area.style.removeProperty('--hesabat-print-scale');
+    const qrReady = addInvoiceBranding();
+    syncReceipt();
+    const cleanup = () => {
+      document.body.classList.remove('print-a4');
+      area.querySelector('#hesabatCombinedCarReceipt')?.remove();
+      area.querySelector('.classic-invoice-brandline')?.remove();
+      area.querySelector('.classic-invoice-title')?.remove();
+      area.querySelector('.classic-invoice-meta')?.remove();
+      area.style.removeProperty('zoom');
+      window.removeEventListener('afterprint',cleanup);
+    };
+    window.addEventListener('afterprint',cleanup,{once:true});
+    Promise.resolve(qrReady).then(()=>setTimeout(()=>window.print(),150));
+    setTimeout(cleanup,60000);
+  };
+})();
+</script>
+<script id="hesabat-reference-invoice-preview">
+(function(){
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+window.previewInvoiceSize=async function(){
+ const area=document.getElementById('printableInvoiceArea');if(!area){alert('لم يتم العثور على بيانات الفاتورة.');return;}
+ try{if(window.loadCustomerFinancialPosition)await window.loadCustomerFinancialPosition();if(window.onAmountPaidInput)window.onAmountPaidInput();if(window.syncInvoiceZeroRows)window.syncInvoiceZeroRows();}catch(e){console.warn(e);}
+ const clone=area.cloneNode(true);clone.querySelectorAll('#printInvoiceHeader,.no-print,button,script,style').forEach(x=>x.remove());clone.querySelectorAll('.form-grid').forEach(row=>{if(row.querySelector('#clientName,#clientPhone,#carInfo,#carPlate'))row.remove();});
+ clone.querySelectorAll('input,textarea,select').forEach(el=>{let v=el.tagName==='SELECT'?(el.options[el.selectedIndex]?.text||''):(el.value||'');let sp=document.createElement('span');sp.className='invoice-value';sp.textContent=v||'—';el.replaceWith(sp);});
+ const item=window.currentSelectedQueueItem||{},val=id=>document.getElementById(id)?.value||'',txt=id=>document.getElementById(id)?.textContent?.trim()||'';
+ const d={center:'مركز أوتو نون لصيانة السيارات',address:'الإسكندرية - المعمورة البلد - طريق أبو قير - بجوار مسجد السادات',phones:['01556004991','01004042250','035685586'],customer:val('clientName')||item.clientName||'',phone:val('clientPhone')||item.phone||item.clientPhone||'',car:val('carInfo')||item.carInfo||'',plate:val('carPlate')||item.carPlate||item.plate||'',invoice:txt('printInvoiceSerial'),date:txt('printInvoiceDate'),receipt:txt('printCarReceiptNo')};
+ // أنشئ QR في الصفحة الأصلية ثم ضمّن صورته داخل المعاينة؛ لا نعتمد على تحميل المكتبة داخل النافذة الجديدة.
+ let qrImage='';
+ try {
+   if(!window.QRCode){
+     await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';sc.onload=resolve;sc.onerror=reject;document.head.appendChild(sc);});
+   }
+   if(window.QRCode){
+     const holder=document.createElement('div');holder.style.cssText='position:absolute;left:-10000px;top:-10000px;width:110px;height:110px';document.body.appendChild(holder);
+     new window.QRCode(holder,{text:JSON.stringify(d),width:100,height:100,correctLevel:window.QRCode.CorrectLevel?window.QRCode.CorrectLevel.M:0});
+     const canvas=holder.querySelector('canvas');const img=holder.querySelector('img');
+     if(canvas)qrImage=canvas.toDataURL('image/png');else if(img)qrImage=img.src;
+     holder.remove();
+   }
+ } catch(qrError){console.warn('تعذر تجهيز QR للمعاينة',qrError);}
+ const w=window.open('','_blank');if(!w){alert('اسمح بفتح النوافذ المنبثقة لمعاينة الفاتورة.');return;}
+ const styles=[...document.querySelectorAll('link[rel="stylesheet"]')].map(x=>x.outerHTML).join('');w.document.open();
+ w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>معاينة فاتورة أوتو نون</title>${styles}<style>
+@page{size:A4 portrait;margin:9mm}*{box-sizing:border-box}body{margin:0;background:#eef1f5;color:#26364a;font-family:Tahoma,Arial,sans-serif}.toolbar{position:sticky;top:0;z-index:9;text-align:center;padding:12px;background:#26364a}.toolbar button{border:0;border-radius:8px;padding:10px 22px;margin:0 5px;font-weight:bold;cursor:pointer}.go{background:#f28c28;color:white}.close{background:white;color:#26364a}
+.sheet{position:relative;width:210mm;min-height:280mm;margin:16px auto;background:white;padding:13mm 12mm;overflow:hidden;box-shadow:0 5px 25px #0002}.brand{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #f28c28;padding:4mm 0 5mm}.brand h2{margin:0;color:#26364a;font-size:22px}.brand small{display:block;color:#555;margin-top:5px;font-size:11px}.brand address{font-style:normal;color:#555;font-size:11px;margin-top:7px;line-height:1.8}.logo{width:54px;height:54px;border:5px solid #f28c28;border-radius:15px 4px;color:#f28c28;display:grid;place-items:center;font-size:27px;font-weight:900}.heading{display:flex;justify-content:space-between;align-items:center;margin:7mm 0 4mm}.heading h1{font-size:19px;margin:0}.serial{background:#76256d;color:white;padding:8px 16px;border-radius:24px;font-weight:bold}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:5mm}.meta div{background:#f7f7f8;border:1px solid #e5e7eb;border-radius:7px;padding:8px;font-size:11px;min-height:40px}.meta b{display:block;color:#76256d;margin-bottom:4px}#copy .card-box{background:white!important;border:1px solid #e2e5e9!important;border-radius:7px!important;padding:8px!important;margin:7px 0!important;box-shadow:none!important;break-inside:avoid}#copy .card-box>div:first-child{color:#76256d!important;font-weight:900!important}#copy table{width:100%;border-collapse:collapse!important;font-size:10px!important}#copy th{background:#ef8120!important;color:white!important}#copy th,#copy td{border:1px solid #e1e4e8!important;padding:7px 5px!important;text-align:center!important;white-space:normal!important}#copy .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:7px 0}#copy .form-field{border:1px solid #e5e7eb;border-radius:7px;padding:7px}#copy .form-field label{display:block;color:#76256d;font-size:10px;font-weight:bold}#copy .invoice-value{font-weight:bold;font-size:11px}#copy .invoice-summary-box{background:#faf5fa!important;border-color:#76256d!important}#copy .summary-row:last-child{background:#76256d!important;color:white!important;border-radius:22px;padding:8px 12px}
+.note{margin:6mm 0;padding:9px 12px;border-right:4px solid #f28c28;background:#fff8f0;font-size:11px}.bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #ddd;padding-top:4mm;margin-top:5mm;font-size:10px}.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;color:#76256d}.qr{width:104px;height:104px;display:grid;place-items:center;background:#fff;border:1px solid #ddd;padding:5px}.qr img,.qr canvas{max-width:100%;max-height:100%}.contacts{text-align:center;line-height:1.9;flex:1}.sign{text-align:center;line-height:2;min-width:115px}.strip{position:absolute;bottom:0;left:0;right:0;height:7mm;background:linear-gradient(90deg,#76256d 0 48%,#f28c28 48%)}@media print{body{background:white}.toolbar{display:none!important}.sheet{margin:0;width:auto;min-height:275mm;box-shadow:none;padding:10mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body><div class="toolbar"><button class="go" onclick="window.print()">طباعة الفاتورة</button><button class="close" onclick="window.close()">إغلاق المعاينة</button></div><main class="sheet"><header class="brand"><div><h2>مركز أوتو نون لصيانة السيارات</h2><small>خدمات الصيانة وقطع الغيار</small><address>الإسكندرية - المعمورة البلد - طريق أبو قير - بجوار مسجد السادات<br>تليفون: 01556004991　 |　 01004042250　 |　 أرضي: 035685586</address></div><div class="logo">ن</div></header>
+<div class="heading"><h1>فاتورة صيانة وقطع غيار</h1><div class="serial">رقم الفاتورة: ${esc(d.invoice||'—')}</div></div><div class="meta"><div><b>اسم العميل</b>${esc(d.customer||'—')}</div><div><b>رقم الهاتف</b>${esc(d.phone||'—')}</div><div><b>التاريخ</b>${esc(d.date||'—')}</div><div><b>السيارة</b>${esc(d.car||'—')}</div><div><b>رقم اللوحة</b>${esc(d.plate||'—')}</div><div><b>إذن استلام السيارة</b>${esc(d.receipt||'يصدر عند التحصيل')}</div></div><section id="copy">${clone.outerHTML}</section><footer class="bottom"><div class="qr-wrap"><b>بيانات الفاتورة QR</b><div class="qr" id="qr">${qrImage?`<img src="${qrImage}" alt="QR بيانات الفاتورة" style="width:100%;height:100%;object-fit:contain">`:'<span style="font-size:10px;color:#b91c1c">تعذر إنشاء QR</span>'}</div></div><div class="contacts"><b> </b><br>  </div><div class="sign"></div></footer><div class="strip"></div></main>
+</body></html>`);w.document.close();
+};})();
+</script>
+
+
+<style id="invoice-layout-improvements-v2">
+@media print{
+ @page{size:A4 portrait;margin:6mm}
+ body.print-a4 #printableInvoiceArea{width:100%!important;max-width:100%!important;min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:3mm!important;border:0!important;border-radius:0!important;box-shadow:none!important;font:8pt Tahoma,Arial,sans-serif!important;color:#17283a!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader{display:block!important;position:relative!important;min-height:31mm!important;padding:0 0 2mm 58mm!important;margin:0 0 2mm!important;text-align:right!important;border:0!important;border-bottom:1.5px solid #173753!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader h2{margin:0 0 1mm!important;font-size:13pt!important;line-height:1.2!important;color:#173753!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader p{width:100%!important;margin:.5mm 0!important;font-size:6.8pt!important;line-height:1.25!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-brandline{position:absolute!important;left:0!important;top:0!important;width:24mm!important;height:24mm!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-qr{display:block!important;width:23mm!important;height:23mm!important;margin:0!important;padding:0!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-qr span{display:none!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-qr canvas,body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-qr img{width:22mm!important;height:22mm!important;max-width:22mm!important;max-height:22mm!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-meta{position:absolute!important;left:25mm!important;top:0!important;width:31mm!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:1mm!important;margin:0!important;padding:0!important;border:0!important;font-size:6.5pt!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-meta span{display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;color:#334155!important;text-align:right!important;font-size:6.5pt!important;white-space:nowrap!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-meta span:first-child{color:#dc2626!important;font-size:9pt!important;font-weight:900!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-title{display:block!important;position:relative!important;margin:2mm 0 0!important;padding:1.5mm 0 0!important;border:0!important;border-top:1.2px solid #173753!important;background:transparent!important;color:#173753!important;text-align:center!important;font-size:10pt!important;line-height:1.2!important;font-weight:900!important}
+ body.print-a4 #printableInvoiceArea > .form-grid:not(.no-print){gap:.5mm 3mm!important;margin:0 0 1mm!important}
+ body.print-a4 #printableInvoiceArea > .form-grid:not(.no-print) .form-field{padding:.5mm 0!important;gap:1mm!important;min-height:0!important}
+ body.print-a4 #printableInvoiceArea > .form-grid:not(.no-print) label,body.print-a4 #printableInvoiceArea > .form-grid:not(.no-print) input{font-size:6.8pt!important;line-height:1.15!important}
+ body.print-a4 #printableInvoiceArea .card-box{margin:1mm 0!important;padding:1mm 1.5mm!important;border:1px solid #aab6c4!important;border-radius:1mm!important;box-shadow:none!important;break-inside:avoid!important}
+ body.print-a4 #printableInvoiceArea .card-box>div:first-child{margin:0 0 .5mm!important;padding:0 0 .5mm!important;font-size:7pt!important;line-height:1.15!important}
+ body.print-a4 #printableInvoiceArea table{width:100%!important;min-width:0!important;table-layout:fixed!important;margin:.5mm 0!important;border-collapse:collapse!important;font-size:6.2pt!important}
+ body.print-a4 #printableInvoiceArea th,body.print-a4 #printableInvoiceArea td{padding:.65mm .7mm!important;font-size:6.2pt!important;line-height:1.1!important;white-space:normal!important;overflow-wrap:anywhere!important;min-height:0!important}
+ body.print-a4 #printableInvoiceArea .invoice-summary-box{width:58%!important;margin:1mm auto 0 0!important;padding:1mm 1.5mm!important;border:1px solid #173753!important;background:#fff!important;border-radius:0!important}body.print-a4 #printableInvoiceArea .invoice-summary-box:before{content:'البيان       المبلغ';display:grid;grid-template-columns:1fr 28%;padding:1mm;font-weight:900;background:#e9eef5;border-bottom:1px solid #173753;text-align:center}body.print-a4 #printableInvoiceArea .summary-row{display:grid!important;grid-template-columns:1fr 28%!important;gap:2mm!important;padding:1mm!important;border-bottom:1px solid #9aa8b8!important;align-items:center!important}body.print-a4 #printableInvoiceArea .summary-row span:last-child{text-align:center!important;border-right:1px solid #9aa8b8!important;padding-right:1mm!important}body.print-a4 #printableInvoiceArea .summary-row:last-child{background:#eef2f7!important;color:#111!important;border-radius:0!important}body.print-a4 #printableInvoiceArea table,body.print-a4 #printableInvoiceArea th,body.print-a4 #printableInvoiceArea td{border:1px solid #17283a!important;text-align:center!important;vertical-align:middle!important}
+ body.print-a4 #printableInvoiceArea .summary-row{padding:.45mm 0!important;min-height:0!important;font-size:6.5pt!important;line-height:1.12!important}
+ body.print-a4 #printableInvoiceArea .summary-row:last-child{font-size:7.2pt!important}
+ body.print-a4 #printableInvoiceArea .invoice-footer-notes{display:block!important;margin-top:1.5mm!important;padding-top:1mm!important;font-size:6pt!important;line-height:1.2!important;white-space:nowrap!important}
+ body.print-a4 #printableInvoiceArea .invoice-footer-notes p{margin:0!important;padding:0!important;font-size:6pt!important;line-height:1.2!important;white-space:nowrap!important}
+ body.print-a4 #printableInvoiceArea .invoice-footer-notes .invoice-signatures{margin-top:2mm!important;padding-top:1mm!important;gap:3mm!important}
+ body.print-a4 #printableInvoiceArea .invoice-footer-notes .invoice-signatures>div{font-size:6.5pt!important}
+ body.print-a4 #printableInvoiceArea .form-field:has(#printCarReceiptNo){display:none!important}
+ body.print-a4 #printableInvoiceArea #printCarReceiptNo{display:none!important}
+ body.print-a4 #printableInvoiceArea .no-print{display:none!important}
+}
+</style>
+<script id="invoice-layout-and-payment-improvements">
+(function(){
+ const $=id=>document.getElementById(id);
+ const esc=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/'/g,'&#39;');
+ window.previewInvoiceSize=async function(){
+   const area=$('printableInvoiceArea');
+   if(!area){alert('لم يتم العثور على بيانات الفاتورة.');return;}
+   try{if(window.loadCustomerFinancialPosition)await window.loadCustomerFinancialPosition();if(window.onAmountPaidInput)window.onAmountPaidInput();if(window.syncInvoiceZeroRows)window.syncInvoiceZeroRows();}catch(e){console.warn('تعذر تحديث ملخص المعاينة:',e);}
+   const item=window.currentSelectedQueueItem||{},val=id=>$(id)?.value||'',txt=id=>$(id)?.textContent?.trim()||'';
+   const data={center:'مركز أوتو نون لصيانة السيارات',centerAddress:'الإسكندرية - المعمورة البلد - طريق أبو قير - بجوار مسجد السادات',centerPhones:['01556004991','01004042250','035685586'],invoice:txt('printInvoiceSerial')||'---',date:txt('printInvoiceDate')||new Date().toLocaleString('ar-EG'),cashier:txt('printCashierName')||'---',customer:val('clientName')||item.clientName||'',phone:val('clientPhone')||item.phone||item.clientPhone||'',car:val('carInfo')||item.carInfo||'',plate:val('carPlate')||item.carPlate||item.plate||''};
+   const clone=area.cloneNode(true);
+   clone.querySelectorAll('#printInvoiceHeader,.no-print,button,script,style').forEach(n=>n.remove());
+   clone.querySelectorAll('.form-grid').forEach(row=>{if(row.querySelector('#clientName,#clientPhone,#carInfo,#carPlate'))row.remove();});
+   clone.querySelectorAll('.form-field').forEach(field=>{if(field.querySelector('#printCarReceiptNo'))field.remove();});
+   clone.querySelectorAll('input,textarea,select').forEach(el=>{const value=el.tagName==='SELECT'?(el.options[el.selectedIndex]?.text||''):(el.value||'');const span=document.createElement('span');span.className='invoice-value';span.textContent=value||'—';el.replaceWith(span);});
+   const win=window.open('','_blank');if(!win){alert('اسمح بفتح النوافذ المنبثقة لمعاينة الفاتورة.');return;}
+   const styles=[...document.querySelectorAll('link[rel="stylesheet"]')].map(x=>x.outerHTML).join('');
+   win.document.open();
+   win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>معاينة فاتورة أوتو نون</title>${styles}
+   <style>
+   @page{size:A4 portrait;margin:6mm}*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#17283a;font:9px Tahoma,Arial,sans-serif}
+   .toolbar{position:sticky;top:0;z-index:5;display:flex;justify-content:center;gap:8px;padding:9px;background:#173753}.toolbar button{border:0;border-radius:7px;padding:8px 18px;font-weight:900;cursor:pointer}.print{background:#f28c28;color:#fff}.close{background:#fff;color:#173753}
+   .sheet{width:198mm;min-height:284mm;margin:12px auto;padding:5mm;background:#fff;border:1px solid #173753;box-shadow:0 4px 18px #0002}
+   .top{display:grid;grid-template-columns:1fr auto auto;gap:5mm;align-items:center;padding:0 0 2mm;border-bottom:1.5px solid #173753}
+   .center h2{margin:0 0 1mm;font-size:14pt;color:#173753}.center p{margin:.5mm 0;font-size:7pt;line-height:1.3}
+   .serial{font-size:9pt;font-weight:900;color:#111;white-space:nowrap;display:flex;gap:1.5mm;align-items:center}.serial-label{color:#111!important;font-weight:800}.serial-number{color:#dc2626!important;font-weight:900}.qr{width:24mm;height:24mm;display:grid;place-items:center;background:#fff;border:1px solid #9aa8b8;padding:1mm}.qr img,.qr canvas{width:22mm!important;height:22mm!important}
+   .title{margin:1.5mm 0;padding:1.5mm 0 0;border-top:1px solid #173753;text-align:center;color:#173753;font-size:10pt;font-weight:900}
+   .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:2mm;margin:1mm 0}.meta div{padding:1mm;border-bottom:1px dashed #aab6c4;font-size:7pt}.meta b{color:#173753;margin-left:1mm}
+   #copy .card-box{margin:1mm 0!important;padding:1mm 1.5mm!important;border:1px solid #aab6c4!important;border-radius:1mm!important;box-shadow:none!important;break-inside:avoid}
+   #copy .card-box>div:first-child{margin:0 0 .5mm!important;padding:0 0 .5mm!important;font-size:7pt!important}
+   #copy table{width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:collapse!important;font-size:6.2pt!important;margin:.5mm 0!important}
+   #copy th,#copy td{padding:1mm .8mm!important;font-size:6.2pt!important;line-height:1.2!important;white-space:normal!important;overflow-wrap:anywhere!important;border:1px solid #334155!important;text-align:center!important;vertical-align:middle!important}#copy th{font-weight:900!important;text-align:center!important}#copy table{border:1.5px solid #17283a!important}#copy .invoice-summary-box{width:58%!important;margin:1mm 0 0 auto!important; /* overridden below for physical left */}
+   #copy .invoice-summary-box{width:58%!important;margin:1mm auto 0 0!important;padding:1mm 1.5mm!important;border:1px solid #17283a!important;border-radius:0!important;background:#fff!important}#copy .invoice-summary-box:before{content:'البيان       المبلغ';display:grid;grid-template-columns:1fr 28%;padding:1mm;font-weight:900;background:#e9eef5;border-bottom:1px solid #17283a;text-align:center}#copy .summary-row{display:grid!important;grid-template-columns:1fr 28%!important;gap:2mm!important;padding:1mm!important;border-bottom:1px solid #9aa8b8!important;align-items:center!important;font-size:6.5pt!important}#copy .summary-row span{display:block!important;text-align:right!important}#copy .summary-row span:last-child{text-align:center!important;border-right:1px solid #9aa8b8!important;padding-right:1mm!important}#copy .summary-row:last-child{background:#eef2f7!important;color:#111!important;border-radius:0!important;font-weight:900!important}
+   #copy .summary-row{padding:.45mm 0!important;font-size:6.5pt!important;line-height:1.12!important}#copy .summary-row:last-child{font-size:7.2pt!important}
+   #copy .invoice-footer-notes{display:block!important;margin-top:1.5mm!important;padding-top:1mm!important;font-size:6pt!important;line-height:1.2!important;white-space:nowrap!important}
+   #copy .invoice-footer-notes p{margin:0!important;font-size:6pt!important;white-space:nowrap!important}#copy .invoice-signatures{margin-top:2mm!important;padding-top:1mm!important;gap:3mm!important}
+   #copy .invoice-signatures>div{font-size:6.5pt!important}#copy .form-field:has(#printCarReceiptNo){display:none!important}#copy .no-print{display:none!important}
+   @media print{body{background:#fff}.toolbar{display:none!important}.sheet{width:auto;min-height:0;margin:0;padding:0;border:0;box-shadow:none}}
+   </style></head><body><div class="toolbar"><button class="print" onclick="window.print()">طباعة A4</button><button class="close" onclick="window.close()">إغلاق المعاينة</button></div>
+   <main class="sheet"><header class="top"><div class="center"><h2>مركز أوتو نون لصيانة السيارات</h2><p>نحن نقدم خدمات صيانة متكاملة لجميع أنواع السيارات</p><p>العنوان: الإسكندرية - المعمورة البلد - طريق أبو قير - بجوار مسجد السادات</p><p>أرضي: 035685586 | تليفون المركز: 01556004991 | للشكاوى والمقترحات: 01004042250</p></div>
+   <div class="serial"><span class="serial-label">رقم الفاتورة:</span><strong class="serial-number">${String(data.invoice).replace(/[&<>"]/g,'')}</strong></div><div class="qr" id="invoicePreviewQr" aria-label="QR بيانات العميل والمركز والفاتورة"></div></header>
+   <div class="title">فاتورة صيانة وقطع غيار</div><div class="meta"><div><b>العميل:</b>${esc(data.customer)}</div><div><b>الهاتف:</b>${esc(data.phone)}</div><div><b>السيارة:</b>${esc(data.car)}</div><div><b>اللوحة:</b>${esc(data.plate)}</div><div><b>التاريخ:</b>${esc(data.date)}</div><div><b>مسؤول الحسابات:</b>${esc(data.cashier)}</div></div>
+   <section id="copy">${clone.outerHTML}</section></main>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\\/script><script>window.addEventListener('load',function(){var q=document.getElementById('invoicePreviewQr');function draw(){if(q&&window.QRCode){q.innerHTML='';new QRCode(q,{text:${JSON.stringify(JSON.stringify(data))},width:100,height:100,correctLevel:QRCode.CorrectLevel?QRCode.CorrectLevel.M:0});}else if(q){q.textContent='QR غير متاح';}}if(window.QRCode)draw();else{var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';sc.onload=draw;sc.onerror=draw;document.head.appendChild(sc);}});<\\/script></body></html>`);
+   win.document.close();
+ };
+})();
+</script>
+
+
+<style id="invoice-final-polish-v3">
+@media print{
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-meta .classic-invoice-number{display:flex!important;gap:1mm!important;align-items:center!important;color:#111!important;font-size:8pt!important;font-weight:800!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-meta .classic-invoice-number b{color:#111!important;font-weight:800!important}
+ body.print-a4 #printableInvoiceArea #printInvoiceHeader .classic-invoice-meta .classic-invoice-number strong{color:#dc2626!important;font-size:10pt!important;font-weight:900!important;background:transparent!important}
+ body.print-a4 #printableInvoiceArea .invoice-signatures .stamp,
+ body.print-a4 #printableInvoiceArea .invoice-signatures .seal,
+ body.print-a4 #printableInvoiceArea .stamp,body.print-a4 #printableInvoiceArea .invoice-stamp{font-size:0!important;color:transparent!important}
+}
+</style>
+<script id="remove-auto-non-from-invoice-seal">
+(function(){
+ function cleanSealText(root){
+  if(!root)return;
+  root.querySelectorAll('.stamp,.seal,.invoice-stamp,.stamp-area').forEach(el=>{
+   el.childNodes.forEach(n=>{if(n.nodeType===3 && /auto\s*non|أوتو\s*نون|اوتو\s*نون/i.test(n.textContent||''))n.textContent='';});
+   el.querySelectorAll('*').forEach(child=>{if(child.children.length===0 && /auto\s*non|أوتو\s*نون|اوتو\s*نون/i.test(child.textContent||''))child.textContent='';});
+  });
+ }
+ document.addEventListener('DOMContentLoaded',()=>cleanSealText(document));
+ const oldPrint=window.printInvoiceBySize;
+ if(typeof oldPrint==='function')window.printInvoiceBySize=function(){cleanSealText(document);return oldPrint.apply(this,arguments);};
+ const oldPreview=window.previewInvoiceSize;
+ if(typeof oldPreview==='function')window.previewInvoiceSize=async function(){cleanSealText(document);return oldPreview.apply(this,arguments);};
 })();
 </script>
