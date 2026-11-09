@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> النسخة الشاملة والمحدثة مع لوحة التحكم الشاملة</title>
+  <title>مركز أوتو نون (NON) - النسخة الشاملة والمحدثة مع لوحة التحكم الشاملة</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -260,6 +260,7 @@
     <div class="center-nav">
       <button class="btn-nav" id="btnHeaderBackup" style="background:var(--btn-blue);" onclick="takeBackup()"><i class="fa-solid fa-download"></i> نسخة احتياطية</button>
       <button class="btn-nav" id="btnHeaderBlank" style="background:var(--danger-red);" onclick="downloadBlankVersion()"><i class="fa-solid fa-file-circle-plus"></i> نسخة فارغة</button>
+      <label class="btn-nav" style="background:#15803d;cursor:pointer;"><i class="fa-solid fa-upload"></i> تحميل / استيراد النسخة <input type="file" accept=".json,application/json" hidden onchange="restoreBackupFromFile(event)"></label>
       <button class="btn-nav" style="background:var(--gold-vip);" onclick="openMasterControlModal()"><i class="fa-solid fa-shield-halved"></i> لوحة تحكم النون</button>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
@@ -375,7 +376,6 @@
                   </div>
                 </div>
 
-                <div class="form-field" id="itemExpiryDateWrap" style="display:none;"><label>تاريخ صلاحية المنتج:</label><input type="date" id="itemExpiryDate"></div>
                 <div class="form-field" id="itemKmValidityWrap" style="display:none;"><label>صلاحية المنتج / موعد التغيير (كيلومتر):</label><input type="number" id="itemKmValidity" min="1" step="1" placeholder="مثال: 5000"></div>
                 <div class="form-field"><label>اسم الصنف:</label><input type="text" id="itemName" required placeholder="مثال: تيل فرامل..." onblur="checkItemExistsAlert()"></div>
                 <div class="form-field"><label>فرع المنتج / العلامة التجارية:</label><input type="text" id="itemBrand" placeholder="اسم الفرع أو الماركة"></div>
@@ -513,19 +513,21 @@
             <button class="btn-action-sm btn-danger global-delete-btn" id="btnDeleteInv" onclick="deleteSelectedItemsGeneric('inventory')"><i class="fa-solid fa-trash"></i> حذف المحدد</button>
             <button class="btn-action-sm btn-gold" onclick="filterShortagesOnly()"><i class="fa-solid fa-triangle-exclamation"></i> النواقص (<span id="shortageBadgeCount">0</span>)</button>
             <button class="btn-action-sm btn-excel" onclick="exportTableToExcel('#inventoryTable', 'Inventory_NON.xlsx')"><i class="fa-solid fa-file-excel"></i> Excel</button>
+            <button class="btn-action-sm btn-blue" type="button" onclick="exportWarehouseBackup()"><i class="fa-solid fa-download"></i> تصدير نسخة المخزن</button>
+            <label class="btn-action-sm btn-success" style="cursor:pointer;"><i class="fa-solid fa-upload"></i> استيراد نسخة المخزن <input type="file" id="warehouseBackupImport" accept=".json,application/json" hidden onchange="importWarehouseBackup(event)"></label>
           </div>
         </div>
         <div id="inventorySearchFilters" class="form-field" style="margin-bottom:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px">
-<input type="text" id="searchInventoryInput" oninput="filterInventoryTable()" placeholder="بحث عام: الصنف / الباركود / الشركة / المورد / القسم">
-<input type="text" id="searchCompanyFilter" oninput="filterInventoryTable()" placeholder="اسم الشركة">
+<input type="text" id="searchInventoryInput" oninput="filterInventoryTable()" placeholder="بحث عام: الصنف / الباركود / الفرع / المورد / القسم">
+<input type="text" id="searchCompanyFilter" oninput="filterInventoryTable()" placeholder="اسم الفرع">
 <input type="text" id="searchSupplierFilter" oninput="filterInventoryTable()" placeholder="اسم المورد / التاجر">
 <input type="text" id="searchItemFilter" oninput="filterInventoryTable()" placeholder="اسم الصنف">
 <input type="text" id="searchDepartmentFilter" oninput="filterInventoryTable()" placeholder="القسم">
-<input type="date" id="searchDateFilter" oninput="filterInventoryTable()" title="تاريخ الصلاحية / التاريخ المسجل">
+<input type="date" id="searchDateFilter" oninput="filterInventoryTable()" title="التاريخ المسجل">
 <button type="button" class="btn-action-sm btn-blue" onclick="printProductsBySearch()"><i class="fa-solid fa-print"></i> طباعة نتائج البحث</button></div>
         <div style="overflow-x: auto;">
           <table id="inventoryTable">
-            <thead><tr><th style="width:30px;"><input type="checkbox" onclick="toggleSelectAllGeneric(this, 'inventory-checkbox')"></th><th>المخزن</th><th>القسم</th><th>الصنف</th><th>الشركة</th><th>المورد</th><th>الباركود</th><th>الرصيد السابق</th><th>الرصيد الحالي</th><th>إجمالي سعر المنتج</th><th>حد التنبيه</th><th>شراء</th><th>بيع</th><th>ربح الصنف</th><th>مصنعية</th><th>صلاحية كم</th><th>المبيع</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <thead><tr><th style="width:30px;"><input type="checkbox" onclick="toggleSelectAllGeneric(this, 'inventory-checkbox')"></th><th>المخزن</th><th>القسم</th><th>الصنف</th><th>الفرع</th><th>المورد</th><th>الباركود</th><th>الرصيد السابق</th><th>الرصيد الحالي</th><th>إجمالي سعر المنتج</th><th>حد التنبيه</th><th>شراء</th><th>بيع</th><th>ربح الصنف</th><th>مصنعية</th><th>صلاحية كم</th><th>المبيع</th><th>الحالة</th><th>إجراء</th></tr></thead>
             <tbody id="inventoryTbody"><tr><td colspan="19" style="text-align:center;">جاري التحميل...</td></tr></tbody>
           </table>
         </div>
@@ -849,8 +851,7 @@
       </div>
       <div class="form-field"><label>القسم:</label><input type="text" id="editItemCategory"></div>
       <div class="form-field"><label>اسم الصنف:</label><input type="text" id="editItemName"></div>
-      <div class="form-field"><label>اسم الشركة / العلامة التجارية:</label><input type="text" id="editItemBrand"></div>
-      <div class="form-field"><label>تاريخ الصلاحية:</label><input type="date" id="editItemExpiryDate"></div>
+      <div class="form-field"><label>اسم الفرع / العلامة التجارية:</label><input type="text" id="editItemBrand"></div>
       <div class="form-field"><label>الكمية:</label><input type="number" id="editItemQty" min="0" step="1"></div>
       <div class="form-field"><label>تنبيه النقص عند:</label><input type="number" id="editItemMinQty" min="0" step="1"></div>
       <div class="form-field"><label>سعر الشراء:</label><input type="number" id="editItemBuy" step="any"></div>
@@ -874,11 +875,9 @@
     let useLocalFallback = false;
 
     try {
-      if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-      db = firebase.firestore();
-    } catch(err) {
-      useLocalFallback = true;
-    }
+      if (window.NON_STANDALONE_BLANK) { useLocalFallback = true; db = null; }
+      else { if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); } db = firebase.firestore(); }
+    } catch(err) { useLocalFallback = true; }
 
     let cachedInventory = [];
     let cachedAccounts = [];
@@ -912,6 +911,7 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       const categorySelect = document.getElementById('itemCategory');
+      loadSavedInventoryCategories();
       if (categorySelect) categorySelect.addEventListener('change', toggleKmValidityField);
       toggleKmValidityField();
       loadSettingsFromStorage();
@@ -1027,39 +1027,93 @@
       window.location.href = 'login.html';
     }
 
-    function takeBackup() {
-      const backupData = {
-        inventory: JSON.parse(localStorage.getItem('inventory') || '[]'),
-        accounts_log: JSON.parse(localStorage.getItem('accounts_log') || '[]'),
-        suppliers_list: JSON.parse(localStorage.getItem('suppliers_list') || '[]'),
-        stores_list: JSON.parse(localStorage.getItem('stores_list') || '[]'),
-        installation_services: JSON.parse(localStorage.getItem('installation_services') || '[]'),
-        returns_log: JSON.parse(localStorage.getItem('returns_log') || '[]'),
-        dept_requests: JSON.parse(localStorage.getItem('dept_requests') || '[]'),
-        issue_orders: JSON.parse(localStorage.getItem('issue_orders') || '[]'),
-        auto_non_settings: settingsConfig
-      };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `AutoNon_Backup_${new Date().toISOString().substring(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      alert("تم إنشاء وتنزيل النسخة الاحتياطية بنجاح!");
+    async function takeBackup() {
+      const collections = ['inventory','accounts_log','suppliers_list','stores_list','installation_services','returns_log','dept_requests','issue_orders','inventory_categories','inventory_movements','supplier_issue_orders','supplier_ledger','supplier_returns','returns_exchanges','cars'];
+      const backupData = {type:'AutoNon_Full_Backup',version:2,createdAt:new Date().toISOString(),all_local_storage:Object.fromEntries(Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)])),auto_non_settings:settingsConfig,server_data:{}};
+      try {
+        if (!useLocalFallback && db) {
+          for (const col of collections) {
+            try { const snap=await db.collection(col).get(); backupData.server_data[col]=snap.docs.map(doc=>({id:doc.id,...doc.data()})); }
+            catch(err) { backupData.server_data[col]=[]; (backupData.server_data._warnings ||= []).push(col+': '+(err.message||err)); }
+          }
+        } else {
+          collections.forEach(k=>{try{backupData.server_data[k]=JSON.parse(localStorage.getItem(k)||'[]')}catch(_){backupData.server_data[k]=[]}});
+        }
+        const stamp=new Date().toISOString().slice(0,10);
+        const jsonBlob=new Blob([JSON.stringify(backupData,null,2)],{type:'application/json;charset=utf-8'});
+        const jsonUrl=URL.createObjectURL(jsonBlob);
+        const ja=document.createElement('a');ja.href=jsonUrl;ja.download=`AutoNon_Full_Backup_${stamp}.json`;document.body.appendChild(ja);ja.click();ja.remove();URL.revokeObjectURL(jsonUrl);
+        if(window.XLSX){
+          const wb=XLSX.utils.book_new();
+          Object.entries(backupData.server_data).forEach(([name,rows])=>{
+            if(name==='_warnings'||!Array.isArray(rows))return;
+            XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{ملاحظة:'لا توجد بيانات'}]),name.slice(0,31));
+          });
+          XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.entries(backupData.all_local_storage).map(([key,value])=>({key,value})).length?Object.entries(backupData.all_local_storage).map(([key,value])=>({key,value})):[{ملاحظة:'لا توجد بيانات محلية'}]),'LocalStorage');
+          XLSX.writeFile(wb,`AutoNon_Full_Backup_${stamp}.xlsx`);
+        }
+        alert('تم تجهيز النسخة الاحتياطية: ملف Excel وملف JSON. تم جلب مجموعات البيانات المعروفة من السيرفر عند الاتصال، مع بيانات التخزين المحلي.');
+      } catch(err) { console.error(err); alert('تعذر إنشاء النسخة الاحتياطية: '+(err.message||err)); }
+    }
+    function exportWarehouseBackup() {
+      const keys = ['inventory','inventory_categories','stores_list','suppliers_list','supplier_issue_orders','supplier_ledger','supplier_returns','returns_log','issue_orders','dept_requests'];
+      const data = { type:'AutoNon_Warehouse_Backup', version:1, createdAt:new Date().toISOString(), data:{} };
+      keys.forEach(key => { try { data.data[key] = JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) { data.data[key] = []; } });
+      // Include the currently cached inventory as a safety net when data is loaded from Firestore.
+      if (Array.isArray(cachedInventory) && cachedInventory.length) data.data.inventory = cachedInventory;
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`AutoNon_Warehouse_Backup_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      alert('تم تصدير نسخة احتياطية من بيانات المخزن بنجاح.');
+    }
+
+    async function importWarehouseBackup(event) {
+      const file = event.target.files && event.target.files[0]; if (!file) return;
+      if (!confirm('سيتم استبدال بيانات المخزن الحالية بالبيانات الموجودة في النسخة الاحتياطية. هل تريد المتابعة؟')) { event.target.value=''; return; }
+      try {
+        const content = JSON.parse(await file.text());
+        const payload = content.data || content;
+        const allowed = ['inventory','inventory_categories','stores_list','suppliers_list','supplier_issue_orders','supplier_ledger','supplier_returns','returns_log','issue_orders','dept_requests'];
+        if (!payload || !Array.isArray(payload.inventory)) throw new Error('ملف النسخة لا يحتوي على بيانات مخزن صحيحة');
+        allowed.forEach(key => { if (Object.prototype.hasOwnProperty.call(payload,key)) localStorage.setItem(key, JSON.stringify(payload[key])); });
+        // عند الاتصال بفايربيس، استبدل مجموعة الأصناف السحابية أيضًا حتى لا تختفي البيانات بعد إعادة التحميل.
+        if (!useLocalFallback && db && Array.isArray(payload.inventory)) {
+          const oldSnap = await db.collection('inventory').get();
+          let batch = db.batch(), count = 0;
+          for (const doc of oldSnap.docs) { batch.delete(doc.ref); count++; if (count >= 400) { await batch.commit(); batch=db.batch(); count=0; } }
+          for (const item of payload.inventory) {
+            const copy = {...item}; const id = copy.id; delete copy.id;
+            const ref = id && !String(id).startsWith('local_') ? db.collection('inventory').doc(String(id)) : db.collection('inventory').doc();
+            batch.set(ref, copy); count++; if (count >= 400) { await batch.commit(); batch=db.batch(); count=0; }
+          }
+          if (count) await batch.commit();
+        }
+        alert('تم استيراد نسخة المخزن بنجاح. سيتم تحديث الصفحة لعرض البيانات.');
+        location.reload();
+      } catch (err) { console.error(err); alert('تعذر استيراد النسخة. تأكد أن الملف نسخة احتياطية صحيحة بصيغة JSON.'); }
+      finally { event.target.value=''; }
     }
 
     function downloadBlankVersion() {
       if(!verifyAdminPassword()) return;
-      if(!confirm("تحذير: سيتم تفريغ كافة البيانات الحالية وبدء نسخة فارغة جديدة. هل أنت متأكد؟")) return;
-      
-      ['inventory', 'accounts_log', 'suppliers_list', 'stores_list', 'installation_services', 'returns_log', 'dept_requests', 'issue_orders'].forEach(key => {
-        localStorage.removeItem(key);
-      });
-      alert("تمت تهيئة وتفريغ البيانات بنجاح وبدء نسخة فارغة نظيفة. سيتم تحديث الصفحة الآن.");
-      location.reload();
+      if(!confirm('سيتم تنزيل ملف HTML مستقل وفارغ لا يتصل بالسيرفر، مع الاحتفاظ بالنسخة الحالية وبياناتها. متابعة؟')) return;
+      let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+      const bootstrap=`<script>
+        window.NON_STANDALONE_BLANK=true;
+        (function(){
+          const p='non_blank_', original={get:Storage.prototype.getItem,set:Storage.prototype.setItem,remove:Storage.prototype.removeItem,key:Storage.prototype.key};
+          Storage.prototype.getItem=function(k){return original.get.call(this,p+k)};
+          Storage.prototype.setItem=function(k,v){return original.set.call(this,p+k,v)};
+          Storage.prototype.removeItem=function(k){return original.remove.call(this,p+k)};
+          try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith(p))localStorage.removeItem(k)}}catch(e){}
+        })();
+      <\/script>`;
+      html=html.replace('<head>','<head>\n'+bootstrap);
+      const blob=new Blob([html],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='AutoNon_Blank_Standalone.html';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+      alert('تم تنزيل نسخة HTML فارغة مستقلة. لن تتصل بالسيرفر ولن تغيّر بيانات النسخة الأصلية.');
     }
-
     function restoreBackupFromFile(event) {
       const file = event.target.files[0];
       if(!file) return;
@@ -1075,11 +1129,33 @@
           if(content.returns_log) localStorage.setItem('returns_log', JSON.stringify(content.returns_log));
           if(content.dept_requests) localStorage.setItem('dept_requests', JSON.stringify(content.dept_requests));
           if(content.issue_orders) localStorage.setItem('issue_orders', JSON.stringify(content.issue_orders));
+          if(content.inventory_categories) localStorage.setItem('inventory_categories', JSON.stringify(content.inventory_categories));
+          if(content.all_local_storage && typeof content.all_local_storage === 'object') Object.entries(content.all_local_storage).forEach(([k,v]) => localStorage.setItem(k, v));
           if(content.auto_non_settings) {
             settingsConfig = content.auto_non_settings;
             saveSettingsToStorage();
           }
-          alert("تم استعادة كافة البيانات بنجاح من الملف الاحتياطي!");
+          if(content.server_data && !useLocalFallback && db) {
+            for (const [col, rows] of Object.entries(content.server_data)) {
+              if (col === '_warnings' || !Array.isArray(rows)) continue;
+              const oldSnap = await db.collection(col).get();
+              let batch = db.batch(), count = 0;
+              for (const doc of oldSnap.docs) {
+                batch.delete(doc.ref); count++;
+                if (count >= 400) { await batch.commit(); batch=db.batch(); count=0; }
+              }
+              for (const row of rows) {
+                const copy={...row}; const id=copy.id; delete copy.id;
+                const ref=id ? db.collection(col).doc(String(id)) : db.collection(col).doc();
+                batch.set(ref,copy); count++;
+                if (count >= 400) { await batch.commit(); batch=db.batch(); count=0; }
+              }
+              if(count) await batch.commit();
+            }
+          } else if(content.server_data) {
+            Object.entries(content.server_data).forEach(([k,v])=>{if(Array.isArray(v))localStorage.setItem(k,JSON.stringify(v));});
+          }
+          alert("تم استعادة البيانات المحلية وبيانات السيرفر الموجودة في النسخة الاحتياطية. سيتم تحديث الصفحة.");
           location.reload();
         } catch(err) {
           alert("حدث خطأ أثناء قراءة ملف النسخة الاحتياطية. تأكد من صحة الملف.");
@@ -1210,16 +1286,27 @@
       });
     }
 
+    function loadSavedInventoryCategories() {
+      let cats=[]; try { cats=JSON.parse(localStorage.getItem('inventory_categories')||'[]'); } catch (_) { cats=[]; }
+      ['itemCategory','editItemCategory'].forEach(id=>{
+        const sel=document.getElementById(id); if(!sel) return;
+        cats.forEach(entry=>{ const name=typeof entry==='string'?entry:entry.name; if(name && !Array.from(sel.options).some(o=>o.value===name)){ const op=document.createElement('option'); op.value=name; op.textContent=name; sel.appendChild(op); } });
+      });
+    }
+
     async function addNewCategoryPrompt() {
-      let cat = prompt("أدخل اسم القسم الجديد:");
-      if(!cat) return;
+      let cat = prompt('أدخل اسم القسم الجديد:');
+      if (cat === null) return;
       cat=cat.trim(); if(!cat) return;
-      const requiresKm = confirm("هل يحتاج هذا القسم إلى تحديد صلاحية بالكيلومتر؟");
-      let cats=JSON.parse(localStorage.getItem('inventory_categories')||'[]');
-      if(!cats.some(x=>x.name===cat)) cats.push({name:cat,requiresKm});
+      const cats=(()=>{try{return JSON.parse(localStorage.getItem('inventory_categories')||'[]')}catch(_){return []}})();
+      const existing=cats.find(x=>(typeof x==='string'?x:x.name)===cat);
+      if(!existing) cats.push({name:cat,requiresKm:confirm('هل يحتاج هذا القسم إلى تحديد صلاحية بالكيلومتر؟'),createdAt:new Date().toISOString()});
       localStorage.setItem('inventory_categories',JSON.stringify(cats));
-      ['itemCategory','editItemCategory'].forEach(id=>{const sel=document.getElementById(id);if(sel&&!Array.from(sel.options).some(o=>o.value===cat)){const op=document.createElement('option');op.value=cat;op.textContent=cat;sel.appendChild(op);}});
-      document.getElementById('itemCategory').value=cat; toggleKmValidityField();
+      loadSavedInventoryCategories();
+      const itemSelect=document.getElementById('itemCategory'); if(itemSelect) itemSelect.value=cat;
+      const editSelect=document.getElementById('editItemCategory'); if(editSelect && Array.from(editSelect.options).some(o=>o.value===cat)) editSelect.value=cat;
+      toggleKmValidityField();
+      alert(existing?'القسم موجود بالفعل وتم اختياره.':'تم حفظ القسم الجديد وسيظل موجودًا بعد تحديث الصفحة.');
     }
 
     async function saveInstallationService(e) {
@@ -1751,14 +1838,25 @@
       try { await updateMissingRequestRecord(select.dataset.requestId, {supplierId:supplier.id,supplierName:supplier.name,supplierPhone:supplier.phone||''}); }
       catch(e) { alert('تعذر حفظ التاجر: '+e.message); }
     }
+    function normalizeEgyptMobile(raw) {
+      let n = String(raw || '').replace(/\D/g, '');
+      if (n.startsWith('0020')) n = '0' + n.slice(4);
+      else if (n.startsWith('20')) n = '0' + n.slice(2);
+      else if (n.startsWith('1')) n = '0' + n;
+      return n;
+    }
+    function egyptWhatsAppNumber(raw) {
+      const n = normalizeEgyptMobile(raw);
+      return n.startsWith('01') ? '20' + n.slice(1) : n;
+    }
     async function sendMissingRequestBatch(requests, supplier) {
       if (!supplier || !supplier.phone) throw new Error('رقم هاتف التاجر غير مسجل.');
       const lines = requests.map(r => `• ${r.itemName || 'صنف غير محدد'} — الكمية: ${Number(r.qty||1)}${r.clientName?' — العميل: '+r.clientName:''}${r.carInfo?' — السيارة: '+r.carInfo:''}`).join('\n');
-      const phone = String(supplier.phone).replace(/\D/g,'');
+      const phone = egyptWhatsAppNumber(supplier.phone);
       if (!phone) throw new Error('رقم هاتف التاجر غير صالح.');
       const msg = `السلام عليكم ${supplier.name||''}\nطلب نواقص من مركز أوتو نون (NON):\n${lines}\nبرجاء تأكيد التوفر والسعر.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
-      for (const r of requests) await updateMissingRequestRecord(r.id, {supplierId:supplier.id,supplierName:supplier.name,supplierPhone:supplier.phone,supplierSent:true,supplierSentAt:new Date().toISOString(),status:'تم إرسال طلب النقص للتاجر'});
+      for (const r of requests) await updateMissingRequestRecord(r.id, {supplierId:supplier.id,supplierName:supplier.name,supplierPhone:normalizeEgyptMobile(supplier.phone),supplierSent:true,supplierSentAt:new Date().toISOString(),status:'تم إرسال طلب النقص للتاجر'});
     }
     async function sendOneMissingRequest(id) {
       const req = (await getData('dept_requests')).find(r => r.id === id);
@@ -1807,8 +1905,7 @@
 
       let orderNo = "NON-ISSUE-" + Math.floor(1000 + Math.random() * 9000);
       currentActiveClientGroup.orderNo = orderNo;
-      const mileageInput = prompt('أدخل قراءة عداد السيارة الحالية بالكيلومتر لحساب موعد التغيير (اتركه فارغًا إذا لم يتوفر):', '');
-      currentActiveClientGroup.odometerAtIssue = mileageInput !== null && mileageInput.trim() !== '' ? Math.max(0, parseInt(mileageInput, 10) || 0) : null;
+      currentActiveClientGroup.odometerAtIssue = null;
       let currentDateStr = new Date().toISOString().substring(0, 10);
       let loggedUser = localStorage.getItem('loggedUser') || localStorage.getItem('username') || localStorage.getItem('user') || 'مدير النظام';
 
@@ -2130,7 +2227,7 @@
     }
 
     function printHtmlReport(title,body){let w=window.open('','_blank');if(!w){alert('اسمح بفتح النوافذ المنبثقة للطباعة');return;}w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${escSupplier(title)}</title><style>body{font-family:Tahoma,Arial,sans-serif;padding:22px;color:#111}h1,h2{text-align:center;margin:6px 0 14px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #555;padding:8px;text-align:right}th{background:#eee}.summary{font-weight:bold;margin:14px 0;padding:10px;border:1px solid #aaa}footer{display:flex;justify-content:space-between;margin-top:45px}@media print{button{display:none}}</style></head><body><h1>مركز أوتو نون (NON)</h1><h2>${escSupplier(title)}</h2>${body}<footer><span>إعداد: ................</span><span>مراجعة: ................</span><span>اعتماد: ................</span></footer><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close();}
-function printProductsBySearch(){const list=getInventorySearchResults();const any=['searchInventoryInput','searchCompanyFilter','searchSupplierFilter','searchItemFilter','searchDepartmentFilter','searchDateFilter'].some(id=>(document.getElementById(id)?.value||'').trim());if(!any){alert('أدخل معيار بحث واحدًا على الأقل قبل الطباعة.');return;}if(!list.length){alert('لا توجد منتجات مطابقة لمعايير البحث.');return;}let body='<div class="summary">عدد النتائج: '+list.length+'</div><table><thead><tr><th>م</th><th>المخزن</th><th>القسم</th><th>الصنف</th><th>الشركة</th><th>المورد / التاجر</th><th>الباركود</th><th>الكمية</th><th>سعر الشراء</th><th>سعر البيع</th><th>الصلاحية / التاريخ</th></tr></thead><tbody>'+list.map((x,i)=>`<tr><td>${i+1}</td><td>${escSupplier(x.storeName||'')}</td><td>${escSupplier(x.category||x.department||'')}</td><td>${escSupplier(x.name||'')}</td><td>${escSupplier(x.brand||x.companyName||'')}</td><td>${escSupplier(x.supplierName||'')}</td><td>${escSupplier(x.barcode||x.code||'')}</td><td>${Number(x.qty||0)}</td><td>${Number(x.buyPrice||0).toFixed(2)}</td><td>${Number(x.sellPrice||0).toFixed(2)}</td><td>${escSupplier(x.expiryDate||x.date||'')}</td></tr>`).join('')+'</tbody></table>';printHtmlReport('نتائج البحث في المخزن',body);}
+function printProductsBySearch(){const list=getInventorySearchResults();const any=['searchInventoryInput','searchCompanyFilter','searchSupplierFilter','searchItemFilter','searchDepartmentFilter','searchDateFilter'].some(id=>(document.getElementById(id)?.value||'').trim());if(!any){alert('أدخل معيار بحث واحدًا على الأقل قبل الطباعة.');return;}if(!list.length){alert('لا توجد منتجات مطابقة لمعايير البحث.');return;}let body='<div class="summary">عدد النتائج: '+list.length+'</div><table><thead><tr><th>م</th><th>المخزن</th><th>القسم</th><th>الصنف</th><th>الفرع</th><th>المورد / التاجر</th><th>الباركود</th><th>الكمية</th><th>سعر الشراء</th><th>سعر البيع</th><th>الصلاحية / التاريخ</th></tr></thead><tbody>'+list.map((x,i)=>`<tr><td>${i+1}</td><td>${escSupplier(x.storeName||'')}</td><td>${escSupplier(x.category||x.department||'')}</td><td>${escSupplier(x.name||'')}</td><td>${escSupplier(x.brand||x.companyName||'')}</td><td>${escSupplier(x.supplierName||'')}</td><td>${escSupplier(x.barcode||x.code||'')}</td><td>${Number(x.qty||0)}</td><td>${Number(x.buyPrice||0).toFixed(2)}</td><td>${Number(x.sellPrice||0).toFixed(2)}</td><td>${escSupplier(x.expiryDate||x.date||'')}</td></tr>`).join('')+'</tbody></table>';printHtmlReport('نتائج البحث في المخزن',body);}
 function viewStoreItems(storeName){storeName=decodeURIComponent(storeName);let list=(cachedInventory||[]).filter(i=>(i.storeName||'مخزن المحل الرئيسي')===storeName);let body='<div class="summary">المخزن: '+escSupplier(storeName)+' | عدد الأصناف: '+list.length+' | إجمالي الكمية: '+list.reduce((n,x)=>n+Number(x.qty||0),0)+'</div><table><thead><tr><th>م</th><th>كود الصنف</th><th>اسم الصنف</th><th>الكمية</th><th>سعر الشراء</th><th>سعر البيع</th></tr></thead><tbody>'+list.map((x,i)=>`<tr><td>${i+1}</td><td>${escSupplier(x.barcode||x.code||'—')}</td><td>${escSupplier(x.name||'')}</td><td>${Number(x.qty||0)}</td><td>${Number(x.buyPrice||0).toFixed(2)}</td><td>${Number(x.sellPrice||0).toFixed(2)}</td></tr>`).join('')+'</tbody></table>';document.getElementById('generalLogModalTitle').textContent='أصناف '+storeName;document.getElementById('generalLogTableContainer').innerHTML=body;let oldPrint=document.getElementById('storePrintActions');if(oldPrint)oldPrint.remove();let safeStore=String(storeName).replace(/\\/g,'\\\\').replace(/'/g,"\\'");let actions=document.createElement('div');actions.id='storePrintActions';actions.style.cssText='display:grid;gap:7px;margin-bottom:8px';actions.innerHTML='<button class="btn-action-sm btn-success" onclick="printStoreItems(\''+safeStore+'\',\'both\')">طباعة قائمة المخزن (بالأسعار)</button><button class="btn-action-sm btn-blue" onclick="printStoreItems(\''+safeStore+'\',\'buy\')">طباعة بسعر الشراء</button><button class="btn-action-sm btn-primary" onclick="printStoreItems(\''+safeStore+'\',\'sell\')">طباعة بسعر البيع</button><button class="btn-action-sm btn-gold" onclick="printStoreItems(\''+safeStore+'\',\'none\')">طباعة بدون أسعار</button>';let closeBtn=document.querySelector('#generalLogModal button[onclick*="generalLogModal"]');if(closeBtn)closeBtn.insertAdjacentElement('beforebegin',actions);document.getElementById('generalLogModal').style.display='flex';}
 function printStoreItems(storeName,mode='both'){storeName=decodeURIComponent(storeName);let list=(cachedInventory||[]).filter(i=>(i.storeName||'مخزن المحل الرئيسي')===storeName);let totalQty=list.reduce((n,x)=>n+Number(x.qty||0),0),buyTotal=list.reduce((n,x)=>n+Number(x.qty||0)*Number(x.buyPrice||0),0),sellTotal=list.reduce((n,x)=>n+Number(x.qty||0)*Number(x.sellPrice||0),0);let cols='<th>م</th><th>كود الصنف</th><th>اسم الصنف</th><th>الكمية</th>';if(mode==='buy'||mode==='both')cols+='<th>سعر الشراء</th>';if(mode==='sell'||mode==='both')cols+='<th>سعر البيع</th>';let rows=list.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+escSupplier(x.barcode||x.code||'—')+'</td><td>'+escSupplier(x.name||'')+'</td><td>'+Number(x.qty||0)+'</td>'+(mode==='buy'||mode==='both'?'<td>'+Number(x.buyPrice||0).toFixed(2)+' ج.م</td>':'')+(mode==='sell'||mode==='both'?'<td>'+Number(x.sellPrice||0).toFixed(2)+' ج.م</td>':'')+'</tr>').join('');let totals='<div class="summary">إجمالي الكمية: '+totalQty+' صنف/قطعة';if(mode==='buy'||mode==='both')totals+=' | إجمالي قيمة الشراء: '+buyTotal.toFixed(2)+' ج.م';if(mode==='sell'||mode==='both')totals+=' | إجمالي قيمة البيع: '+sellTotal.toFixed(2)+' ج.م';totals+='</div>';let body='<div class="summary">المخزن: '+escSupplier(storeName)+' | عدد الأصناف: '+list.length+'</div>'+totals+'<table><thead><tr>'+cols+'</tr></thead><tbody>'+rows+'</tbody></table>';let titles={both:'قائمة المخزن بالأسعار',buy:'قائمة المخزن بسعر الشراء',sell:'قائمة المخزن بسعر البيع',none:'قائمة المخزن بدون أسعار'};printHtmlReport((titles[mode]||titles.both)+': '+storeName,body);} 
 function supplierAccountStatement(id){let sup=supplierRead('suppliers_list').find(x=>x.id===id);if(!sup)return;let from=prompt('من تاريخ (YYYY-MM-DD) — اتركه فارغاً لعرض كل الفترات','');if(from===null)return;let to=prompt('إلى تاريخ (YYYY-MM-DD) — اتركه فارغاً حتى اليوم','');if(to===null)return;let start=from?new Date(from+'T00:00:00'):new Date('2000-01-01T00:00:00'),end=to?new Date(to+'T23:59:59'):new Date();if(isNaN(start)||isNaN(end)||start>end){alert('صيغة التاريخ غير صحيحة أو الفترة غير سليمة. استخدم YYYY-MM-DD.');return;}let events=[];supplierRead('supplier_issue_orders').filter(o=>o.supplierId===id).forEach(o=>{let d=new Date(o.date);if(d>=start&&d<=end)events.push({date:o.date,type:'توريد',desc:(o.lines||[]).map(l=>l.name+' × '+l.qty).join('، '),debit:Number(o.total||0),credit:0,ref:o.orderNo});if(Number(o.paid||0)>0){let payDate=(supplierRead('supplier_ledger').filter(l=>l.supplierId===id&&l.orderNo===o.orderNo&&l.type==='سداد'));payDate.forEach(p=>{let pd=new Date(p.date);if(pd>=start&&pd<=end)events.push({date:p.date,type:'سداد',desc:p.notes||'سداد مورد',debit:0,credit:Number(p.value||0),ref:o.orderNo});});}});supplierRead('supplier_returns').filter(r=>r.supplierId===id).forEach(r=>{let d=new Date(r.date);if(d>=start&&d<=end)events.push({date:r.date,type:r.type||'مرتجع',desc:(r.itemName||'')+' × '+r.qty,debit:0,credit:Number(r.value||0),ref:r.id});});events.sort((a,b)=>a.date.localeCompare(b.date));let running=0;let rows=events.map((e,i)=>{running+=e.debit-e.credit;return `<tr><td>${i+1}</td><td>${new Date(e.date).toLocaleDateString('ar-EG')}</td><td>${escSupplier(e.ref)}</td><td>${escSupplier(e.type)}</td><td>${escSupplier(e.desc)}</td><td>${e.debit.toFixed(2)}</td><td>${e.credit.toFixed(2)}</td><td>${running.toFixed(2)}</td></tr>`}).join('');let totals=events.reduce((a,e)=>({debit:a.debit+e.debit,credit:a.credit+e.credit}),{debit:0,credit:0});let body=`<div class="summary">المورد: ${escSupplier(sup.name)} | الكود: ${escSupplier(sup.code||'')} | من ${escSupplier(from||'بداية التعامل')} إلى ${escSupplier(to||new Date().toISOString().slice(0,10))}<br>إجمالي التوريدات: ${totals.debit.toFixed(2)} ج.م | إجمالي السداد والمرتجعات: ${totals.credit.toFixed(2)} ج.م | صافي الفترة: ${(totals.debit-totals.credit).toFixed(2)} ج.م</div><table><thead><tr><th>م</th><th>التاريخ</th><th>رقم المرجع</th><th>نوع الحركة</th><th>البيان / الصنف</th><th>مدين</th><th>دائن</th><th>الرصيد التراكمي</th></tr></thead><tbody>${rows||'<tr><td colspan="8">لا توجد حركات في الفترة المحددة</td></tr>'}</tbody></table>`;printHtmlReport('كشف حساب المورد',body);}
@@ -2169,14 +2266,7 @@ function toggleKmValidityField() {
       const origin = document.getElementById('itemOrigin')?.value.trim() || '';
       const supplierId = document.getElementById('itemSupplier')?.value || '';
       const supplierName = (JSON.parse(localStorage.getItem('suppliers_list')||'[]').find(x=>x.id===supplierId)||{}).name || '';
-      const wantsExpiryDate = confirm('هل تريد إضافة صلاحية تاريخ للمنتج؟');
-      let expiryDate = '';
-      if (wantsExpiryDate) {
-        expiryDate = prompt('أدخل تاريخ صلاحية المنتج بصيغة YYYY-MM-DD:','');
-        if (expiryDate === null) return;
-        expiryDate = expiryDate.trim();
-        if (expiryDate && !/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)) { alert('صيغة التاريخ غير صحيحة. استخدم YYYY-MM-DD.'); return; }
-      }
+      const expiryDate = '';
       const wantsKmValidity = confirm('هل تريد إضافة صلاحية بالكيلومتر للمنتج؟');
       let kmInputValue = document.getElementById('itemKmValidity').value;
       if (wantsKmValidity && !kmInputValue) kmInputValue = prompt('أدخل صلاحية المنتج بالكيلومتر:','5000');
@@ -2221,6 +2311,7 @@ function toggleKmValidityField() {
 
     async function loadInventoryData() {
       cachedInventory = await getData("inventory");
+      loadSavedInventoryCategories();
       const tbody = document.getElementById('inventoryTbody');
       if(!tbody) return;
       tbody.innerHTML = '';
@@ -2243,7 +2334,7 @@ function toggleKmValidityField() {
         let previousQty = Math.max(q, Number(item.previousQty ?? q) || 0);
         let soldQty = Math.max(0, Number(item.soldQty) || 0);
         let bp = parseFloat(item.buyPrice) || 0;
-        const totalProductPrice = previousQty * bp;
+        const totalProductPrice = q * bp; // إجمالي قيمة المنتج حسب الرصيد الحالي
         totalValue += (q * bp);
         const sp = parseFloat(item.sellPrice) || 0;
         // صافي الربح = (فرق سعر البيع والشراء + المصنعية) × الكمية المباعة
@@ -2302,7 +2393,6 @@ function toggleKmValidityField() {
       document.getElementById('editItemName').value = name;
       const existing = (cachedInventory || []).find(x => x.id === id) || {};
       document.getElementById('editItemBrand').value = existing.brand || '';
-      document.getElementById('editItemExpiryDate').value = existing.expiryDate || '';
       document.getElementById('editItemQty').value = qty;
       document.getElementById('editItemMinQty').value = Number.isFinite(Number(existing.minQty)) ? Number(existing.minQty) : 2;
       document.getElementById('editItemBuy').value = buy;
@@ -2325,7 +2415,7 @@ function toggleKmValidityField() {
       let category = document.getElementById('editItemCategory').value;
       let name = document.getElementById('editItemName').value.trim();
       let brand = document.getElementById('editItemBrand').value.trim();
-      let expiryDate = document.getElementById('editItemExpiryDate').value || '';
+      let expiryDate = '';
       let qty = Math.max(0, parseInt(document.getElementById('editItemQty').value, 10) || 0);
       let minQty = Math.max(0, parseInt(document.getElementById('editItemMinQty').value, 10) || 0);
       let buyPrice = parseFloat(document.getElementById('editItemBuy').value) || 0;
@@ -2358,15 +2448,41 @@ function toggleKmValidityField() {
       if (btn) btn.style.background = shortageFilterActive ? '#b45309' : '';
     }
 
+    function normalizeInventorySearch(value) {
+      return String(value ?? '').toLocaleLowerCase('ar')
+        .replace(/[\u064B-\u065F\u0670]/g, '')
+        .replace(/ـ/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
     function getInventorySearchResults() {
-      const val=id=>(document.getElementById(id)?.value||'').trim().toLocaleLowerCase('ar');
+      const val=id=>normalizeInventorySearch(document.getElementById(id)?.value || '');
       const q=val('searchInventoryInput'),company=val('searchCompanyFilter'),supplier=val('searchSupplierFilter'),item=val('searchItemFilter'),dept=val('searchDepartmentFilter'),date=val('searchDateFilter');
       return (cachedInventory||[]).filter(i=>{
-        const fields=[i.name,i.barcode,i.code,i.category,i.brand,i.companyName,i.supplierName,i.storeName,i.expiryDate,i.date,i.createdAt].map(v=>String(v||'').toLocaleLowerCase('ar'));
-        return (!q||fields.some(v=>v.includes(q)))&&(!company||String(i.brand||i.companyName||'').toLocaleLowerCase('ar').includes(company))&&(!supplier||String(i.supplierName||i.supplier||'').toLocaleLowerCase('ar').includes(supplier))&&(!item||String(i.name||'').toLocaleLowerCase('ar').includes(item))&&(!dept||String(i.category||i.department||'').toLocaleLowerCase('ar').includes(dept))&&(!date||[i.expiryDate,i.date,i.createdAt,i.updatedAt].some(v=>String(v||'').slice(0,10)===date));
-      });
+        const fields=[i.name,i.barcode,i.code,i.category,i.brand,i.branch,i.companyName,i.supplierName,i.supplier,i.storeName,i.expiryDate,i.date,i.createdAt,i.updatedAt]
+          .map(normalizeInventorySearch);
+        const branchText=normalizeInventorySearch([i.branch,i.brand,i.companyName].filter(Boolean).join(' '));
+        const supplierText=normalizeInventorySearch([i.supplierName,i.supplier].filter(Boolean).join(' '));
+        const itemText=normalizeInventorySearch(i.name);
+        const deptText=normalizeInventorySearch([i.category,i.department].filter(Boolean).join(' '));
+        return (!q||fields.some(v=>v.includes(q))) &&
+          (!company||branchText.includes(company)) &&
+          (!supplier||supplierText.includes(supplier)) &&
+          (!item||itemText.includes(item)) &&
+          (!dept||deptText.includes(dept)) &&
+          (!date||[i.expiryDate,i.date,i.createdAt,i.updatedAt].some(v=>String(v||'').slice(0,10)===date));
+      }).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
     }
-    function filterInventoryTable(){renderInventoryList(getInventorySearchResults());}
+    function filterInventoryTable(){
+      // البحث يعرض نتائج البحث دون أن يظل فلتر نقص الكمية السابق مخفياً لباقي الأصناف.
+      shortageFilterActive = false;
+      const shortageBtn=document.querySelector('button[onclick="filterShortagesOnly()"]');
+      if(shortageBtn) shortageBtn.style.background='';
+      const results=getInventorySearchResults();
+      renderInventoryList(results);
+      const tbody=document.getElementById('inventoryTbody');
+      if(tbody && results.length===0) tbody.innerHTML='<tr><td colspan="19" style="text-align:center;padding:18px;color:#b91c1c;font-weight:700;">لا توجد أصناف مطابقة للبحث. جرّب كتابة جزء من اسم الصنف أو الكود.</td></tr>';
+    }
 
     function renderInventoryList(list) {
       const tbody = document.getElementById('inventoryTbody');
@@ -2396,7 +2512,7 @@ function toggleKmValidityField() {
             <td><code>${item.barcode || '---'}</code></td>
             <td style="font-weight:bold;">${Math.max(q, Number(item.previousQty ?? q) || 0)}</td>
             <td style="font-weight:bold;">${q}</td>
-            <td>${(Math.max(q, Number(item.previousQty ?? q) || 0) * bp).toFixed(2)} ج.م</td>
+            <td>${(q * bp).toFixed(2)} ج.م</td>
             <td>${bp} ج.م</td>
             <td>${item.sellPrice || 0} ج.م</td>
             <td style="font-weight:bold;color:${itemProfit >= 0 ? '#15803d' : '#b91c1c'};">${itemProfit.toFixed(2)} ج.م</td>
@@ -2424,12 +2540,49 @@ function categoryNeedsKm(cat){const saved=supplierRead('inventory_categories');c
 function refreshSupplierSelects(){const a=supplierRead('suppliers_list');['itemSupplier','supplySupplier'].forEach(id=>{let el=document.getElementById(id);if(!el)return;let old=el.value;el.innerHTML=(id==='itemSupplier'?'<option value="">بدون تحديد</option>':'<option value="">اختر التاجر / المورد</option>')+a.map(x=>`<option value="${escSupplier(x.id)}">${escSupplier(x.code||'') } - ${escSupplier(x.name)}</option>`).join('');if(old)el.value=old;});}
 function escSupplier(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function normalizeSupplierName(v){return String(v||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('ar');}
-function saveSupplierRecord(e){e.preventDefault();let a=supplierRead('suppliers_list'),name=supplierName.value.trim();if(a.some(x=>normalizeSupplierName(x.name)===normalizeSupplierName(name))){alert('اسم التاجر أو المورد مسجل بالفعل. لن يتم إنشاء سجل مكرر.');return;}let id='sup_'+Date.now(),code='SUP-'+String(Date.now()).slice(-8);a.push({id,code,name,phone:supplierPhone.value.trim(),section:supplierSection.value.trim(),address:supplierAddress.value.trim(),notes:supplierNotes.value.trim(),balance:0,createdAt:new Date().toISOString()});supplierWrite('suppliers_list',a);e.target.reset();loadSupplierRecords();let x=a[a.length-1];if(x.phone){let msg=`مرحباً ${x.name}، كود حسابك لدى مركز أوتو نون هو ${x.code}. للاستعلام عن الرصيد أو كشف الحساب يرجى التواصل معنا وإرسال هذا الكود.`;window.open('https://wa.me/'+x.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank');}}
-function loadSupplierRecords(){refreshSupplierSelects();renderSupplierRecords();renderSupplierOrders();renderSupplierItemOptions();renderSupplierReturnOptions();}
+async function saveSupplierRecord(e){
+  e.preventDefault();
+  const name=supplierName.value.trim();
+  if(!name)return;
+  try{
+    // عند توفر Firebase تكون قاعدة البيانات السحابية هي مصدر الحفظ الأساسي.
+    let a=supplierRead('suppliers_list');
+    if(!useLocalFallback && db){
+      const snap=await db.collection('suppliers').get();
+      a=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+    }
+    if(a.some(x=>normalizeSupplierName(x.name)===normalizeSupplierName(name))){
+      alert('اسم التاجر أو المورد مسجل بالفعل. لن يتم إنشاء سجل مكرر.');return;
+    }
+    const stamp=Date.now(),id='sup_'+stamp,code='SUP-'+String(stamp).slice(-8);
+    const x={id,code,name,phone:normalizeEgyptMobile(supplierPhone.value),section:supplierSection.value.trim(),address:supplierAddress.value.trim(),notes:supplierNotes.value.trim(),balance:0,createdAt:new Date().toISOString()};
+    if(!useLocalFallback && db){
+      await db.collection('suppliers').doc(id).set(x);
+    }else{
+      a.push(x);supplierWrite('suppliers_list',a);
+    }
+    e.target.reset();
+    await loadSupplierRecords();
+    if(x.phone){let msg=`مرحباً ${x.name}، كود حسابك لدى مركز أوتو نون هو ${x.code}. للاستعلام عن الرصيد أو كشف الحساب يرجى التواصل معنا وإرسال هذا الكود.`;window.open('https://wa.me/'+egyptWhatsAppNumber(x.phone)+'?text='+encodeURIComponent(msg),'_blank');}
+    alert('تم حفظ بيانات المورد بنجاح'+((!useLocalFallback&&db)?' على السيرفر.':'.'));
+  }catch(err){console.error('Supplier save error:',err);alert('تعذر حفظ المورد على السيرفر. لم يتم حفظه محلياً كبديل حتى لا تختلف البيانات: '+(err.message||err));}
+}
+async function loadSupplierRecords(){
+  try{
+    if(!useLocalFallback && db){
+      const snap=await db.collection('suppliers').get();
+      const cloud=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
+      supplierWrite('suppliers_list',cloud); // نسخة مؤقتة للعرض والعمل دون اتصال فقط
+    }
+  }catch(err){console.error('تعذر تحميل الموردين من السيرفر:',err);}
+  refreshSupplierSelects();renderSupplierRecords();renderSupplierOrders();renderSupplierItemOptions();renderSupplierReturnOptions();
+}
+document.addEventListener('DOMContentLoaded',()=>{loadSupplierRecords();});
+window.addEventListener('storage',function(e){if(e.key==='suppliers_list')loadSupplierRecords();});
 function supplierTotals(x){let orders=supplierRead('supplier_issue_orders').filter(o=>o.supplierId===x.id),returns=supplierRead('supplier_returns').filter(r=>r.supplierId===x.id);let gross=orders.reduce((n,o)=>n+Number(o.total||0),0),paid=orders.reduce((n,o)=>n+Number(o.paid||0),0),ret=returns.reduce((n,r)=>n+Number(r.value||0),0),pieces=orders.reduce((n,o)=>n+(o.lines||[]).reduce((m,l)=>m+Number(l.qty||0),0),0)-returns.reduce((n,r)=>n+Number(r.qty||0),0);return {gross,paid,due:Math.max(0,gross-paid-ret),pieces,returns:ret};}
 function renderSupplierRecords(){const a=supplierRead('suppliers_list'),q=(document.getElementById('supplierSearch')?.value||'').toLowerCase(),tb=document.getElementById('supplierRows');if(!tb)return;tb.innerHTML=a.filter(x=>[x.code,x.name,x.phone,x.section,x.address].join(' ').toLowerCase().includes(q)).map(x=>{let t=supplierTotals(x);return `<tr><td>${escSupplier(x.code||'')}</td><td>${escSupplier(x.name)}</td><td>${escSupplier(x.phone)}</td><td>${escSupplier(x.section)}</td><td>${escSupplier(x.address)}</td><td>${t.gross.toFixed(2)} ج.م</td><td>${t.paid.toFixed(2)} ج.م</td><td>${t.due.toFixed(2)} ج.م</td><td>${t.pieces}</td><td>${escSupplier(x.notes)}</td><td><button class="btn-action-sm btn-blue" onclick="editSupplier('${x.id}')">تعديل</button> <button class="btn-action-sm btn-purple" onclick="showSupplierItems('${x.id}')">أصنافي / طباعة</button> <button class="btn-action-sm btn-primary" onclick="supplierAccountStatement('${x.id}')">كشف حساب بالفترة</button> <button class="btn-action-sm btn-success" onclick="supplierWhatsApp('${x.id}')">واتساب</button> <button class="btn-action-sm btn-danger" onclick="deleteSupplier('${x.id}')"><i class="fa-solid fa-trash"></i> حذف التاجر</button></td></tr>`}).join('')||'<tr><td colspan="11">لا توجد بيانات</td></tr>';}
-function editSupplier(id){let a=supplierRead('suppliers_list'),x=a.find(y=>y.id===id);if(!x)return;let name=prompt('اسم المورد',x.name);if(name===null)return;if(a.some(y=>y.id!==id&&normalizeSupplierName(y.name)===normalizeSupplierName(name))){alert('هذا الاسم مسجل لمورد آخر.');return;}x.name=name.trim();x.phone=prompt('الهاتف',x.phone||'')??x.phone;x.section=prompt('القسم',x.section||'')??x.section;x.address=prompt('العنوان',x.address||'')??x.address;x.notes=prompt('ملاحظات',x.notes||'')??x.notes;supplierWrite('suppliers_list',a);loadSupplierRecords();}
-function deleteSupplier(id){
+async function editSupplier(id){let a=supplierRead('suppliers_list'),x=a.find(y=>y.id===id);if(!x)return;let name=prompt('اسم المورد',x.name);if(name===null)return;if(a.some(y=>y.id!==id&&normalizeSupplierName(y.name)===normalizeSupplierName(name))){alert('هذا الاسم مسجل لمورد آخر.');return;}x.name=name.trim();x.phone=prompt('الهاتف',x.phone||'')??x.phone;x.section=prompt('القسم',x.section||'')??x.section;x.address=prompt('العنوان',x.address||'')??x.address;x.notes=prompt('ملاحظات',x.notes||'')??x.notes;try{if(!useLocalFallback&&db)await db.collection('suppliers').doc(id).set(x,{merge:true});else supplierWrite('suppliers_list',a);await loadSupplierRecords();}catch(err){alert('تعذر تحديث المورد على السيرفر: '+(err.message||err));}}
+async function deleteSupplier(id){
   const suppliers=supplierRead('suppliers_list');
   const supplier=suppliers.find(x=>x.id===id);
   if(!supplier)return;
@@ -2440,11 +2593,14 @@ function deleteSupplier(id){
     ? `\n\nتنبيه: يوجد ${orders} إذن توريد و${returns} مرتجع/تالف مرتبطين به. سيتم حذف بيانات التاجر من القائمة فقط، مع الاحتفاظ بكل الأذونات والمرتجعات وكشف الحساب والسجلات التاريخية كما هي.`
     : '\n\nسيتم حذف بيانات التاجر من القائمة.';
   if(!confirm(`هل أنت متأكد من حذف التاجر «${supplier.name}»؟${warning}`))return;
-  supplierWrite('suppliers_list',suppliers.filter(x=>x.id!==id));
-  loadSupplierRecords();
-  alert('تم حذف بيانات التاجر من القائمة مع الاحتفاظ بالسجلات التاريخية.');
+  try{
+    if(!useLocalFallback&&db) await db.collection('suppliers').doc(id).delete();
+    else supplierWrite('suppliers_list',suppliers.filter(x=>x.id!==id));
+    await loadSupplierRecords();
+    alert('تم حذف بيانات التاجر من القائمة مع الاحتفاظ بالسجلات التاريخية.');
+  }catch(err){alert('تعذر حذف المورد من السيرفر: '+(err.message||err));}
 }
-function supplierWhatsApp(id){let x=supplierRead('suppliers_list').find(y=>y.id===id);if(!x||!x.phone){alert('أضف رقم هاتف المورد أولاً');return;}let t=supplierTotals(x),msg=`مرحباً ${x.name}، كود المورد: ${x.code||''}. إجمالي التعامل: ${t.gross.toFixed(2)} ج.م، إجمالي المدفوع: ${t.paid.toFixed(2)} ج.م، المستحق: ${t.due.toFixed(2)} ج.م. للاستعلام عن كشف الحساب يرجى التواصل مع مركز أوتو نون.`;window.open('https://wa.me/'+x.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank');}
+function supplierWhatsApp(id){let x=supplierRead('suppliers_list').find(y=>y.id===id);if(!x||!x.phone){alert('أضف رقم هاتف المورد أولاً');return;}let t=supplierTotals(x),msg=`مرحباً ${x.name}، كود المورد: ${x.code||''}. إجمالي التعامل: ${t.gross.toFixed(2)} ج.م، إجمالي المدفوع: ${t.paid.toFixed(2)} ج.م، المستحق: ${t.due.toFixed(2)} ج.م. للاستعلام عن كشف الحساب يرجى التواصل مع مركز أوتو نون.`;window.open('https://wa.me/'+egyptWhatsAppNumber(x.phone)+'?text='+encodeURIComponent(msg),'_blank');}
 function renderSupplierItemOptions(){let d=document.getElementById('supplierInventoryOptions');if(!d)return;d.innerHTML=(cachedInventory||[]).map(x=>`<option value="${escSupplier(x.barcode||x.code||'')}">${escSupplier(x.name)}</option><option value="${escSupplier(x.name)}">${escSupplier(x.barcode||x.code||'')}</option>`).join('');}
 function findSupplyInventoryItem(){let q=document.getElementById('supplyItem').value.trim().toLowerCase(),it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q||String(x.name||'').toLowerCase()===q);document.getElementById('supplyItemName').value=it?.name||'';document.getElementById('supplyBarcode').value=it?.barcode||it?.code||'';if(!it&&q.length>=3){document.getElementById('supplyItemName').value='غير مسجل - استخدم تسجيل صنف جديد';}}
 function openNewSupplyItem(){let q=document.getElementById('supplyItem').value.trim();if(!q){alert('اكتب كود الصنف أو اسمه أولاً');return;}let it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase());if(it){alert('الصنف موجود بالفعل: '+it.name+' - الكود '+(it.barcode||it.code||'غير محدد'));document.getElementById('supplyItemName').value=it.name;document.getElementById('supplyBarcode').value=it.barcode||it.code||'';return;}document.getElementById('itemSub').classList.add('show');document.getElementById('itemName').value=q;document.getElementById('itemBarcode').value=/^[A-Za-z0-9_-]+$/.test(q)?q:'';if(!document.getElementById('itemBarcode').value)generateRandomBarcode();let sid=document.getElementById('supplySupplier').value;if(sid)document.getElementById('itemSupplier').value=sid;supplierRegistrationPending=true;document.getElementById('itemQty').value=0;document.getElementById('itemMinQty').value=2;document.getElementById('itemBuyPrice').value=document.getElementById('supplyPrice').value||0;document.getElementById('itemName').focus();alert('تم نقل بيانات البحث إلى تسجيل صنف جديد. راجع الاسم والكود ثم احفظ الصنف، وبعدها ارجع لإذن التوريد.');}
