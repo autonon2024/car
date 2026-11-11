@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>المخزن وصرف قطع الغيار </title>
+  <title>إدارة المخزن وصرف قطع الغيار </title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -385,7 +385,7 @@
                   <label>الباركود:</label>
                   <div style="display:flex; gap:5px;">
                     <input type="text" id="itemBarcode" required onblur="checkItemExistsAlert()">
-                    <button type="button" class="btn-action-sm btn-blue" onclick="generateRandomBarcode()">توليد</button>
+                    <button type="button" class="btn-action-sm btn-blue" onclick="generateRandomBarcode(true)">توليد</button>
                   </div>
                 </div>
                 <div class="form-field"><label>الكمية الافتتاحية:</label><input type="number" id="itemQty" required min="0" step="1" value="0" placeholder="0"></div>
@@ -585,7 +585,13 @@
               <button class="btn-action-sm btn-success" type="button" onclick="sendSelectedShortagesBySuppliers()">إرسال المحدد حسب التاجر</button>
             </div>
           </div>
-          <p style="margin:5px 0 10px;color:#92400e;font-size:.85rem;">اختر تاجرًا لكل قطعة، أو حدد عدة قطع ووزّعها على تاجر واحد أو أكثر. يمكن إرسال كل قطعة منفردة أو إرسال مجموعة كل تاجر برسالة واحدة.</p>
+          <p style="margin:5px 0 10px;color:#92400e;font-size:.85rem;">لا تُضاف الأصناف إلى قائمة النواقص تلقائيًا. ابحث عن الصنف الموجود بالمخزن ثم اضغط «تحويل إلى النواقص» لإضافته يدويًا.</p>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 12px;">
+            <input id="manualShortageSearch" type="text" list="manualShortageOptions" placeholder="ابحث باسم الصنف أو الباركود" style="flex:1;min-width:220px;padding:9px;border:1px solid #dbe5f1;border-radius:8px;">
+            <datalist id="manualShortageOptions"></datalist>
+            <input id="manualShortageQty" type="number" min="1" value="1" placeholder="الكمية" style="width:95px;padding:9px;border:1px solid #dbe5f1;border-radius:8px;">
+            <button class="btn-action-sm btn-gold" type="button" onclick="manuallyAddShortage()">تحويل إلى النواقص</button>
+          </div>
           <div style="overflow-x:auto;">
             <table id="missingPartsRequestsTable">
               <thead><tr><th><input type="checkbox" onchange="toggleAllMissingRequests(this)"></th><th>الصنف المطلوب</th><th>الكمية</th><th>القسم</th><th>العميل / السيارة</th><th>التاجر ورقم الهاتف</th><th>الحالة</th><th>إجراء</th></tr></thead>
@@ -1821,7 +1827,7 @@
           <td>${escapeMissingHtml(req.clientName || '—')}<br><small>${escapeMissingHtml(req.carInfo || req.carType || '')} ${escapeMissingHtml(req.carPlate || '')}</small></td>
           <td><select class="missing-supplier-select" data-request-id="${escapeMissingHtml(req.id)}" onchange="assignMissingRequestSupplier(this)">${supplierOptions}</select></td>
           <td><span class="alert-badge" style="${sent?'background:#dcfce7;color:#166534':'background:#fef3c7;color:#92400e'}">${sent?'تم الإرسال للتاجر':'بانتظار اختيار التاجر / الإرسال'}</span></td>
-          <td><button type="button" class="btn-action-sm btn-success" onclick="sendOneMissingRequest('${escapeMissingHtml(req.id)}')">إرسال القطعة</button></td></tr>`;
+          <td><button type="button" class="btn-action-sm btn-success" onclick="sendOneMissingRequest('${escapeMissingHtml(req.id)}')">إرسال القطعة</button> <button type="button" class="btn-action-sm btn-danger" onclick="deleteMissingRequest('${escapeMissingHtml(req.id)}')">حذف</button></td></tr>`;
       }).join('');
     }
     async function updateMissingRequestRecord(id, patch) {
@@ -2288,7 +2294,7 @@ function toggleKmValidityField() {
       }
 
       await addData("inventory", {
-        storeName, category, name, barcode, qty, previousQty: qty, soldQty: 0, buyPrice, sellPrice, installationFee, kmValidity, expiryDate, brand, origin, supplierId, supplierName, withdrawCount: 0
+        storeName, category, name, barcode, serialNumber: barcode, qty, previousQty: qty, soldQty: 0, buyPrice, sellPrice, installationFee, kmValidity, expiryDate, brand, origin, supplierId, supplierName, withdrawCount: 0
       });
 
       alert("تم حفظ الصنف بنجاح!");
@@ -2312,6 +2318,8 @@ function toggleKmValidityField() {
     async function loadInventoryData() {
       cachedInventory = await getData("inventory");
       loadSavedInventoryCategories();
+      renderSupplierItemOptions();
+      refreshManualShortageOptions();
       const tbody = document.getElementById('inventoryTbody');
       if(!tbody) return;
       tbody.innerHTML = '';
@@ -2601,11 +2609,11 @@ async function deleteSupplier(id){
   }catch(err){alert('تعذر حذف المورد من السيرفر: '+(err.message||err));}
 }
 function supplierWhatsApp(id){let x=supplierRead('suppliers_list').find(y=>y.id===id);if(!x||!x.phone){alert('أضف رقم هاتف المورد أولاً');return;}let t=supplierTotals(x),msg=`مرحباً ${x.name}، كود المورد: ${x.code||''}. إجمالي التعامل: ${t.gross.toFixed(2)} ج.م، إجمالي المدفوع: ${t.paid.toFixed(2)} ج.م، المستحق: ${t.due.toFixed(2)} ج.م. للاستعلام عن كشف الحساب يرجى التواصل مع مركز أوتو نون.`;window.open('https://wa.me/'+egyptWhatsAppNumber(x.phone)+'?text='+encodeURIComponent(msg),'_blank');}
-function renderSupplierItemOptions(){let d=document.getElementById('supplierInventoryOptions');if(!d)return;d.innerHTML=(cachedInventory||[]).map(x=>`<option value="${escSupplier(x.barcode||x.code||'')}">${escSupplier(x.name)}</option><option value="${escSupplier(x.name)}">${escSupplier(x.barcode||x.code||'')}</option>`).join('');}
+function renderSupplierItemOptions(){let d=document.getElementById('supplierInventoryOptions');if(!d)return;const seen=new Set();d.innerHTML=(cachedInventory||[]).filter(x=>{const k=String(x.id||x.barcode||x.name);if(seen.has(k))return false;seen.add(k);return true;}).map(x=>`<option value="${escSupplier(x.name)}">${escSupplier(x.barcode||x.code||'')}</option><option value="${escSupplier(x.barcode||x.code||'')}">${escSupplier(x.name)}</option>`).join('');}
 function findSupplyInventoryItem(){let q=document.getElementById('supplyItem').value.trim().toLowerCase(),it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q||String(x.name||'').toLowerCase()===q);document.getElementById('supplyItemName').value=it?.name||'';document.getElementById('supplyBarcode').value=it?.barcode||it?.code||'';if(!it&&q.length>=3){document.getElementById('supplyItemName').value='غير مسجل - استخدم تسجيل صنف جديد';}}
 function openNewSupplyItem(){let q=document.getElementById('supplyItem').value.trim();if(!q){alert('اكتب كود الصنف أو اسمه أولاً');return;}let it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase());if(it){alert('الصنف موجود بالفعل: '+it.name+' - الكود '+(it.barcode||it.code||'غير محدد'));document.getElementById('supplyItemName').value=it.name;document.getElementById('supplyBarcode').value=it.barcode||it.code||'';return;}document.getElementById('itemSub').classList.add('show');document.getElementById('itemName').value=q;document.getElementById('itemBarcode').value=/^[A-Za-z0-9_-]+$/.test(q)?q:'';if(!document.getElementById('itemBarcode').value)generateRandomBarcode();let sid=document.getElementById('supplySupplier').value;if(sid)document.getElementById('itemSupplier').value=sid;supplierRegistrationPending=true;document.getElementById('itemQty').value=0;document.getElementById('itemMinQty').value=2;document.getElementById('itemBuyPrice').value=document.getElementById('supplyPrice').value||0;document.getElementById('itemName').focus();alert('تم نقل بيانات البحث إلى تسجيل صنف جديد. راجع الاسم والكود ثم احفظ الصنف، وبعدها ارجع لإذن التوريد.');}
 function supplierEnterNav(e){if(e.key!=='Enter')return;e.preventDefault();let ids=['supplyItem','supplyQty','supplyPrice'],i=ids.indexOf(e.target.id);if(e.target.id==='supplyItem'){findSupplyInventoryItem();document.getElementById('supplyQty').focus();}else if(i>=0&&i<ids.length-1)document.getElementById(ids[i+1]).focus();else addSupplyLine();}
-function addSupplyLine(){let sid=document.getElementById('supplySupplier').value,sup=supplierRead('suppliers_list').find(x=>x.id===sid),q=document.getElementById('supplyItem').value.trim(),it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase()),qty=Number(supplyQty.value),price=Number(supplyPrice.value);if(!sup||!q||qty<1||price<0){alert('اختر المورد وابحث عن الصنف وأدخل الكمية والسعر');return;}if(!it){openNewSupplyItem();return;}let barcode=it.barcode||it.code||'';supplierDraftLines.push({supplierId:sid,supplierName:sup.name,itemId:it.id,code:barcode,name:it.name,barcode,qty,price,total:qty*price});document.getElementById('supplyItem').value='';document.getElementById('supplyItemName').value='';document.getElementById('supplyBarcode').value='';supplyQty.value='';supplyPrice.value='';renderSupplyDraft();document.getElementById('supplyItem').focus();}
+function addSupplyLine(){let sid=document.getElementById('supplySupplier').value,sup=supplierRead('suppliers_list').find(x=>x.id===sid),q=document.getElementById('supplyItem').value.trim(),it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase()),qty=Number(supplyQty.value),price=Number(supplyPrice.value);if(!sup||!q||qty<1||price<0){alert('اختر المورد وابحث عن الصنف وأدخل الكمية والسعر');return;}if(!it){openNewSupplyItem();return;}let barcode=it.barcode||it.code||'';const duplicate=supplierDraftLines.find(x=>x.supplierId===sid&&(x.itemId===it.id||(x.code&&x.code===barcode)||String(x.name).trim().toLowerCase()===String(it.name).trim().toLowerCase()));if(duplicate){duplicate.qty+=qty;duplicate.price=price;duplicate.total=duplicate.qty*price;}else supplierDraftLines.push({supplierId:sid,supplierName:sup.name,itemId:it.id,code:barcode,name:it.name,barcode,qty,price,total:qty*price});document.getElementById('supplyItem').value='';document.getElementById('supplyItemName').value='';document.getElementById('supplyBarcode').value='';supplyQty.value='';supplyPrice.value='';renderSupplyDraft();document.getElementById('supplyItem').focus();}
 function renderSupplyDraft(){document.getElementById('supplyDraftList').innerHTML='<table><thead><tr><th>الكود</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+supplierDraftLines.map((x,i)=>`<tr><td>${escSupplier(x.code)}</td><td>${escSupplier(x.name)}</td><td>${x.qty}</td><td>${x.price}</td><td>${x.total.toFixed(2)}</td><td><button type="button" class="btn-action-sm btn-danger" onclick="removeSupplyLine(${i})">حذف</button></td></tr>`).join('')+'</tbody></table><b>إجمالي التوريد: '+supplierDraftLines.reduce((n,x)=>n+x.total,0).toFixed(2)+' ج.م</b>';}
 function removeSupplyLine(i){supplierDraftLines.splice(i,1);renderSupplyDraft();}
 async function persistInventoryQty(item,qty,price,supplier){let data={...item,qty:Number(item.qty||0)+qty,buyPrice:price,supplierId:supplier.id,supplierName:supplier.name};if(!useLocalFallback&&db&&item.id&&!String(item.id).startsWith('local_')){let id=data.id;delete data.id;await db.collection('inventory').doc(id).update(data);data.id=id;}else{let arr=supplierRead('inventory'),idx=arr.findIndex(x=>x.id===item.id);if(idx>=0)arr[idx]=data;else arr.push(data);supplierWrite('inventory',arr);}return data;}
@@ -2660,6 +2668,70 @@ function revealWarehouseNetProfit(){
   if(pass==='123'){el.innerText=el.dataset.actual||'0.00 ج.م';el.dataset.revealed='1';}
   else alert('كلمة المرور غير صحيحة.');
 }
+
+// توليد باركود فريد متسلسل مع خيار الطباعة
+function generateRandomBarcode(askToPrint=false){
+  const key='non_barcode_serial_counter';
+  let counter=parseInt(localStorage.getItem(key)||'1000',10);
+  const used=new Set((cachedInventory||[]).map(x=>String(x.barcode||x.code||x.serialNumber||'').toUpperCase()));
+  let code='';
+  do { counter++; code='NON-'+String(counter).padStart(7,'0'); } while(used.has(code));
+  localStorage.setItem(key,String(counter));
+  const field=document.getElementById('itemBarcode');
+  if(field) field.value=code;
+  const nameField=document.getElementById('itemName');
+  if(nameField) nameField.dataset.generatedSerial=code;
+  if(askToPrint && confirm('تم توليد الباركود والسيريال نمبر: '+code+'\nهل تريد طباعة الباركود الآن؟')) printGeneratedBarcode(code);
+}
+function printGeneratedBarcode(code){
+  const w=window.open('','_blank','width=520,height=360');
+  if(!w){alert('اسمح بفتح النوافذ المنبثقة حتى تتمكن من طباعة الباركود.');return;}
+  let svg='';
+  try{
+    if(typeof JsBarcode==='function'){
+      const node=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      JsBarcode(node,code,{format:'CODE128',width:2,height:75,displayValue:true,fontSize:16,margin:8});
+      svg=node.outerHTML;
+    }
+  }catch(e){console.warn('Barcode render error',e);}
+  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>باركود ${code}</title><style>body{font-family:Tahoma,Arial;text-align:center;padding:25px}.label{width:75mm;margin:20px auto;padding:12px;border:1px dashed #999}svg{max-width:100%}.serial{font-size:18px;font-weight:bold;margin-top:8px}@media print{@page{size:80mm 50mm;margin:4mm}}</style></head><body><div class="label"><h3>مركز أوتو نون (NON)</h3>${svg||`<div style="font-size:22px;letter-spacing:2px">${code}</div>`}<div class="serial">${code}</div></div><script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+// قائمة النواقص يدوية فقط: البحث عن صنف بالمخزن ثم تحويله صراحةً
+function refreshManualShortageOptions(){
+  const dl=document.getElementById('manualShortageOptions');if(!dl)return;
+  const seen=new Set();
+  dl.innerHTML=(cachedInventory||[]).filter(x=>{const k=String(x.id||x.name);if(seen.has(k))return false;seen.add(k);return true;})
+    .map(x=>`<option value="${escapeMissingHtml(x.name)}">${escapeMissingHtml(x.barcode||x.code||'')}</option>`).join('');
+}
+async function manuallyAddShortage(){
+  const q=(document.getElementById('manualShortageSearch')?.value||'').trim();
+  const qty=Math.max(1,parseInt(document.getElementById('manualShortageQty')?.value||'1',10));
+  if(!q){alert('ابحث عن اسم الصنف أو الباركود أولاً.');return;}
+  const item=(cachedInventory||[]).find(x=>String(x.name||'').trim().toLowerCase()===q.toLowerCase()||String(x.barcode||x.code||'').trim().toLowerCase()===q.toLowerCase());
+  if(!item){alert('الصنف غير موجود بالمخزن. اختر صنفًا مسجلاً من نتائج البحث.');return;}
+  const all=await getData('dept_requests');
+  const existing=all.find(x=>x.requestType==='MISSING_PART'&&String(x.inventoryItemId||'')===String(item.id)&&!x.deleted);
+  if(existing){alert('هذا الصنف موجود بالفعل في قائمة النواقص. يمكنك حذف السجل القديم أولاً إذا أردت إعادة إضافته.');return;}
+  await addData('dept_requests',{requestType:'MISSING_PART',itemName:item.name,qty,department:item.category||'',inventoryItemId:item.id,itemBarcode:item.barcode||item.code||'',source:'manual_inventory_shortage',createdAt:new Date().toISOString(),clientName:'طلب مخزني يدوي',carInfo:'—'});
+  document.getElementById('manualShortageSearch').value='';
+  document.getElementById('manualShortageQty').value='1';
+  await loadDeptRequests();
+  alert('تم تحويل الصنف إلى قائمة النواقص يدويًا.');
+}
+async function deleteMissingRequest(id){
+  if(!confirm('هل تريد حذف هذا الصنف من سجل النواقص نهائيًا؟'))return;
+  try{
+    if(useLocalFallback||String(id).startsWith('local_')){
+      const a=JSON.parse(localStorage.getItem('dept_requests')||'[]').filter(x=>x.id!==id);
+      localStorage.setItem('dept_requests',JSON.stringify(a));
+    }else await db.collection('dept_requests').doc(id).delete();
+    await loadDeptRequests();
+    alert('تم حذف سجل النواقص.');
+  }catch(err){alert('تعذر حذف سجل النواقص: '+(err.message||err));}
+}
+window.addEventListener('load',()=>{refreshManualShortageOptions();});
+
 </script>
 
 </body>
