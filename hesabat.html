@@ -2873,70 +2873,7 @@ body.dark-mode{background:#0b1420!important;color:#e5edf6!important}body.dark-mo
       if(!w){alert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.');return;}
       const title='مراجعة بيانات العميل - '+(currentSelectedQueueItem.invoiceSerial||'فاتورة');
       w.document.open();
-      w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'+returnReviewSafe(title)+'</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Tahoma,Arial;color:#111;font-size:11px}h3,h4{margin:8px 0}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #555;padding:5px;text-align:right}th{background:#eee}.card-box{border:1px solid #bbb;padding:8px;margin:6px 0;border-radius:5px}button{display:none!important}#returnReviewCustomerGrid,#returnReviewExtraInfo{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-top:25px;text-align:center}.line{height:32px;border-bottom:1px solid #111}.stamp{border:2px dashed #555;border-radius:50%;height:55px;width:85px;margin:auto;display:grid;place-items:center;font-weight:bold}</style></head><body><h2 style="text-align:center">مركز أوتو نون لصيانة السيارات</h2><h3 style="text-align:center">مراجعة بيانات العميل قبل إرجاعه للحسابات</h3>'+content.innerHTML+'<div class="signatures"><div>توقيع مسئول الحسابات<div class="line"></div></div><div>ختم المركز<div class="stamp">أوتو نون</div></div><div>توقيع العميل<div class="line"></div></div></div><script>window.onload=()=>window.print()<\/script>
-<script id="accounts-profits-history-reset-v1">
-(function(){
- const RESET_COLLECTIONS=[
-  'invoices_archive',
-  'expenses',
-  'daily_profit_closings',
-  'treasury_transactions',
-  'treasury_transfers',
-  'financial_summary_transfers',
-  'client_accounts',
-  'client_collection_receipts',
-  'client_advance_payments',
-  'workshop_archive'
- ];
- const RESET_LOCAL_KEYS=[
-  'invoices_archive','expenses','daily_profit_closings',
-  'treasury_transactions','treasury_transfers','financial_summary_transfers',
-  'client_accounts','client_collection_receipts','client_advance_payments','workshop_archive'
- ];
- async function deleteCollectionRows(name){
-  const snap=await window.db.collection(name).get();
-  const docs=snap.docs||[];
-  for(let i=0;i<docs.length;i+=400){
-   const batch=window.db.batch();
-   docs.slice(i,i+400).forEach(doc=>batch.delete(doc.ref));
-   await batch.commit();
-  }
-  return docs.length;
- }
- window.resetAccountsProfitsHistory=async function(){
-  const list='الفواتير وأرشيفها، المصروفات، تقفيلات الأرباح اليومية، حركات الخزائن والتحويلات، حسابات العملاء التاريخية، إيصالات التحصيل والدفعات المقدمة، وأرشيف الورشة.';
-  if(!window.db||typeof window.db.collection!=='function'){alert('السيرفر غير متصل. لم يتم حذف أي بيانات.');return;}
-  if(!confirm('تحذير: سيتم تصفير سجل الحسابات والأرباح على السيرفر.\\n\\nسيتم حذف: '+list+'\\n\\nسيتم الاحتفاظ بأرصدة الخزائن الحالية، وأرصدة العملاء الحالية، والمخزون، والأصناف، والموردين، والسيارات، والموظفين، وأرقام التسلسل.\\n\\nهل تريد المتابعة؟'))return;
-  const phrase=prompt('للتأكيد النهائي اكتب العبارة التالية كما هي:\\nتصفير الحسابات والأرباح');
-  if(phrase!=='تصفير الحسابات والأرباح'){if(phrase!==null)alert('عبارة التأكيد غير مطابقة. لم يتم تنفيذ التصفير.');return;}
-  const status=document.getElementById('apStatus');
-  if(status)status.textContent='جاري تصفير السجلات الحسابية على السيرفر...';
-  const counts={};let current='';
-  try{
-   for(const name of RESET_COLLECTIONS){current=name;counts[name]=await deleteCollectionRows(name);}
-   RESET_LOCAL_KEYS.forEach(key=>localStorage.removeItem(key));
-   // تفريغ الذاكرة المؤقتة حتى لا تظهر الأرقام القديمة قبل إعادة التحميل.
-   if(window.accountsProfitCache){
-    window.accountsProfitCache.invoices=[];
-    window.accountsProfitCache.expenses=[];
-   }
-   if(Array.isArray(window.salesDailyRows))window.salesDailyRows=[];
-   if(Array.isArray(window.salesDailyExpenses))window.salesDailyExpenses=[];
-   if(status)status.textContent='تم تصفير السجل التاريخي بنجاح. جاري تحديث التقارير...';
-   alert('تم تصفير سجل الحسابات والأرباح على السيرفر بنجاح.\\n\\nعدد السجلات المحذوفة:\\n'+Object.entries(counts).map(([k,v])=>k+': '+v).join('\\n')+'\\n\\nتم الاحتفاظ بالأرصدة الحالية والمخزون والبيانات الأساسية.');
-   if(typeof window.openAccountsProfits==='function')await window.openAccountsProfits();
-   if(typeof window.loadSalesDaily==='function')await window.loadSalesDaily();
-   if(typeof window.loadFinancialStats==='function')await window.loadFinancialStats();
-  }catch(err){
-   const done=Object.entries(counts).reduce((a,[,v])=>a+v,0);
-   if(status)status.textContent='توقف التصفير بسبب خطأ في '+current+'.';
-   alert('لم يكتمل التصفير. تم حذف '+done+' سجل قبل حدوث الخطأ عند مجموعة '+current+'.\\nيمكنك إعادة المحاولة بعد إصلاح صلاحيات Firestore.\\nالخطأ: '+(err.message||err));
-  }
- };
-})();
-</script>
-
-</body></html>');
+      w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'+returnReviewSafe(title)+'</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Tahoma,Arial;color:#111;font-size:11px}h3,h4{margin:8px 0}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #555;padding:5px;text-align:right}th{background:#eee}.card-box{border:1px solid #bbb;padding:8px;margin:6px 0;border-radius:5px}button{display:none!important}#returnReviewCustomerGrid,#returnReviewExtraInfo{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-top:25px;text-align:center}.line{height:32px;border-bottom:1px solid #111}.stamp{border:2px dashed #555;border-radius:50%;height:55px;width:85px;margin:auto;display:grid;place-items:center;font-weight:bold}</style></head><body><h2 style="text-align:center">مركز أوتو نون لصيانة السيارات</h2><h3 style="text-align:center">مراجعة بيانات العميل قبل إرجاعه للحسابات</h3>'+content.innerHTML+'<div class="signatures"><div>توقيع مسئول الحسابات<div class="line"></div></div><div>ختم المركز<div class="stamp">أوتو نون</div></div><div>توقيع العميل<div class="line"></div></div></div><script>window.onload=()=>window.print()<\/script></body></html>');
 
 
       w.document.close();
@@ -5982,21 +5919,18 @@ window.addEventListener('load', function () {
  async function persistSuppliersToServer(list){
    const col=supplierCollection();
    if(!col) throw new Error('اتصال Firebase غير مهيأ');
-   // قائمة الحظر السحابية تمنع أي نسخة قديمة من إعادة المورد بعد حذفه.
-   const tombSnap=await window.db.collection('deleted_suppliers').get();
-   const deletedIds=new Set(tombSnap.docs.map(d=>String(d.id)));
-   const safeList=(Array.isArray(list)?list:[]).filter(item=>item&&item.id&&!deletedIds.has(String(item.id)));
-   if(safeList.length!==(Array.isArray(list)?list.length:0)) localStorage.setItem('suppliers_list',JSON.stringify(safeList));
+   // كتابة/تحديث السجلات الحالية وحذف ما أزيل من القائمة صراحةً.
    const existing=await col.get();
-   const wanted=new Set(safeList.map(x=>String(x.id)));
+   const wanted=new Set(list.map(x=>String(x.id)));
    let batch=window.db.batch(), count=0;
-   for(const item of safeList){
+   for(const item of list){
+     if(!item || !item.id) continue;
      const data={...item, updatedAt:new Date().toISOString()};
      batch.set(col.doc(String(item.id)),data,{merge:true}); count++;
      if(count>=400){await batch.commit();batch=window.db.batch();count=0;}
    }
    for(const doc of existing.docs){
-     if(deletedIds.has(String(doc.id))||!wanted.has(String(doc.id))){
+     if(!wanted.has(String(doc.id))){
        batch.delete(doc.ref);count++;
        if(count>=400){await batch.commit();batch=window.db.batch();count=0;}
      }
@@ -6034,25 +5968,20 @@ window.addEventListener('load', function () {
    if(!col){console.error('Firestore غير متاح لقائمة الموردين');return;}
    col.onSnapshot(async snapshot=>{
      try{
-       // يجب قراءة سجل الحذف أولاً قبل عرض أو إعادة مزامنة أي مورد.
-       const tombSnap=await window.db.collection('deleted_suppliers').get();
-       const deletedIds=new Set(tombSnap.docs.map(d=>String(d.id)));
-       const resurrected=snapshot.docs.filter(doc=>deletedIds.has(String(doc.id)));
-       for(let i=0;i<resurrected.length;i+=400){
-         const batch=window.db.batch();
-         resurrected.slice(i,i+400).forEach(doc=>batch.delete(doc.ref));
-         await batch.commit();
+       const serverRows=snapshot.docs.map(doc=>({...doc.data(),id:doc.id}));
+       const localRows=read('suppliers_list');
+       // ترحيل البيانات المحلية القديمة مرة واحدة إذا كانت مجموعة السيرفر فارغة.
+       if(snapshot.empty && localRows.length){
+         supplierServerReady=true;
+         await persistSuppliersToServer(localRows);
+         return;
        }
-       const serverRows=snapshot.docs.filter(doc=>!deletedIds.has(String(doc.id))).map(doc=>({...doc.data(),id:doc.id}));
        localStorage.setItem('suppliers_list',JSON.stringify(serverRows));
        supplierServerReady=true;
        if(typeof window.renderAccountsSupplierDirectory==='function') window.renderAccountsSupplierDirectory();
        if(selectedSupplier) selectedSupplier=serverRows.find(x=>String(x.id)===String(selectedSupplier.id))||null;
      }catch(err){
-       supplierServerReady=false;
-       console.error('خطأ تحميل دليل الموردين أو سجل الحذف من السيرفر:',err);
-       const host=document.getElementById('accountSupplierDirectoryResult');
-       if(host) host.innerHTML='<p style="color:#b91c1c;font-weight:bold">تعذر التحقق من سجل حذف الموردين؛ لن يتم اعتماد القائمة حتى ينجح الاتصال.</p>';
+       console.error('خطأ تحميل دليل الموردين من السيرفر:',err);
      }
    },err=>{
      supplierServerReady=false;
@@ -6087,16 +6016,12 @@ window.addEventListener('load', function () {
    });
    selectedSupplier=x;showSupplier(x);alert('تم تعديل بيانات المورد في الحسابات والمخزن بنفس السجل.');
  };
- window.deleteAccountsSupplier=async function(id){
+ window.deleteAccountsSupplier=function(id){
    const a=suppliers(),x=a.find(v=>String(v.id)===String(id));if(!x)return;
-   if(!confirm('تأكيد حذف المورد «'+(x.name||'')+'» من قائمة الموردين والتجار في الحسابات والمخزن؟\\nسيتم الاحتفاظ بأذونات التوريد والمدفوعات والسجلات التاريخية، مع تسجيل الحذف على السيرفر لمنع رجوعه.'))return;
-   try{
-     if(!window.db||typeof window.db.collection!=='function')throw new Error('السيرفر غير متصل؛ لم يتم تنفيذ الحذف.');
-     await window.db.collection('deleted_suppliers').doc(String(id)).set({supplierId:String(id),supplierName:x.name||'',deletedAt:new Date().toISOString(),deletedFrom:'Hesabat'});
-     write('suppliers_list',a.filter(v=>String(v.id)!==String(id)));
-     if(selectedSupplier&&String(selectedSupplier.id)===String(id)){selectedSupplier=null;const nm=document.getElementById('accountSupplierName'),cd=document.getElementById('accountSupplierCode');if(nm)nm.value='';if(cd)cd.value='';}
-     renderAccountsSupplierDirectory();alert('تم حذف المورد وتسجيله في قائمة الحظر على السيرفر لمنع ظهوره مرة أخرى.');
-   }catch(err){alert('تعذر تثبيت حذف المورد على السيرفر: '+(err.message||err));}
+   if(!confirm('تأكيد حذف المورد «'+(x.name||'')+'» من قائمة الموردين والتجار في الحسابات والمخزن؟\nسيتم الاحتفاظ بأذونات التوريد والمدفوعات والسجلات التاريخية.'))return;
+   write('suppliers_list',a.filter(v=>String(v.id)!==String(id)));
+   if(selectedSupplier&&String(selectedSupplier.id)===String(id)){selectedSupplier=null;const nm=document.getElementById('accountSupplierName'),cd=document.getElementById('accountSupplierCode');if(nm)nm.value='';if(cd)cd.value='';}
+   renderAccountsSupplierDirectory();alert('تم حذف المورد من القائمة المشتركة؛ ستختفي بياناته من صفحة المخزن أيضاً مع الاحتفاظ بالسجلات السابقة.');
  };
  // إذا تغيرت القائمة من صفحة المخزن في نافذة أخرى، حدّث دليل الحسابات تلقائياً.
  window.addEventListener('storage',function(e){if(e.key==='suppliers_list'){if(selectedSupplier){selectedSupplier=suppliers().find(v=>String(v.id)===String(selectedSupplier.id))||null;}renderAccountsSupplierDirectory();}});
@@ -6177,8 +6102,8 @@ window.addEventListener('load', function () {
       const st=states[k];
       try{
         const serverRows=snap.docs.map(doc=>{const x=doc.data()||{};delete x._syncIndex;delete x._syncedAt;return {...x,id:x.id||doc.id};});
-        // لا تسترجع بيانات قديمة من الجهاز عندما تكون مجموعة Firestore فارغة.
-        // الفراغ هنا نتيجة صحيحة للحذف، ويجب أن ينعكس محلياً كما هو.
+        const localRows=readArray(k);
+        if(snap.empty&&localRows.length){st.ready=true;await saveCollection(k,localRows);return;}
         serverRows.sort((a,b)=>0);
         setLocal(k,serverRows);st.ready=true;
         if(typeof window.renderAccountsSupplierDirectory==='function')window.renderAccountsSupplierDirectory();
@@ -6740,10 +6665,6 @@ function printClientLifeStatement(){const content=document.getElementById('clien
      <div class="card-box" style="margin:0;text-align:center"><b>صافي الربح</b><div id="apAllNet" style="font-size:22px;font-weight:900">0</div></div>
     </div>
     <div id="apAllWarning" style="margin-top:8px;color:#9a3412;font-size:13px"></div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px dashed #d97706">
-     <button class="btn-action btn-danger" type="button" onclick="resetAccountsProfitsHistory()"><i class="fa-solid fa-eraser"></i> تصفير سجل الحسابات والأرباح بالكامل</button>
-     <small style="color:#7f1d1d;font-weight:700">يحذف السجلات التاريخية من السيرفر، مع الاحتفاظ بأرصدة الخزائن والمخزون والأصناف والعملاء.</small>
-    </div>
    </section>
    <section style="background:#f0fdfa;border:1px solid #99e4d7;border-radius:8px;padding:12px">
     <h3 style="margin:0 0 10px;font-size:16px">حساب الأرباح خلال فترة</h3>
