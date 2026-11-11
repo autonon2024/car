@@ -489,7 +489,7 @@
           <button class="btn-action-sm btn-blue" onclick="openNewSupplyItem()" type="button">كود غير موجود؟ تسجيل صنف جديد</button><button class="btn-action-sm btn-success" onclick="addSupplyLine()" type="button">إضافة للتوريد</button>
           <button class="btn-action-sm btn-blue" onclick="createSupplierIssueOrder()" type="button">حفظ</button>
         </div>
-        <div id="supplyDraftList"></div><div class="collapsible-section"><h4>مرتجع / تالف للمورد</h4><div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px"><input id="supplierReturnItem" placeholder="كود أو اسم الصنف" list="supplierReturnOptions" oninput="findSupplierReturnItem()"><datalist id="supplierReturnOptions"></datalist><input id="supplierReturnItemName" placeholder="اسم الصنف المحدد" readonly><input id="supplierReturnQty" type="number" min="1" placeholder="الكمية"><select id="supplierReturnType"><option value="مرتجع">مرتجع للمورد</option><option value="تالف">تالف على المورد</option></select><input id="supplierReturnNotes" placeholder="السبب / ملاحظات"><button class="btn-action-sm btn-danger" type="button" onclick="saveSupplierReturn()">تسجيل المرتجع / التالف</button></div></div>
+        <div id="supplyDraftList"></div><div class="collapsible-section"><h4>مرتجع / تالف للمورد</h4><div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px"><input id="supplierReturnItem" placeholder="كود أو اسم الصنف" list="supplierReturnOptions" oninput="findSupplierReturnItem()"><datalist id="supplierReturnOptions"></datalist><input id="supplierReturnItemName" placeholder="اسم الصنف المحدد" readonly><input id="supplierReturnQty" type="number" min="1" placeholder="الكمية"><select id="supplierReturnType"><option value="مرتجع">مرتجع للمورد</option><option value="تالف">تالف على المورد</option></select><input id="supplierReturnNotes" placeholder="السبب / ملاحظات"><button class="btn-action-sm btn-danger" type="button" onclick="saveSupplierReturn()">تسجيل المرتجع / التالف</button></div></div><div style="overflow:auto;margin-top:10px"><h4>سجل مرتجع / تالف المورد</h4><table><thead><tr><th>التاريخ</th><th>المورد</th><th>الصنف</th><th>الكمية</th><th>النوع</th><th>القيمة</th><th>ملاحظات</th><th>إجراء</th></tr></thead><tbody id="supplierReturnsHistoryBody"><tr><td colspan="8">جاري التحميل...</td></tr></tbody></table></div>
         <div class="form-field"><input id="issueSearch" placeholder="بحث برقم إذن الصرف" oninput="renderSupplierOrders()"></div>
         <div style="overflow:auto"><table><thead><tr><th>رقم الإذن</th><th>التاجر</th><th>التاريخ</th><th>الأصناف</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>إجراء</th></tr></thead><tbody id="supplierOrderRows"></tbody></table></div>
         <button class="btn-action-sm btn-gold" onclick="sendShortagesToSupplier()">إرسال النواقص واتساب</button>
@@ -1565,17 +1565,20 @@
     async function deleteItem(col, id) {
       if(!settingsConfig.enableDelete) { alert("تم تعطيل أزرار الحذف بواسطة الإدارة!"); return; }
       if (!verifyAdminPassword()) return;
-      if (confirm("هل أنت متأكد من الحذف نهائياً؟")) {
-        if (useLocalFallback || id.startsWith('local_')) {
-          let list = JSON.parse(localStorage.getItem(col) || '[]');
-          list = list.filter(i => i.id !== id);
-          localStorage.setItem(col, JSON.stringify(list));
+      if (!confirm("هل أنت متأكد من الحذف نهائياً؟")) return;
+      try {
+        if (String(id).startsWith('local_')) {
+          const list=JSON.parse(localStorage.getItem(col)||'[]').filter(i=>String(i.id)!==String(id));
+          localStorage.setItem(col,JSON.stringify(list));
         } else {
-          await db.collection(col).doc(id).delete();
+          if(!db) throw new Error('لا يوجد اتصال بقاعدة البيانات؛ لم يتم حذف السجل.');
+          await db.collection(col).doc(String(id)).delete();
+          const list=JSON.parse(localStorage.getItem(col)||'[]').filter(i=>String(i.id)!==String(id));
+          localStorage.setItem(col,JSON.stringify(list));
         }
         reloadTableData(col);
         alert("تم الحذف بنجاح.");
-      }
+      } catch(err) { console.error('Delete failed:',col,id,err); alert('تعذر حذف السجل من السيرفر: '+(err.message||err)); }
     }
 
     function reloadTableData(col) {
@@ -1607,6 +1610,7 @@
       if(!verifyAdminPassword()) return;
       if(!confirm(`هل أنت متأكد من حذف (${selected.length}) عنصر تحديداً بالكامل؟`)) return;
 
+      try {
       for(let cb of selected) {
         let id = cb.value;
         if (col === 'dept_requests') {
@@ -1614,11 +1618,12 @@
           let group = cachedDeptRequestsGrouped[id] || Object.values(cachedDeptRequestsGrouped).find(g => g.requestIds.includes(id));
           if(group && group.requestIds) {
             for(let reqId of group.requestIds) {
-              if (useLocalFallback || reqId.startsWith('local_')) {
+              if (String(reqId).startsWith('local_')) {
                 let list = JSON.parse(localStorage.getItem(col) || '[]');
                 list = list.filter(i => i.id !== reqId);
                 localStorage.setItem(col, JSON.stringify(list));
               } else {
+                if(!db) throw new Error('لا يوجد اتصال بقاعدة البيانات؛ لم يتم حذف السجل.');
                 await db.collection(col).doc(reqId).delete();
               }
             }
@@ -1626,16 +1631,18 @@
           }
         }
 
-        if (useLocalFallback || id.startsWith('local_')) {
+        if (String(id).startsWith('local_')) {
           let list = JSON.parse(localStorage.getItem(col) || '[]');
           list = list.filter(i => i.id !== id);
           localStorage.setItem(col, JSON.stringify(list));
         } else {
+          if(!db) throw new Error('لا يوجد اتصال بقاعدة البيانات؛ لم يتم حذف السجل.');
           await db.collection(col).doc(id).delete();
         }
       }
       alert("تم حذف العناصر المحددة بالكامل بنجاح.");
       reloadTableData(col);
+      } catch(err) { console.error('Bulk delete failed:',err); alert('تعذر إتمام الحذف بالكامل: '+(err.message||err)); reloadTableData(col); }
     }
 
 
@@ -2542,8 +2549,54 @@ function toggleKmValidityField() {
 
 <script>
 let supplierDraftLines=[]; let supplierRegistrationPending=false;
+const SUPPLIER_COLLECTION_MAP={suppliers_list:'suppliers',supplier_issue_orders:'supplier_issue_orders',supplier_returns:'supplier_returns',supplier_ledger:'supplier_ledger',supplier_payment_archive:'supplier_payment_archive'};
+let __supplierServerReady=false;
+const __supplierSyncQueues={};
 function supplierRead(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}}
-function supplierWrite(key,value){localStorage.setItem(key,JSON.stringify(value))}
+function supplierWrite(key,value){
+  const before=supplierRead(key);
+  localStorage.setItem(key,JSON.stringify(value));
+  if(__supplierServerReady && SUPPLIER_COLLECTION_MAP[key] && db) supplierQueueServerSync(key,before,Array.isArray(value)?value:[]);
+}
+async function supplierSyncCollection(key,before,after){
+  const collectionName=SUPPLIER_COLLECTION_MAP[key];
+  if(!collectionName || !db) throw new Error('اتصال Firebase غير متاح؛ لم يتم اعتماد التعديل محليًا فقط.');
+  const col=db.collection(collectionName), oldById=new Map((before||[]).filter(x=>x&&x.id).map(x=>[String(x.id),x])), newById=new Map((after||[]).filter(x=>x&&x.id).map(x=>[String(x.id),x]));
+  let batch=db.batch(),count=0;
+  const commitIfFull=async()=>{if(count>=450){await batch.commit();batch=db.batch();count=0;}};
+  for(const [id,item] of newById){ if(id.startsWith('local_')) continue; const copy={...item}; delete copy.id; batch.set(col.doc(id),copy,{merge:true}); count++; await commitIfFull(); }
+  for(const id of oldById.keys()){ if(!newById.has(id) && !id.startsWith('local_')){batch.delete(col.doc(id));count++;await commitIfFull();} }
+  if(count) await batch.commit();
+}
+function supplierQueueServerSync(key,before,after){
+  const prior=__supplierSyncQueues[key]||Promise.resolve();
+  __supplierSyncQueues[key]=prior.then(()=>supplierSyncCollection(key,before,after)).catch(err=>{console.error('Supplier cloud sync failed:',key,err);alert('تعذر مزامنة بيانات الموردين مع السيرفر ('+key+'): '+(err.message||err));});
+  return __supplierSyncQueues[key];
+}
+async function ensureSupplierServerData(){
+  if(!db) throw new Error('Firebase غير متاح.');
+  // أعد التحقق من سجل الحذف عند كل تحميل؛ لا تعتمد على نسخة محلية قديمة.
+  const tombSnap=await db.collection('deleted_suppliers').get();
+  const deletedIds=new Set(tombSnap.docs.map(doc=>String(doc.id)));
+  const loaded={};
+  for(const [key,collectionName] of Object.entries(SUPPLIER_COLLECTION_MAP)){
+    const snap=await db.collection(collectionName).get();
+    if(key==='suppliers_list'){
+      const resurrected=snap.docs.filter(doc=>deletedIds.has(String(doc.id)));
+      for(let i=0;i<resurrected.length;i+=400){
+        const batch=db.batch();
+        resurrected.slice(i,i+400).forEach(doc=>batch.delete(doc.ref));
+        await batch.commit();
+      }
+      loaded[key]=snap.docs.filter(doc=>!deletedIds.has(String(doc.id))).map(doc=>({...doc.data(),id:doc.id}));
+    }else{
+      loaded[key]=snap.docs.map(doc=>({...doc.data(),id:doc.id}));
+    }
+  }
+  // Firestore هو المصدر الأساسي؛ أي مورد عليه علامة حذف لا يظهر حتى لو أعادته نسخة قديمة.
+  for(const [key,rows] of Object.entries(loaded)) localStorage.setItem(key,JSON.stringify(rows));
+  __supplierServerReady=true;
+}
 function categoryNeedsKm(cat){const saved=supplierRead('inventory_categories');const c=saved.find(x=>x.name===cat);return c?!!c.requiresKm:['فلاتر وزيوت','فرامل'].includes(cat);}
 function refreshSupplierSelects(){const a=supplierRead('suppliers_list');['itemSupplier','supplySupplier'].forEach(id=>{let el=document.getElementById(id);if(!el)return;let old=el.value;el.innerHTML=(id==='itemSupplier'?'<option value="">بدون تحديد</option>':'<option value="">اختر التاجر / المورد</option>')+a.map(x=>`<option value="${escSupplier(x.id)}">${escSupplier(x.code||'') } - ${escSupplier(x.name)}</option>`).join('');if(old)el.value=old;});}
 function escSupplier(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -2555,7 +2608,7 @@ async function saveSupplierRecord(e){
   try{
     // عند توفر Firebase تكون قاعدة البيانات السحابية هي مصدر الحفظ الأساسي.
     let a=supplierRead('suppliers_list');
-    if(!useLocalFallback && db){
+    if(db){
       const snap=await db.collection('suppliers').get();
       a=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
     }
@@ -2564,50 +2617,70 @@ async function saveSupplierRecord(e){
     }
     const stamp=Date.now(),id='sup_'+stamp,code='SUP-'+String(stamp).slice(-8);
     const x={id,code,name,phone:normalizeEgyptMobile(supplierPhone.value),section:supplierSection.value.trim(),address:supplierAddress.value.trim(),notes:supplierNotes.value.trim(),balance:0,createdAt:new Date().toISOString()};
-    if(!useLocalFallback && db){
+    if(db){
       await db.collection('suppliers').doc(id).set(x);
+      a.push(x);localStorage.setItem('suppliers_list',JSON.stringify(a));
     }else{
-      a.push(x);supplierWrite('suppliers_list',a);
+      a.push(x);localStorage.setItem('suppliers_list',JSON.stringify(a));
     }
     e.target.reset();
     await loadSupplierRecords();
     if(x.phone){let msg=`مرحباً ${x.name}، كود حسابك لدى مركز أوتو نون هو ${x.code}. للاستعلام عن الرصيد أو كشف الحساب يرجى التواصل معنا وإرسال هذا الكود.`;window.open('https://wa.me/'+egyptWhatsAppNumber(x.phone)+'?text='+encodeURIComponent(msg),'_blank');}
-    alert('تم حفظ بيانات المورد بنجاح'+((!useLocalFallback&&db)?' على السيرفر.':'.'));
+    alert('تم حفظ بيانات المورد بنجاح'+(db?' على السيرفر.':'.'));
   }catch(err){console.error('Supplier save error:',err);alert('تعذر حفظ المورد على السيرفر. لم يتم حفظه محلياً كبديل حتى لا تختلف البيانات: '+(err.message||err));}
 }
 async function loadSupplierRecords(){
   try{
-    if(!useLocalFallback && db){
-      const snap=await db.collection('suppliers').get();
-      const cloud=snap.docs.map(doc=>({id:doc.id,...doc.data()}));
-      supplierWrite('suppliers_list',cloud); // نسخة مؤقتة للعرض والعمل دون اتصال فقط
-    }
-  }catch(err){console.error('تعذر تحميل الموردين من السيرفر:',err);}
-  refreshSupplierSelects();renderSupplierRecords();renderSupplierOrders();renderSupplierItemOptions();renderSupplierReturnOptions();
+    await ensureSupplierServerData();
+  }catch(err){
+    console.error('تعذر تحميل بيانات الموردين من السيرفر:',err);
+    const tb=document.getElementById('supplierRows');
+    if(tb) tb.innerHTML='<tr><td colspan="11">تعذر الاتصال بالسيرفر؛ لم يتم استبدال البيانات السحابية ببيانات محلية قديمة.</td></tr>';
+  }
+  refreshSupplierSelects();renderSupplierRecords();renderSupplierOrders();renderSupplierItemOptions();renderSupplierReturnOptions();renderSupplierReturnHistory();
 }
 document.addEventListener('DOMContentLoaded',()=>{loadSupplierRecords();});
 window.addEventListener('storage',function(e){if(e.key==='suppliers_list')loadSupplierRecords();});
 function supplierTotals(x){let orders=supplierRead('supplier_issue_orders').filter(o=>o.supplierId===x.id),returns=supplierRead('supplier_returns').filter(r=>r.supplierId===x.id);let gross=orders.reduce((n,o)=>n+Number(o.total||0),0),paid=orders.reduce((n,o)=>n+Number(o.paid||0),0),ret=returns.reduce((n,r)=>n+Number(r.value||0),0),pieces=orders.reduce((n,o)=>n+(o.lines||[]).reduce((m,l)=>m+Number(l.qty||0),0),0)-returns.reduce((n,r)=>n+Number(r.qty||0),0);return {gross,paid,due:Math.max(0,gross-paid-ret),pieces,returns:ret};}
 function renderSupplierRecords(){const a=supplierRead('suppliers_list'),q=(document.getElementById('supplierSearch')?.value||'').toLowerCase(),tb=document.getElementById('supplierRows');if(!tb)return;tb.innerHTML=a.filter(x=>[x.code,x.name,x.phone,x.section,x.address].join(' ').toLowerCase().includes(q)).map(x=>{let t=supplierTotals(x);return `<tr><td>${escSupplier(x.code||'')}</td><td>${escSupplier(x.name)}</td><td>${escSupplier(x.phone)}</td><td>${escSupplier(x.section)}</td><td>${escSupplier(x.address)}</td><td>${t.gross.toFixed(2)} ج.م</td><td>${t.paid.toFixed(2)} ج.م</td><td>${t.due.toFixed(2)} ج.م</td><td>${t.pieces}</td><td>${escSupplier(x.notes)}</td><td><button class="btn-action-sm btn-blue" onclick="editSupplier('${x.id}')">تعديل</button> <button class="btn-action-sm btn-purple" onclick="showSupplierItems('${x.id}')">أصنافي / طباعة</button> <button class="btn-action-sm btn-primary" onclick="supplierAccountStatement('${x.id}')">كشف حساب بالفترة</button> <button class="btn-action-sm btn-success" onclick="supplierWhatsApp('${x.id}')">واتساب</button> <button class="btn-action-sm btn-danger" onclick="deleteSupplier('${x.id}')"><i class="fa-solid fa-trash"></i> حذف التاجر</button></td></tr>`}).join('')||'<tr><td colspan="11">لا توجد بيانات</td></tr>';}
-async function editSupplier(id){let a=supplierRead('suppliers_list'),x=a.find(y=>y.id===id);if(!x)return;let name=prompt('اسم المورد',x.name);if(name===null)return;if(a.some(y=>y.id!==id&&normalizeSupplierName(y.name)===normalizeSupplierName(name))){alert('هذا الاسم مسجل لمورد آخر.');return;}x.name=name.trim();x.phone=prompt('الهاتف',x.phone||'')??x.phone;x.section=prompt('القسم',x.section||'')??x.section;x.address=prompt('العنوان',x.address||'')??x.address;x.notes=prompt('ملاحظات',x.notes||'')??x.notes;try{if(!useLocalFallback&&db)await db.collection('suppliers').doc(id).set(x,{merge:true});else supplierWrite('suppliers_list',a);await loadSupplierRecords();}catch(err){alert('تعذر تحديث المورد على السيرفر: '+(err.message||err));}}
+async function editSupplier(id){let a=supplierRead('suppliers_list'),x=a.find(y=>y.id===id);if(!x)return;let name=prompt('اسم المورد',x.name);if(name===null)return;if(a.some(y=>y.id!==id&&normalizeSupplierName(y.name)===normalizeSupplierName(name))){alert('هذا الاسم مسجل لمورد آخر.');return;}x.name=name.trim();x.phone=prompt('الهاتف',x.phone||'')??x.phone;x.section=prompt('القسم',x.section||'')??x.section;x.address=prompt('العنوان',x.address||'')??x.address;x.notes=prompt('ملاحظات',x.notes||'')??x.notes;try{if(!String(id).startsWith('local_')&&db){const copy={...x};delete copy.id;await db.collection('suppliers').doc(id).set(copy,{merge:true});localStorage.setItem('suppliers_list',JSON.stringify(a));}else{localStorage.setItem('suppliers_list',JSON.stringify(a));}await loadSupplierRecords();}catch(err){alert('تعذر تحديث المورد على السيرفر: '+(err.message||err));}}
 async function deleteSupplier(id){
   const suppliers=supplierRead('suppliers_list');
-  const supplier=suppliers.find(x=>x.id===id);
+  const supplier=suppliers.find(x=>String(x.id)===String(id));
   if(!supplier)return;
-  const orders=supplierRead('supplier_issue_orders').filter(x=>x.supplierId===id).length;
-  const returns=supplierRead('supplier_returns').filter(x=>x.supplierId===id).length;
-  const activity=orders+returns;
-  const warning=activity
-    ? `\n\nتنبيه: يوجد ${orders} إذن توريد و${returns} مرتجع/تالف مرتبطين به. سيتم حذف بيانات التاجر من القائمة فقط، مع الاحتفاظ بكل الأذونات والمرتجعات وكشف الحساب والسجلات التاريخية كما هي.`
-    : '\n\nسيتم حذف بيانات التاجر من القائمة.';
-  if(!confirm(`هل أنت متأكد من حذف التاجر «${supplier.name}»؟${warning}`))return;
+  const orders=supplierRead('supplier_issue_orders').filter(x=>String(x.supplierId)===String(id)).length;
+  const returns=supplierRead('supplier_returns').filter(x=>String(x.supplierId)===String(id)).length;
+  const ledger=supplierRead('supplier_ledger').filter(x=>String(x.supplierId)===String(id)).length;
+  if(!confirm(`هل أنت متأكد من حذف التاجر «${supplier.name}» نهائيًا؟\nسيتم حذف ${orders} إذن توريد و${returns} سجل مرتجع/تالف و${ledger} حركة من كشف الحساب المرتبطة به من السيرفر، مع الإبقاء على أصناف المخزن نفسها وفصلها عن المورد.`))return;
   try{
-    if(!useLocalFallback&&db) await db.collection('suppliers').doc(id).delete();
-    else supplierWrite('suppliers_list',suppliers.filter(x=>x.id!==id));
+    if(String(id).startsWith('local_')){
+      for(const key of ['suppliers_list','supplier_issue_orders','supplier_returns','supplier_ledger']) supplierWrite(key,supplierRead(key).filter(x=>String(x.supplierId)!==String(id)&&String(x.id)!==String(id)));
+    } else {
+      if(!db) throw new Error('لا يوجد اتصال بقاعدة البيانات؛ لم يتم حذف أي بيانات من السيرفر.');
+      // تثبيت علامة حذف دائمة قبل حذف السجل؛ تمنع أي نسخة Hesabat قديمة من إعادته.
+      await db.collection('deleted_suppliers').doc(String(id)).set({
+        supplierId:String(id),supplierName:supplier.name||'',
+        deletedAt:new Date().toISOString(),deletedFrom:'Treasury'
+      });
+      const targets=[['suppliers',doc=>doc.id===String(id)],['supplier_issue_orders',null],['supplier_returns',null],['supplier_ledger',null],['supplier_payment_archive',null]];
+      for(const [collectionName] of targets){
+        const snap=collectionName==='suppliers'?await db.collection(collectionName).doc(String(id)).get():await db.collection(collectionName).where('supplierId','==',String(id)).get();
+        const docs=collectionName==='suppliers'?(snap.exists?[{ref:snap.ref}]:[]):snap.docs;
+        for(let i=0;i<docs.length;i+=450){const batch=db.batch();docs.slice(i,i+450).forEach(d=>batch.delete(d.ref));await batch.commit();}
+      }
+      // لا نحذف البضاعة الفعلية؛ نفصل فقط ارتباطها بالمورد المحذوف.
+      const invSnap=await db.collection('inventory').where('supplierId','==',String(id)).get();
+      for(let i=0;i<invSnap.docs.length;i+=450){const batch=db.batch();invSnap.docs.slice(i,i+450).forEach(d=>batch.update(d.ref,{supplierId:firebase.firestore.FieldValue.delete(),supplierName:firebase.firestore.FieldValue.delete()}));await batch.commit();}
+      for(const key of ['suppliers_list','supplier_issue_orders','supplier_returns','supplier_ledger','supplier_payment_archive']){
+        const arr=supplierRead(key).filter(x=>String(x.supplierId)!==String(id)&&String(x.id)!==String(id));
+        localStorage.setItem(key,JSON.stringify(arr));
+      }
+    }
     await loadSupplierRecords();
-    alert('تم حذف بيانات التاجر من القائمة مع الاحتفاظ بالسجلات التاريخية.');
-  }catch(err){alert('تعذر حذف المورد من السيرفر: '+(err.message||err));}
+    alert('تم حذف التاجر وكل أذوناته ومرتجعاته وحركات كشف حسابه من السيرفر. تم الاحتفاظ بأصناف المخزن وفصلها عن المورد.');
+  }catch(err){console.error('Supplier cascade delete failed:',err);alert('تعذر حذف بيانات التاجر بالكامل من السيرفر: '+(err.message||err));}
 }
+
 function supplierWhatsApp(id){let x=supplierRead('suppliers_list').find(y=>y.id===id);if(!x||!x.phone){alert('أضف رقم هاتف المورد أولاً');return;}let t=supplierTotals(x),msg=`مرحباً ${x.name}، كود المورد: ${x.code||''}. إجمالي التعامل: ${t.gross.toFixed(2)} ج.م، إجمالي المدفوع: ${t.paid.toFixed(2)} ج.م، المستحق: ${t.due.toFixed(2)} ج.م. للاستعلام عن كشف الحساب يرجى التواصل مع مركز أوتو نون.`;window.open('https://wa.me/'+egyptWhatsAppNumber(x.phone)+'?text='+encodeURIComponent(msg),'_blank');}
 function renderSupplierItemOptions(){let d=document.getElementById('supplierInventoryOptions');if(!d)return;const seen=new Set();d.innerHTML=(cachedInventory||[]).filter(x=>{const k=String(x.id||x.barcode||x.name);if(seen.has(k))return false;seen.add(k);return true;}).map(x=>`<option value="${escSupplier(x.name)}">${escSupplier(x.barcode||x.code||'')}</option><option value="${escSupplier(x.barcode||x.code||'')}">${escSupplier(x.name)}</option>`).join('');}
 function findSupplyInventoryItem(){let q=document.getElementById('supplyItem').value.trim().toLowerCase(),it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q||String(x.name||'').toLowerCase()===q);document.getElementById('supplyItemName').value=it?.name||'';document.getElementById('supplyBarcode').value=it?.barcode||it?.code||'';if(!it&&q.length>=3){document.getElementById('supplyItemName').value='غير مسجل - استخدم تسجيل صنف جديد';}}
@@ -2617,15 +2690,67 @@ function addSupplyLine(){let sid=document.getElementById('supplySupplier').value
 function renderSupplyDraft(){document.getElementById('supplyDraftList').innerHTML='<table><thead><tr><th>الكود</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th></th></tr></thead><tbody>'+supplierDraftLines.map((x,i)=>`<tr><td>${escSupplier(x.code)}</td><td>${escSupplier(x.name)}</td><td>${x.qty}</td><td>${x.price}</td><td>${x.total.toFixed(2)}</td><td><button type="button" class="btn-action-sm btn-danger" onclick="removeSupplyLine(${i})">حذف</button></td></tr>`).join('')+'</tbody></table><b>إجمالي التوريد: '+supplierDraftLines.reduce((n,x)=>n+x.total,0).toFixed(2)+' ج.م</b>';}
 function removeSupplyLine(i){supplierDraftLines.splice(i,1);renderSupplyDraft();}
 async function persistInventoryQty(item,qty,price,supplier){let data={...item,qty:Number(item.qty||0)+qty,buyPrice:price,supplierId:supplier.id,supplierName:supplier.name};if(!useLocalFallback&&db&&item.id&&!String(item.id).startsWith('local_')){let id=data.id;delete data.id;await db.collection('inventory').doc(id).update(data);data.id=id;}else{let arr=supplierRead('inventory'),idx=arr.findIndex(x=>x.id===item.id);if(idx>=0)arr[idx]=data;else arr.push(data);supplierWrite('inventory',arr);}return data;}
-async function createSupplierIssueOrder(){if(!supplierDraftLines.length){alert('أضف أصنافاً مسجلة إلى التوريد أولاً');return;}let sid=document.getElementById('supplySupplier').value,lines=supplierDraftLines.filter(x=>x.supplierId===sid);if(!lines.length){alert('كل إذن توريد لمورد واحد فقط');return;}let sup=supplierRead('suppliers_list').find(x=>x.id===sid);if(!sup)return;let id='SUP-'+Date.now(),total=lines.reduce((n,x)=>n+x.total,0),o={id,orderNo:id,supplierId:sid,supplierName:sup.name,lines:lines.map(x=>({...x})),total,paid:0,remaining:total,date:new Date().toISOString(),type:'توريد'};let orders=supplierRead('supplier_issue_orders');orders.push(o);supplierWrite('supplier_issue_orders',orders);try{for(const l of lines){let it=(cachedInventory||[]).find(x=>x.id===l.itemId);if(!it)continue;let updated=await persistInventoryQty(it,l.qty,l.price,sup);let idx=cachedInventory.findIndex(x=>x.id===updated.id);if(idx>=0)cachedInventory[idx]=updated;}}catch(err){alert('تم حفظ الإذن، لكن تعذر تحديث المخزن بالكامل: '+err.message);}let ledger=supplierRead('supplier_ledger');lines.forEach(l=>ledger.push({id:'LED-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),supplierId:sid,supplierName:sup.name,orderNo:id,type:'توريد',itemCode:l.code,itemName:l.name,qty:l.qty,value:l.total,date:o.date,notes:'إذن توريد'}));supplierWrite('supplier_ledger',ledger);supplierDraftLines=[];renderSupplyDraft();renderSupplierOrders();renderSupplierRecords();await loadInventoryData();printSupplierOrder(id);}
+async function createSupplierIssueOrder(){if(!supplierDraftLines.length){alert('أضف أصنافاً مسجلة إلى التوريد أولاً');return;}let sid=document.getElementById('supplySupplier').value,lines=supplierDraftLines.filter(x=>x.supplierId===sid);if(!lines.length){alert('كل إذن توريد لمورد واحد فقط');return;}let sup=supplierRead('suppliers_list').find(x=>x.id===sid);if(!sup)return;let id='SUP-'+Date.now(),total=lines.reduce((n,x)=>n+x.total,0),o={id,orderNo:id,supplierId:sid,supplierName:sup.name,lines:lines.map(x=>({...x})),total,paid:0,remaining:total,date:new Date().toISOString(),type:'توريد'};let orders=supplierRead('supplier_issue_orders');orders.push(o);supplierWrite('supplier_issue_orders',orders);try{for(const l of lines){let it=(cachedInventory||[]).find(x=>x.id===l.itemId);if(!it)continue;let updated=await persistInventoryQty(it,l.qty,l.price,sup);let idx=cachedInventory.findIndex(x=>x.id===updated.id);if(idx>=0)cachedInventory[idx]=updated;}}catch(err){alert('تم حفظ الإذن، لكن تعذر تحديث المخزن بالكامل: '+err.message);}let ledger=supplierRead('supplier_ledger');lines.forEach(l=>ledger.push({id:'LED-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),supplierId:sid,supplierName:sup.name,orderNo:id,type:'توريد',itemCode:l.code,itemName:l.name,qty:l.qty,value:l.total,date:o.date,notes:'إذن توريد'}));supplierWrite('supplier_ledger',ledger);await Promise.all(Object.values(__supplierSyncQueues));supplierDraftLines=[];renderSupplyDraft();renderSupplierOrders();renderSupplierRecords();await loadInventoryData();printSupplierOrder(id);}
 function renderSupplierOrders(){let tb=document.getElementById('supplierOrderRows');if(!tb)return;let q=(document.getElementById('issueSearch')?.value||'').toLowerCase(),a=supplierRead('supplier_issue_orders');tb.innerHTML=a.filter(x=>(x.orderNo+' '+x.supplierName).toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${x.orderNo}</td><td>${escSupplier(x.supplierName)}</td><td>${new Date(x.date).toLocaleDateString('ar-EG')}</td><td>${x.lines.map(l=>escSupplier(l.code)+' '+escSupplier(l.name)+' × '+l.qty).join('، ')}</td><td>${Number(x.total||0).toFixed(2)}</td><td>${Number(x.paid||0).toFixed(2)}</td><td>${Number(x.remaining||0).toFixed(2)}</td><td><button class="btn-action-sm btn-primary" onclick="printSupplierOrder('${x.id}')">طباعة</button></td></tr>`).join('')||'<tr><td colspan="8">لا توجد أذونات</td></tr>';}
-function supplierOrderPayment(id){let a=supplierRead('supplier_issue_orders'),x=a.find(y=>y.id===id);if(!x)return;let v=Number(prompt('قيمة الدفعة (المتبقي '+x.remaining+')',x.remaining));if(!Number.isFinite(v)||v<=0||v>x.remaining){alert('قيمة الدفع غير صحيحة');return;}x.paid=(x.paid||0)+v;x.remaining=Math.max(0,x.total-x.paid);supplierWrite('supplier_issue_orders',a);let ledger=supplierRead('supplier_ledger');ledger.push({id:'PAY-'+Date.now(),supplierId:x.supplierId,supplierName:x.supplierName,orderNo:x.orderNo,type:'سداد',value:v,date:new Date().toISOString(),notes:'دفعة على إذن التوريد'});supplierWrite('supplier_ledger',ledger);renderSupplierOrders();renderSupplierRecords();}
+function supplierOrderPayment(id){let a=supplierRead('supplier_issue_orders'),x=a.find(y=>y.id===id);if(!x)return;let v=Number(prompt('قيمة الدفعة (المتبقي '+x.remaining+')',x.remaining));if(!Number.isFinite(v)||v<=0||v>x.remaining){alert('قيمة الدفع غير صحيحة');return;}x.paid=(x.paid||0)+v;x.remaining=Math.max(0,x.total-x.paid);supplierWrite('supplier_issue_orders',a);let ledger=supplierRead('supplier_ledger');ledger.push({id:'PAY-'+Date.now(),supplierId:x.supplierId,supplierName:x.supplierName,orderNo:x.orderNo,type:'سداد',value:v,date:new Date().toISOString(),notes:'دفعة على إذن التوريد'});supplierWrite('supplier_ledger',ledger);Promise.all(Object.values(__supplierSyncQueues)).then(()=>{renderSupplierOrders();renderSupplierRecords();}).catch(console.error);}
 function printSupplierOrder(id){let x=supplierRead('supplier_issue_orders').find(y=>y.id===id);if(!x)return;let w=window.open('','_blank');if(!w){alert('اسمح بفتح النوافذ المنبثقة للطباعة');return;}w.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>إذن توريد ${escSupplier(x.orderNo)}</title><style>body{font-family:Tahoma,Arial;padding:25px;color:#111}h1,h2{text-align:center}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #444;padding:9px;text-align:right}th{background:#eee}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px;border:1px solid #aaa;padding:12px}footer{display:flex;justify-content:space-between;margin-top:60px}</style></head><body><h1>مركز أوتو نون (NON)</h1><h2>إذن توريد مخزني</h2><div class="meta"><div>رقم الإذن: <b>${escSupplier(x.orderNo)}</b></div><div>التاريخ: ${new Date(x.date).toLocaleString('ar-EG')}</div><div>كود المورد: ${escSupplier((supplierRead('suppliers_list').find(z=>z.id===x.supplierId)||{}).code||'')}</div><div>اسم المورد: ${escSupplier(x.supplierName)}</div></div><table><thead><tr><th>م</th><th>كود الصنف / الباركود</th><th>اسم الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>${x.lines.map((l,i)=>`<tr><td>${i+1}</td><td>${escSupplier(l.code||l.barcode||'')}</td><td>${escSupplier(l.name)}</td><td>${l.qty}</td><td>${Number(l.price).toFixed(2)}</td><td>${Number(l.total).toFixed(2)}</td></tr>`).join('')}</tbody></table><h3>الإجمالي: ${Number(x.total).toFixed(2)} ج.م | المدفوع: ${Number(x.paid||0).toFixed(2)} ج.م | المستحق: ${Number(x.remaining||0).toFixed(2)} ج.م</h3><footer><span>توقيع المورد: ...................</span><span>أمين المخزن: ...................</span><span>اعتماد الإدارة: ...................</span></footer><script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close();}
 function showSupplierItems(id){let sup=supplierRead('suppliers_list').find(x=>x.id===id);if(!sup)return;let orders=supplierRead('supplier_issue_orders').filter(o=>o.supplierId===id),map=new Map();orders.forEach(o=>(o.lines||[]).forEach(l=>{let key=l.itemId||l.code||l.name,cur=map.get(key)||{code:l.code||l.barcode||'',name:l.name||'',qty:0,buy:Number(l.price||0),sell:0,date:o.date};cur.qty+=Number(l.qty||0);cur.date=o.date||cur.date;map.set(key,cur);}));(cachedInventory||[]).filter(i=>i.supplierId===id||i.supplierName===sup.name).forEach(i=>{let key=i.id||i.barcode||i.name,cur=map.get(key)|| {code:i.barcode||i.code||'',name:i.name||'',qty:0,buy:Number(i.buyPrice||0),sell:Number(i.sellPrice||0),date:''};cur.name=i.name||cur.name;cur.code=i.barcode||i.code||cur.code;cur.sell=Number(i.sellPrice||cur.sell||0);cur.buy=Number(i.buyPrice||cur.buy||0);cur.qty=Number(i.qty??cur.qty);map.set(key,cur);});let returns=supplierRead('supplier_returns').filter(r=>r.supplierId===id),retTotal=returns.reduce((n,r)=>n+Number(r.qty||0)*Number((cachedInventory||[]).find(i=>i.id===r.itemId)?.sellPrice||r.sellPrice||0),0),list=[...map.values()];let body=`<div class="summary">المورد: ${escSupplier(sup.name)} | إجمالي المرتجعات بسعر البيع × الكمية: ${retTotal.toFixed(2)} ج.م</div><table><thead><tr><th>م</th><th>اسم الصنف</th><th>كود الصنف</th><th>الكمية</th><th>تاريخ التوريد</th><th>سعر البيع</th><th>سعر الشراء</th></tr></thead><tbody>${list.map((x,i)=>`<tr><td>${i+1}</td><td>${escSupplier(x.name)}</td><td>${escSupplier(x.code||'—')}</td><td>${Number(x.qty||0)}</td><td>${x.date?new Date(x.date).toLocaleDateString('ar-EG'):'—'}</td><td>${Number(x.sell||0).toFixed(2)}</td><td>${Number(x.buy||0).toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="7">لا توجد أصناف مسجلة لهذا المورد.</td></tr>'}</tbody></table>`;printHtmlReport('أصناف المورد: '+sup.name,body);}
-function saveSupplierReturn(){let sid=document.getElementById('supplySupplier').value,sup=supplierRead('suppliers_list').find(x=>x.id===sid),q=document.getElementById('supplierReturnItem').value.trim(),qty=Number(document.getElementById('supplierReturnQty').value),type=document.getElementById('supplierReturnType').value,notes=document.getElementById('supplierReturnNotes').value.trim();if(!sup||!q||qty<1){alert('اختر المورد وحدد الصنف والكمية');return;}let it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase());if(!it){alert('الصنف غير موجود في المخزن. ابحث بالكود أو الاسم الصحيح.');return;}if(Number(it.qty||0)<qty){alert('الكمية المتاحة بالمخزن أقل من الكمية المرتجعة.');return;}let value=qty*Number(it.buyPrice||0),rec={id:'RET-'+Date.now(),supplierId:sid,supplierName:sup.name,itemId:it.id,itemCode:it.barcode||it.code||'',itemName:it.name,sellPrice:Number(it.sellPrice||0),qty,type,value,notes,date:new Date().toISOString()};let arr=supplierRead('supplier_returns');arr.push(rec);supplierWrite('supplier_returns',arr);let ledger=supplierRead('supplier_ledger');ledger.push({...rec,orderNo:'',type,notes:notes||type});supplierWrite('supplier_ledger',ledger);if(!useLocalFallback&&db&&it.id&&!String(it.id).startsWith('local_')){db.collection('inventory').doc(it.id).update({qty:Number(it.qty||0)-qty}).then(()=>loadInventoryData()).catch(e=>alert('تم تسجيل الحركة لكن تعذر تحديث المخزن السحابي: '+e.message));}else{let inv=supplierRead('inventory'),ix=inv.findIndex(x=>x.id===it.id);if(ix>=0){inv[ix].qty=Number(inv[ix].qty||0)-qty;supplierWrite('inventory',inv);}}document.getElementById('supplierReturnItem').value='';document.getElementById('supplierReturnQty').value='';document.getElementById('supplierReturnNotes').value='';renderSupplierRecords();loadInventoryData();alert('تم تسجيل '+type+' وتحديث الكمية وكشف حساب المورد.');}
+function renderSupplierReturnHistory(){
+  const tb=document.getElementById('supplierReturnsHistoryBody');if(!tb)return;
+  const rows=supplierRead('supplier_returns').slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  tb.innerHTML=rows.map(r=>`<tr><td>${r.date?new Date(r.date).toLocaleString('ar-EG'):'—'}</td><td>${escSupplier(r.supplierName||'')}</td><td>${escSupplier(r.itemName||'')}</td><td>${Number(r.qty||0)}</td><td>${escSupplier(r.type||'')}</td><td>${Number(r.value||0).toFixed(2)} ج.م</td><td>${escSupplier(r.notes||'')}</td><td><button class="btn-action-sm btn-danger" onclick="deleteSupplierReturn('${escSupplier(r.id)}')"><i class="fa-solid fa-trash"></i> حذف</button></td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center">لا توجد مرتجعات أو تالف مسجل.</td></tr>';
+}
+async function deleteSupplierReturn(id){
+  const rec=supplierRead('supplier_returns').find(x=>String(x.id)===String(id));if(!rec)return;
+  if(!confirm(`حذف سجل ${rec.type||'المرتجع/التالف'} للصنف «${rec.itemName||''}»؟ سيتم إلغاء أثره على كمية المخزن وحذف حركته من كشف حساب المورد.`))return;
+  try{
+    if(!String(id).startsWith('local_')&&db){
+      const itemId=String(rec.itemId||'');
+      const batch=db.batch();
+      if(itemId&&!itemId.startsWith('local_')) batch.update(db.collection('inventory').doc(itemId),{qty:firebase.firestore.FieldValue.increment(Number(rec.qty||0))});
+      batch.delete(db.collection('supplier_returns').doc(String(id)));
+      batch.delete(db.collection('supplier_ledger').doc(String(id)));
+      const ledgerSnap=await db.collection('supplier_ledger').where('id','==',String(id)).get();ledgerSnap.docs.forEach(d=>batch.delete(d.ref));
+      await batch.commit();
+    }else{
+      const inv=supplierRead('inventory'),ix=inv.findIndex(x=>String(x.id)===String(rec.itemId));if(ix>=0){inv[ix].qty=Number(inv[ix].qty||0)+Number(rec.qty||0);supplierWrite('inventory',inv);}
+    }
+    supplierWrite('supplier_returns',supplierRead('supplier_returns').filter(x=>String(x.id)!==String(id)));
+    supplierWrite('supplier_ledger',supplierRead('supplier_ledger').filter(x=>String(x.id)!==String(id)));
+    renderSupplierReturnHistory();renderSupplierRecords();await loadInventoryData();
+    alert('تم حذف سجل المرتجع/التالف وإرجاع الكمية إلى المخزن.');
+  }catch(err){console.error('Delete supplier return failed:',err);alert('تعذر حذف سجل المرتجع/التالف: '+(err.message||err));}
+}
+async function saveSupplierReturn(){
+  const sid=document.getElementById('supplySupplier').value,sup=supplierRead('suppliers_list').find(x=>String(x.id)===String(sid)),q=document.getElementById('supplierReturnItem').value.trim(),qty=Number(document.getElementById('supplierReturnQty').value),type=document.getElementById('supplierReturnType').value,notes=document.getElementById('supplierReturnNotes').value.trim();
+  if(!sup||!q||!Number.isFinite(qty)||qty<1){alert('اختر المورد وحدد الصنف والكمية');return;}
+  const it=(cachedInventory||[]).find(x=>String(x.barcode||x.code||'').toLowerCase()===q.toLowerCase()||String(x.name||'').toLowerCase()===q.toLowerCase());
+  if(!it){alert('الصنف غير موجود في المخزن. ابحث بالكود أو الاسم الصحيح.');return;}
+  if(Number(it.qty||0)<qty){alert('الكمية المتاحة بالمخزن أقل من الكمية المرتجعة.');return;}
+  const value=qty*Number(it.buyPrice||0),id='RET-'+Date.now(),date=new Date().toISOString();
+  const rec={id,supplierId:sid,supplierName:sup.name,itemId:it.id,itemCode:it.barcode||it.code||'',itemName:it.name,sellPrice:Number(it.sellPrice||0),qty,type,value,notes,date};
+  const ledgerRec={...rec,orderNo:'',type,notes:notes||type};
+  try{
+    if(!String(it.id||'').startsWith('local_')){
+      if(!db)throw new Error('لا يوجد اتصال بقاعدة البيانات؛ لم يتم تسجيل المرتجع.');
+      const batch=db.batch();batch.update(db.collection('inventory').doc(String(it.id)),{qty:Number(it.qty||0)-qty});
+      const retCopy={...rec};delete retCopy.id;batch.set(db.collection('supplier_returns').doc(id),retCopy);
+      const ledCopy={...ledgerRec};delete ledCopy.id;batch.set(db.collection('supplier_ledger').doc(id),ledCopy);
+      await batch.commit();
+    }else{
+      const inv=supplierRead('inventory'),ix=inv.findIndex(x=>String(x.id)===String(it.id));if(ix>=0){inv[ix].qty=Number(inv[ix].qty||0)-qty;supplierWrite('inventory',inv);}
+    }
+    const arr=supplierRead('supplier_returns');arr.push(rec);localStorage.setItem('supplier_returns',JSON.stringify(arr));
+    const ledger=supplierRead('supplier_ledger');ledger.push(ledgerRec);localStorage.setItem('supplier_ledger',JSON.stringify(ledger));
+    document.getElementById('supplierReturnItem').value='';document.getElementById('supplierReturnQty').value='';document.getElementById('supplierReturnNotes').value='';
+    renderSupplierRecords();renderSupplierReturnHistory();await loadInventoryData();
+    alert('تم تسجيل '+type+' ومزامنته مع السيرفر وتحديث كمية المخزن وكشف حساب المورد.');
+  }catch(err){console.error('Save supplier return failed:',err);alert('تعذر تسجيل المرتجع/التالف على السيرفر: '+(err.message||err));}
+}
+
 function sendShortagesToSupplier(){let inv=cachedInventory||[],short=inv.filter(x=>Number(x.qty||0)<=2);if(!short.length){alert('لا توجد نواقص (الكمية 2 أو أقل)');return;}let sid=document.getElementById('supplySupplier').value,sup=supplierRead('suppliers_list').find(x=>x.id===sid);if(!sup||!sup.phone){alert('اختر المورد وسجل رقم هاتفه');return;}let msg='قائمة النواقص المطلوبة من مركز أوتو نون:\n'+short.map(x=>`${x.name} (${x.barcode||x.code||'بدون كود'}): مطلوب ${Math.max(1,5-Number(x.qty||0))}`).join('\n');window.open('https://wa.me/'+sup.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank');}
 function toggleKmValidityField(){let cat=document.getElementById('itemCategory')?.value,wrap=document.getElementById('itemKmValidityWrap');if(wrap)wrap.style.display=categoryNeedsKm(cat)?'flex':'none';}
-window.addEventListener('load',()=>{refreshSupplierSelects();renderSupplierItemOptions();renderSupplierReturnOptions();document.getElementById('itemCategory')?.addEventListener('change',toggleKmValidityField);toggleKmValidityField();document.querySelectorAll('#tableSuppliersCard input, #tableSuppliersCard select').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter' && !['supplyItem','supplyQty','supplyPrice'].includes(el.id) && el.tagName!=='BUTTON'){e.preventDefault();let all=[...document.querySelectorAll('#tableSuppliersCard input:not([readonly]), #tableSuppliersCard select')].filter(x=>x.offsetParent!==null);let i=all.indexOf(el);if(i>=0&&all[i+1])all[i+1].focus();}}));});
+window.addEventListener('load',()=>{refreshSupplierSelects();renderSupplierItemOptions();renderSupplierReturnOptions();renderSupplierReturnHistory();document.getElementById('itemCategory')?.addEventListener('change',toggleKmValidityField);toggleKmValidityField();document.querySelectorAll('#tableSuppliersCard input, #tableSuppliersCard select').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter' && !['supplyItem','supplyQty','supplyPrice'].includes(el.id) && el.tagName!=='BUTTON'){e.preventDefault();let all=[...document.querySelectorAll('#tableSuppliersCard input:not([readonly]), #tableSuppliersCard select')].filter(x=>x.offsetParent!==null);let i=all.indexOf(el);if(i>=0&&all[i+1])all[i+1].focus();}}));});
 
 let currentWarehouseReport='stock';
 async function renderWarehouseReport(type='stock'){
