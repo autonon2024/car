@@ -274,6 +274,18 @@ input,select,textarea{border:1px solid #dce4ef!important;background:#fbfcfe!impo
 .archive-count{font-size:.78rem;color:#718198;margin:12px 2px}.archive-list{display:grid;gap:10px}.archive-item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px;border:1px solid #e8edf4;border-radius:14px;background:#fff}.archive-item-main b,.archive-item-main span,.archive-item-main small{display:block}.archive-item-main b{color:#1d3557}.archive-item-main span{font-size:.85rem;margin:5px 0;color:#53657d}.archive-item-main small{color:#8996a8}.archive-item-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.archive-item-meta span{font-size:.72rem;color:#718198;background:#f2f5f9;padding:6px 9px;border-radius:20px}.archive-empty{display:grid;justify-items:center;gap:8px;padding:40px;color:#8492a6}.archive-empty i{font-size:2rem}.archive-empty b{color:#40536e}
 .transfer-modal-card{width:min(760px,100%)}.transfer-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.transfer-report-field{grid-column:1/-1}.transfer-report-field textarea{min-height:110px}.required-star{color:#dc2626}.transfer-actions{display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid #edf1f6}.btn-neutral{background:#edf1f6;color:#46566d}
 body.modal-open{overflow:hidden}
+.dispatch-choice-modal{display:none;position:fixed;inset:0;z-index:100500;align-items:center;justify-content:center;padding:16px;background:rgba(9,20,38,.62);backdrop-filter:blur(4px)}
+.dispatch-choice-modal.is-open{display:flex}
+.dispatch-choice-card{width:min(460px,100%);background:#fff;border-radius:20px;padding:22px;box-shadow:0 25px 80px #07132655;text-align:center}
+.dispatch-choice-card h3{color:#1d3557;margin-bottom:8px;font-size:1.15rem}
+.dispatch-choice-card p{color:#64748b;margin-bottom:18px;line-height:1.7}
+.dispatch-choice-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dispatch-choice-actions button{min-height:58px;font-size:.95rem}
+.dispatch-choice-cancel{margin-top:12px;width:100%;background:#edf1f6;color:#46566d}
+body.dark-mode .dispatch-choice-card{background:#17243a;color:#e8eef8}
+body.dark-mode .dispatch-choice-card h3{color:#e8eef8}
+@media(max-width:480px){.dispatch-choice-actions{grid-template-columns:1fr}}
+
 body.dark-mode{--bg-color:#0d1728;--card-bg:#17243a;--text-main:#e8eef8;--border-color:#2b3a52;--input-bg:#1d2c43;background:#0d1728!important}
 body.dark-mode .engineer-modal-card,body.dark-mode .engineer-shortcut,body.dark-mode .archive-item{background:#17243a;color:#e8eef8;border-color:#2b3a52}
 body.dark-mode .engineer-modal-head h2,body.dark-mode .engineer-shortcut b,body.dark-mode .archive-item-main b{color:#e8eef8}
@@ -384,6 +396,17 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
    <div class="form-field transfer-report-field"><label>تقرير التحويل وملاحظات المهندس <span class="required-star">*</span></label><textarea id="engineerTransferReport" rows="4" placeholder="اكتب سبب التحويل، نتيجة الفحص، المطلوب من القسم، وأي تعليمات للفني..."></textarea></div>
   </div>
   <footer class="transfer-actions"><button class="btn-action-sm btn-primary" onclick="saveEngineerDepartmentTransfer()"><i class="fa-solid fa-paper-plane"></i> تأكيد التحويل</button><button class="btn-action-sm btn-neutral" onclick="closeEngineerModal('engineerTransferModal')">إلغاء</button></footer>
+ </section>
+</div>
+<div id="dispatchChoiceModal" class="dispatch-choice-modal" aria-hidden="true">
+ <section class="dispatch-choice-card" role="dialog" aria-modal="true" aria-labelledby="dispatchChoiceTitle">
+  <h3 id="dispatchChoiceTitle"><i class="fa-solid fa-car-rear"></i> طريقة إرسال السيارة للفني</h3>
+  <p>اختار طريقة تجهيز السيارة قبل التحويل للقسم المختص:</p>
+  <div class="dispatch-choice-actions">
+   <button type="button" class="btn-action-sm btn-lift" onclick="confirmDiagnosisDispatch('with')"><i class="fa-solid fa-car-side"></i> إرسال بكوريك</button>
+   <button type="button" class="btn-action-sm btn-primary" onclick="confirmDiagnosisDispatch('without')"><i class="fa-solid fa-ban"></i> إرسال بدون كوريك</button>
+  </div>
+  <button type="button" class="btn-action-sm dispatch-choice-cancel" onclick="closeDiagnosisDispatchChoice()">إلغاء</button>
  </section>
 </div>
 <div class="card-box" id="engineerExtraTools" style="border:2px solid #0284c7;display:none">
@@ -606,7 +629,7 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
         </div>
 
         <div style="display:flex; flex-direction:column; gap:10px;">
-          <button type="button" class="btn-action-sm" style="background:#16a34a; color:white; padding:12px; font-size:1rem;" onclick="finishDiagnosisAndTransferToDepartment()">
+          <button type="button" class="btn-action-sm" style="background:#16a34a; color:white; padding:12px; font-size:1rem;" onclick="openDiagnosisDispatchChoice()">
             <i class="fa-solid fa-paper-plane"></i> إرسال للفني وتخصيص الكوريك (وإرسال إشعار واتساب للعميل)
           </button>
 
@@ -1106,20 +1129,37 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
       }
     }
 
-    window.finishDiagnosisAndTransferToDepartment = async function() {
+    window.openDiagnosisDispatchChoice = function() {
+      if (!currentSelectedCarDocId) { alert("اختر سيارة أولاً!"); return; }
+      const modal = document.getElementById('dispatchChoiceModal');
+      if (modal) { modal.classList.add('is-open'); modal.setAttribute('aria-hidden','false'); }
+    };
+    window.closeDiagnosisDispatchChoice = function() {
+      const modal = document.getElementById('dispatchChoiceModal');
+      if (modal) { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden','true'); }
+    };
+    window.confirmDiagnosisDispatch = function(choice) {
+      if (choice !== 'with' && choice !== 'without') return;
+      closeDiagnosisDispatchChoice();
+      finishDiagnosisAndTransferToDepartment(choice);
+    };
+
+    window.finishDiagnosisAndTransferToDepartment = async function(liftChoice = 'with') {
       if (!currentSelectedCarDocId) { alert("اختر سيارة أولاً!"); return; }
       const targetDept = document.getElementById('diagTargetDepartment').value;
       const serviceType = document.getElementById('diagServiceTypeSelect').value;
       const liftId = document.getElementById('diagLiftSelect').value;
-      const lift = liftsLocalData.find(x => x.id === liftId);
+      const selectedLift = liftsLocalData.find(x => x.id === liftId);
+      const lift = liftChoice === 'with' ? selectedLift : null;
       const clientName = document.getElementById('diagClientName').value || 'عميلنا';
       const phone = document.getElementById('diagPhone').value;
       const isWash = targetDept === "wash";
       const isQuickMaintenance = targetDept === "quick_maintenance";
 
-      // الصيانة السريعة لا تحتاج إلى تخصيص كوريك.
-      if (!isWash && !isQuickMaintenance && (!lift || lift.status !== 'idle')) {
-        alert("⚠️ اختر كوريك متاح وغير مشغول أولاً، أو اختر الصيانة السريعة/المغسلة.");
+      // عند اختيار الإرسال بكوريك يجب تحديد كوريك متاح وغير مشغول.
+      if (liftChoice === 'with' && (!lift || lift.status !== 'idle')) {
+        alert("⚠️ اختر كوريك متاح وغير مشغول أولاً، أو ارجع واختر الإرسال بدون كوريك.");
+        openDiagnosisDispatchChoice();
         return;
       }
       const technician = lift?.technicianName || '';
@@ -1131,7 +1171,7 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
             ? `محول إلى المغسلة${serviceType ? ` — ${serviceType}` : ''}`
             : isQuickMaintenance
               ? `محول إلى قسم الصيانة السريعة${serviceType ? ` — ${serviceType}` : ''}`
-              : `محول إلى قسم: ${getDepartmentArabicName(targetDept)}${lift ? ` (${lift.name})` : ''}`,
+              : `محول إلى قسم: ${getDepartmentArabicName(targetDept)}${lift ? ` (${lift.name})` : ' — بدون كوريك'}`,
           targetDepartment: targetDept,
           serviceType: serviceType,
           assignedLift: lift ? lift.name : '',
@@ -1145,7 +1185,7 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
           updatedAt: now
         });
 
-        if (lift && !isWash && !isQuickMaintenance) {
+        if (lift) {
           await db.collection('lifts').doc(lift.id).update({
             status: 'busy',
             carId: currentSelectedCarDocId,
@@ -1167,7 +1207,7 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
 
         if (phone) {
           let cleanPhone = normalizeEgyptPhone(phone);
-          const liftText = lift ? ` على ${lift.name}${technician ? ` مع الفني ${technician}` : ''}` : '';
+          const liftText = lift ? ` على ${lift.name}${technician ? ` مع الفني ${technician}` : ''}` : ' بدون تخصيص كوريك';
           const departmentNameArabic = getDepartmentArabicName(targetDept);
           const serviceText = serviceType ? `\nالخدمة المطلوبة: ${serviceType}` : '';
           const msg = `مرحباً بك يا ${clientName} في مركز أوتو نون.\nتم تحويل سيارتكم إلى قسم ${departmentNameArabic}${serviceText}${liftText ? `\nمكان العمل: ${liftText.trim()}` : ''} لبدء تنفيذ الأعمال المطلوبة.\nسنوافيكم بأي مستجدات، وشكراً لثقتكم بنا.`;
@@ -1175,7 +1215,7 @@ body.dark-mode .modal-table-wrap th{background:#22334d;color:#dce7f7}
         }
 
         const departmentLabel = getDepartmentArabicName(targetDept);
-        alert(`🚀 تم إرسال السيارة بنجاح إلى قسم (${departmentLabel})${lift ? ` وتخصيص (${lift.name}) للفني (${technician || 'غير محدد'})` : ''}.`);
+        alert(`🚀 تم إرسال السيارة بنجاح إلى قسم (${departmentLabel})${lift ? ` وتخصيص (${lift.name}) للفني (${technician || 'غير محدد'})` : ' بدون كوريك'}.`);
       } catch(e) { console.error(e); alert("خطأ في الإرسال للقسم أو تحديث حالة الكوريك."); }
     };
 
