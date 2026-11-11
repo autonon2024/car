@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إدارة وحذف بيانات Auto Noon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#102b49;--blue:#1769aa;--orange:#f28a16;--red:#d93636;--green:#15966b;--bg:#f3f6fa;--line:#dbe3ed;--muted:#6b7b8d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Cairo,Arial,sans-serif;color:#172b43}
+header{background:linear-gradient(115deg,#0b2038,#174b78);color:#fff;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 4px 18px #0b203833}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:48px;height:48px;border-radius:14px;background:#ffffff1c;display:grid;place-items:center;font-size:25px}.brand h1{font-size:19px;margin:0}.brand p{margin:2px 0 0;color:#d5e6f5;font-size:12px}
+button{font-family:inherit;border:0;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer;transition:.15s}button:disabled{opacity:.55;cursor:not-allowed}.btn-google{background:white;color:#24384f}.btn-blue{background:var(--blue);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-green{background:var(--green);color:white}.btn-orange{background:var(--orange);color:#fff}.btn-light{background:#eaf0f7;color:#203c59}.btn-ghost{background:#ffffff18;color:white;border:1px solid #ffffff40}
+main{max-width:1450px;margin:22px auto;padding:0 18px}.notice{background:#fff8e9;border:1px solid #f1d29b;color:#75501b;padding:13px 16px;border-radius:12px;margin-bottom:16px;font-size:13px}
+.login{max-width:540px;margin:7vh auto;background:white;border:1px solid var(--line);border-radius:18px;padding:30px;text-align:center;box-shadow:0 10px 35px #19365312}.login h2{margin:0 0 8px}.login p{color:var(--muted);font-size:14px}
+.hidden{display:none!important}.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:15px}.user{background:white;border:1px solid var(--line);padding:8px 12px;border-radius:10px;font-size:13px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{background:#e4ebf3;color:#28445f}.tab.active{background:var(--navy);color:#fff}
+.panel{background:white;border:1px solid var(--line);border-radius:15px;padding:18px;margin-bottom:16px;box-shadow:0 5px 20px #16365308}
+.panel h3{margin:0 0 12px;font-size:17px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.stat{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fbfdff}.stat small{display:block;color:var(--muted)}.stat b{font-size:22px;color:var(--navy)}
+input,select{font:inherit;border:1px solid #cbd6e2;border-radius:9px;padding:10px 12px;background:#fff;min-width:0;width:100%}.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar>*{flex:1 1 180px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;min-width:720px;font-size:13px}th{background:var(--navy);color:white;text-align:right;padding:11px;white-space:nowrap}td{padding:10px;border-bottom:1px solid #e8edf3}tr:hover td{background:#f8fbff}.muted{color:var(--muted)}.danger-note{color:#a52626;background:#fff0f0;padding:10px;border-radius:9px;font-size:13px}
+.file-row{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #edf1f5}.file-row:last-child{border:0}.file-row .path{flex:1;min-width:0;overflow-wrap:anywhere}.file-row small{color:var(--muted);display:block}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:#0e2034;color:#dcecff;border-radius:10px;padding:14px;font-size:12px;max-height:330px;overflow:auto}
+#toast{position:fixed;bottom:20px;left:20px;z-index:20;background:#122d49;color:white;padding:12px 18px;border-radius:10px;box-shadow:0 6px 22px #0003;display:none;max-width:min(90vw,600px)}
+.progress{height:8px;background:#e9eef4;border-radius:20px;overflow:hidden;margin-top:9px}.progress span{display:block;height:100%;background:var(--green);width:0}
+@media(max-width:600px){header{padding:15px}.brand h1{font-size:16px}main{padding:0 10px}.panel{padding:13px}.login{margin:4vh 10px;padding:22px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><div class="logo">🗄️</div><div><h1>مركز إدارة بيانات Auto Noon</h1><p>إدارة قاعدة البيانات والملفات السحابية من مكان واحد</p></div></div>
+ <div id="headerActions" class="hidden"><button class="btn-ghost" onclick="signOutNow()">تسجيل الخروج</button></div>
+</header>
+<main>
+ <div id="loginView" class="login">
+  <div style="font-size:48px">🔐</div><h2>تسجيل الدخول الآمن</h2>
+  <p>سجّل الدخول بحساب Google المعتمد كمدير للنظام للوصول إلى بيانات السيرفر.</p>
+  <button class="btn-google" onclick="loginGoogle()">🌐 الدخول باستخدام Google</button>
+  <p class="muted" style="font-size:12px;margin-top:18px">لن تظهر بيانات السيرفر قبل التحقق من صلاحية حسابك.</p>
+  <div id="loginError" class="danger-note hidden"></div>
+ </div>
+ <section id="appView" class="hidden">
+  <div class="topline"><div class="user">الحساب الحالي: <b id="userEmail">—</b></div><div><button class="btn-light" onclick="refreshAll()">↻ تحديث البيانات</button></div></div>
+  <div class="notice"><b>تنبيه مهم:</b> الحذف هنا نهائي ولا يمكن التراجع عنه. احفظ نسخة احتياطية قبل حذف مجموعات أو مجلدات كاملة. لا يتم حذف أي شيء من التخزين المحلي للكمبيوتر؛ العمليات على Firebase فقط.</div>
+  <div class="grid">
+   <div class="stat"><small>مجموعات قاعدة البيانات المعروفة</small><b id="collectionCount">0</b></div>
+   <div class="stat"><small>سجلات ظاهرة في المجموعة المحددة</small><b id="docCount">0</b></div>
+   <div class="stat"><small>ملفات/مجلدات في المسار الحالي</small><b id="storageCount">0</b></div>
+  </div>
+  <div class="tabs">
+   <button class="tab active" data-tab="database" onclick="switchTab('database')">قاعدة البيانات</button>
+   <button class="tab" data-tab="storage" onclick="switchTab('storage')">الملفات والصور</button>
+   <button class="tab" data-tab="setup" onclick="switchTab('setup')">إعداد الأمان</button>
+  </div>
+  <div id="databaseTab" class="panel">
+   <h3>إدارة سجلات قاعدة البيانات (Firestore)</h3>
+   <div class="toolbar">
+    <select id="collectionSelect" onchange="loadCollection()"></select>
+    <input id="docSearch" placeholder="بحث داخل السجلات..." oninput="renderDocs()">
+    <button class="btn-light" onclick="loadCollection()">تحميل المجموعة</button>
+    <button class="btn-red" onclick="deleteSelectedDocs()">حذف السجلات المحددة</button>
+   </div>
+   <div class="toolbar">
+    <input id="newCollection" placeholder="اسم مجموعة أخرى (اختياري)">
+    <button class="btn-light" onclick="loadCustomCollection()">فتح مجموعة بالاسم</button>
+    <button class="btn-red" onclick="deleteWholeCollection()">حذف المجموعة بالكامل</button>
+   </div>
+   <div class="danger-note">حذف المجموعة بالكامل يمسح كل المستندات داخلها. لا تستخدمه إلا إذا كنت متأكداً من اسم المجموعة ومحتواها.</div>
+   <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th><input type="checkbox" id="selectAllDocs" style="width:auto" onchange="toggleAllDocs(this)"></th><th>معرّف السجل</th><th>ملخص البيانات</th><th>تاريخ تقريبي</th><th>إجراء</th></tr></thead><tbody id="docsBody"><tr><td colspan="5">اختر مجموعة لعرض بياناتها.</td></tr></tbody></table></div>
+   <div id="dbProgress" class="progress hidden"><span id="dbProgressBar"></span></div>
+  </div>
+  <div id="storageTab" class="panel hidden">
+   <h3>إدارة الملفات والصور (Firebase Storage)</h3>
+   <div class="toolbar">
+    <input id="storagePath" placeholder="المسار داخل Storage — اتركه فارغاً للجذر" value="">
+    <button class="btn-blue" onclick="loadStorage()">عرض المسار</button>
+    <button class="btn-light" onclick="goStorageRoot()">الجذر</button>
+    <button class="btn-red" onclick="deleteCurrentFolder()">حذف محتويات هذا المجلد بالكامل</button>
+   </div>
+   <div class="muted" style="font-size:12px;margin-bottom:10px">المسار الحالي: <b id="storageCurrent">/</b> — افتح المجلد بالضغط على اسمه، وحدد الملفات لحذفها.</div>
+   <div id="storageList" class="panel" style="padding:0;margin:0">اضغط «عرض المسار» لعرض الملفات.</div>
+   <div class="toolbar" style="margin-top:12px"><button class="btn-red" onclick="deleteSelectedFiles()">حذف الملفات المحددة</button></div>
+   <div id="storageProgress" class="progress hidden"><span id="storageProgressBar"></span></div>
+  </div>
+  <div id="setupTab" class="panel hidden">
+   <h3>إعداد صلاحية المدير وقواعد الحماية</h3>
+   <p>هذه الصفحة تستخدم Google Authentication وتتحقق من وجود مستند اعتماد باسم UID حسابك داخل مجموعة <b>admins</b>، ومعه <b>active: true</b>. يلزم إعداد هذا الاعتماد وقواعد Firebase مرة واحدة بواسطة مالك المشروع.</p>
+   <div class="stat"><small>UID حساب Google الحالي</small><b id="currentUid" style="font-size:14px;overflow-wrap:anywhere">—</b><button class="btn-light" onclick="copyUid()">نسخ UID</button></div>
+   <h4>1) إنشاء اعتماد المدير لمرة واحدة</h4>
+   <p>من Firebase Authentication فعّل Google وسجّل دخولك بهذا الملف مرة، ثم انسخ UID أعلاه وأنشئ مستنداً في Firestore:</p>
+   <pre>Collection: admins
+Document ID: [ضع UID حسابك هنا]
+Fields:
+  active : true
+  email  : "your-google-email@gmail.com"</pre>
+   <h4>2) قواعد Firestore المقترحة</h4>
+   <p>تأكد من دمج القواعد مع قواعد تطبيقك الحالية وعدم استبدال قواعد أخرى يحتاجها النظام دون مراجعتها. هذه القواعد تمنح صلاحية القراءة/الحذف للمدير المعتمد فقط على المجموعات غير الحساسة المحددة:</p>
+   <pre id="firestoreRules"></pre>
+   <h4>3) قواعد Firebase Storage</h4>
+   <pre id="storageRules"></pre>
+   <div class="danger-note">مهم: لا تضع كلمة مرور أو مفتاح خدمة Admin SDK داخل ملف HTML. أي كود في المتصفح يمكن للمستخدمين رؤيته. الحماية الحقيقية تعتمد على Firebase Security Rules، وليس إخفاء الأزرار فقط.</div>
+  </div>
+ </section>
+</main>
+<div id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script>
+const firebaseConfig = {
+ apiKey:"AIzaSyAo4cdiLNInZoVPA6kFkDUl1tWaxcLVtKk",
+ authDomain:"auto-non-b841f.firebaseapp.com",
+ projectId:"auto-non-b841f",
+ storageBucket:"auto-non-b841f.firebasestorage.app",
+ messagingSenderId:"512423300329",
+ appId:"1:512423300329:web:190310e1c4b80c9921b478",
+ measurementId:"G-ZG5RQBB3GL"
+};
+const COLLECTIONS = [
+ "inventory","accounts_log","suppliers_list","suppliers","stores_list","installation_services",
+ "returns_log","dept_requests","issue_orders","inventory_categories","inventory_movements",
+ "supplier_issue_orders","supplier_ledger","supplier_returns","returns_exchanges","cars",
+ "supplier_payment_archive","treasury_transactions","customers","customer_accounts","invoices",
+ "daily_sales","daily_closings","users","employees","delivery_applications","orders","settings",
+ "admins"
+];
+let auth, db, storage, currentUser=null, currentCollection="inventory", docsCache=[], storageItems=[], currentStoragePath="";
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$("toast");t.textContent=msg;t.style.display="block";clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.style.display="none",4500)}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function safeDate(d){for(const k of ["date","dateStr","createdAt","updatedAt","timestamp"]){if(d&&d[k]){let x=d[k].toDate?d[k].toDate():new Date(d[k]);if(!isNaN(x))return x.toLocaleString("ar-EG")}}return "—"}
+function adminRef(){return db.collection("admins").doc(currentUser.uid)}
+async function loginGoogle(){
+ if(!["http:","https:","chrome-extension:"].includes(location.protocol)){
+  $("loginError").innerHTML='يجب تشغيل البرنامج من خلال المشغّل المرفق، وليس بفتح ملف HTML مباشرة. شغّل ملف <b>تشغيل_إدارة_السيرفر.bat</b> ثم افتح العنوان المحلي الذي يظهر لك.';
+  $("loginError").classList.remove("hidden");return;
+ }
+ try{const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});await auth.signInWithPopup(provider)}
+ catch(e){
+  const extra=(e.code==="auth/operation-not-supported-in-this-environment")
+   ?" تأكد أيضاً من تفعيل Web Storage في المتصفح وعدم استخدام وضع يمنعه."
+   :"";
+  $("loginError").textContent="تعذر تسجيل الدخول: "+e.message+extra;
+  $("loginError").classList.remove("hidden")
+ }
+}
+async function signOutNow(){await auth.signOut()}
+async function onAuth(user){
+ currentUser=user;
+ if(!user){$("loginView").classList.remove("hidden");$("appView").classList.add("hidden");$("headerActions").classList.add("hidden");return}
+ try{
+  const admin=await adminRef().get();
+  if(!admin.exists||admin.data().active!==true){
+   await auth.signOut();
+   $("loginError").textContent="هذا الحساب غير معتمد كمدير. يجب إضافة UID إلى مجموعة admins وتعيين active = true.";
+   $("loginError").classList.remove("hidden");return;
+  }
+  $("loginError").classList.add("hidden");$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");$("headerActions").classList.remove("hidden");
+  $("userEmail").textContent=user.email||"حساب Google";$("currentUid").textContent=user.uid;
+  $("collectionSelect").innerHTML=COLLECTIONS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+  $("firestoreRules").textContent=makeFirestoreRules();$("storageRules").textContent=makeStorageRules();
+  await refreshAll();
+ }catch(e){await auth.signOut();$("loginError").textContent="تعذر التحقق من صلاحية المدير. راجع قواعد Firebase: "+e.message;$("loginError").classList.remove("hidden")}
+}
+function makeFirestoreRules(){return `rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+   function isAdmin() {
+     return request.auth != null &&
+       exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+       get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+   }
+   match /admins/{uid} {
+     allow read: if request.auth != null && request.auth.uid == uid;
+     // إدارة مستندات admins تكون من المالك عبر إعداد آمن منفصل.
+     allow write: if false;
+   }
+   match /{collection}/{docId} {
+     allow read, delete: if isAdmin();
+     allow create, update: if isAdmin();
+   }
+ }
+}`;}
+function makeStorageRules(){return `rules_version = '2';
+service firebase.storage {
+ match /b/{bucket}/o {
+   function isAdmin() {
+     return request.auth != null &&
+       firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+       firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.active == true;
+   }
+   match /{allPaths=**} {
+     allow read, delete: if isAdmin();
+     // لا تمنح create/update لهذا الملف الإداري إلا إذا كان مطلوباً ومراجعاً.
+   }
+ }
+}`;}
+function switchTab(tab){
+ ["database","storage","setup"].forEach(x=>{$(x+"Tab").classList.toggle("hidden",x!==tab);document.querySelector(`[data-tab="${x}"]`).classList.toggle("active",x===tab)});
+ if(tab==="storage")loadStorage();
+}
+async function refreshAll(){await loadCollection();$("collectionCount").textContent=COLLECTIONS.length;toast("تم تحديث بيانات الاتصال")}
+function loadCustomCollection(){const v=$("newCollection").value.trim();if(!/^[A-Za-z0-9_-]{1,120}$/.test(v)){toast("اكتب اسم مجموعة صحيحاً باللغة الإنجليزية");return}if(!COLLECTIONS.includes(v)){COLLECTIONS.push(v);$("collectionSelect").insertAdjacentHTML("beforeend",`<option value="${esc(v)}">${esc(v)}</option>`)}$("collectionSelect").value=v;loadCollection()}
+async function loadCollection(){
+ currentCollection=$("collectionSelect").value||currentCollection;$("docsBody").innerHTML='<tr><td colspan="5">جارٍ التحميل...</td></tr>';
+ try{const snap=await db.collection(currentCollection).get();docsCache=snap.docs.map(d=>({id:d.id,data:d.data()}));$("docCount").textContent=docsCache.length;renderDocs()}
+ catch(e){$("docsBody").innerHTML=`<tr><td colspan="5">فشل تحميل المجموعة: ${esc(e.message)}</td></tr>`;toast("تحقق من صلاحيات Firestore وقواعد الأمان")}
+}
+function renderDocs(){
+ const q=$("docSearch").value.trim().toLowerCase();
+ const rows=docsCache.filter(x=>(x.id+" "+JSON.stringify(x.data)).toLowerCase().includes(q));
+ $("docsBody").innerHTML=rows.map(x=>`<tr><td><input type="checkbox" class="doc-check" value="${esc(x.id)}" style="width:auto"></td><td dir="ltr">${esc(x.id)}</td><td>${esc(JSON.stringify(x.data).slice(0,260))}</td><td>${esc(safeDate(x.data))}</td><td><button class="btn-red" onclick="deleteOneDoc('${esc(x.id)}')">حذف</button></td></tr>`).join("")||'<tr><td colspan="5">لا توجد سجلات مطابقة.</td></tr>';
+ $("selectAllDocs").checked=false;
+}
+function toggleAllDocs(master){document.querySelectorAll(".doc-check").forEach(c=>c.checked=master.checked)}
+async function deleteRefsInBatches(refs,progressId){
+ const total=refs.length;let done=0;
+ for(let i=0;i<total;i+=400){const batch=db.batch();refs.slice(i,i+400).forEach(r=>batch.delete(r));await batch.commit();done=Math.min(i+400,total);if(progressId){$(progressId).classList.remove("hidden");$(progressId+"Bar").style.width=(done/total*100)+"%"}}
+}
+async function deleteOneDoc(id){if(currentCollection==="admins"){toast("حذف صلاحيات المدير غير متاح من هذه الأداة");return}if(!confirm("حذف نهائي للسجل "+id+"؟"))return;try{await db.collection(currentCollection).doc(id).delete();docsCache=docsCache.filter(x=>x.id!==id);renderDocs();$("docCount").textContent=docsCache.length;toast("تم حذف السجل من Firestore")}catch(e){toast("فشل الحذف: "+e.message)}}
+async function deleteSelectedDocs(){
+ if(currentCollection==="admins"){toast("حذف صلاحيات المدير غير متاح من هذه الأداة");return}
+ const ids=[...document.querySelectorAll(".doc-check:checked")].map(x=>x.value);if(!ids.length){toast("حدد سجلات أولاً");return}
+ if(!confirm(`تأكيد حذف ${ids.length} سجل نهائياً من مجموعة ${currentCollection}؟`))return;
+ try{await deleteRefsInBatches(ids.map(id=>db.collection(currentCollection).doc(id)),"dbProgress");await loadCollection();toast("اكتمل حذف السجلات المحددة")}catch(e){toast("توقف الحذف بسبب خطأ: "+e.message)}
+}
+async function deleteWholeCollection(){
+ if(currentCollection==="admins"){toast("لا يمكن حذف مجموعة admins من هذه الأداة");return}
+ if(!confirm(`تحذير شديد: سيتم حذف كل مستندات مجموعة ${currentCollection} (${docsCache.length} سجل معروض). هل أنت متأكد؟`))return;
+ if(!confirm("تأكيد أخير: الحذف نهائي ولا يمكن استرجاعه إلا من نسخة احتياطية. متابعة؟"))return;
+ try{
+  const snap=await db.collection(currentCollection).get();const refs=snap.docs.map(d=>d.ref);
+  await deleteRefsInBatches(refs,"dbProgress");await loadCollection();toast("تم حذف محتويات المجموعة بالكامل")}
+ catch(e){toast("فشل حذف المجموعة: "+e.message)}
+}
+async function goStorageRoot(){$("storagePath").value="";currentStoragePath="";await loadStorage()}
+async function loadStorage(){
+ try{
+  currentStoragePath=$("storagePath").value.trim().replace(/^\/+|\/+$/g,"");$("storageCurrent").textContent="/"+currentStoragePath;
+  const ref=storage.ref(currentStoragePath||"/");const result=await ref.listAll();
+  storageItems=[...result.prefixes.map(x=>({kind:"folder",name:x.name,fullPath:x.fullPath,ref:x})),...result.items.map(x=>({kind:"file",name:x.name,fullPath:x.fullPath,ref:x}))];
+  $("storageCount").textContent=storageItems.length;
+  $("storageList").innerHTML=storageItems.map((x,i)=>`<div class="file-row"><input type="checkbox" class="storage-check" data-index="${i}" style="width:auto"><span>${x.kind==="folder"?"📁":"📄"}</span><div class="path"><b>${esc(x.name)}</b><small dir="ltr">${esc(x.fullPath)}</small></div>${x.kind==="folder"?`<button class="btn-light" onclick="openFolder('${esc(x.fullPath)}')">فتح</button>`:`<button class="btn-light" onclick="openFile('${esc(x.fullPath)}')">رابط</button>`}</div>`).join("")||'<div style="padding:18px;text-align:center">المجلد فارغ.</div>';
+ }catch(e){$("storageList").textContent="تعذر عرض الملفات: "+e.message;toast("راجع قواعد Firebase Storage")}
+}
+function openFolder(path){$("storagePath").value=path;loadStorage()}
+async function openFile(path){try{const u=await storage.ref(path).getDownloadURL();window.open(u,"_blank","noopener")}catch(e){toast("تعذر فتح الملف: "+e.message)}}
+async function collectFilesRecursive(ref,out=[]){
+ const r=await ref.listAll();out.push(...r.items);
+ for(const folder of r.prefixes)await collectFilesRecursive(folder,out);
+ return out;
+}
+async function deleteSelectedFiles(){
+ const selected=[...document.querySelectorAll(".storage-check:checked")].map(c=>storageItems[Number(c.dataset.index)]).filter(Boolean);
+ if(!selected.length){toast("حدد ملفات أو مجلدات أولاً");return}
+ if(!confirm(`سيتم حذف ${selected.length} عنصر محدد. المجلدات ستحذف بكل الملفات والمجلدات الفرعية. متابعة؟`))return;
+ try{
+  const files=[];for(const item of selected){if(item.kind==="file")files.push(item.ref);else await collectFilesRecursive(item.ref,files)}
+  for(let i=0;i<files.length;i++){await files[i].delete();$("storageProgress").classList.remove("hidden");$("storageProgressBar").style.width=((i+1)/Math.max(files.length,1)*100)+"%"}
+  await loadStorage();toast(`تم حذف ${files.length} ملف من Storage`)
+ }catch(e){toast("تعذر إكمال الحذف: "+e.message)}
+}
+async function deleteCurrentFolder(){
+ const path=currentStoragePath||"";
+ if(!path){toast("حذف الجذر بالكامل غير مسموح من هذه الأداة. افتح مجلداً محدداً.");return}
+ if(!confirm(`حذف كل الملفات داخل المجلد /${path} وكل المجلدات الفرعية؟`))return;
+ if(!confirm("تأكيد نهائي: سيتم حذف كل المحتويات بشكل نهائي. متابعة؟"))return;
+ try{const files=await collectFilesRecursive(storage.ref(path),[]);for(let i=0;i<files.length;i++){await files[i].delete();$("storageProgress").classList.remove("hidden");$("storageProgressBar").style.width=((i+1)/Math.max(files.length,1)*100)+"%"}await loadStorage();toast(`تم حذف محتويات المجلد (${files.length} ملف)`)}
+ catch(e){toast("فشل حذف المجلد: "+e.message)}
+}
+function copyUid(){navigator.clipboard.writeText(currentUser.uid).then(()=>toast("تم نسخ UID")).catch(()=>toast("انسخ UID يدوياً"))}
+try{
+ firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.firestore();storage=firebase.storage();
+ auth.onAuthStateChanged(onAuth);
+}catch(e){$("loginError").textContent="تعذر تشغيل Firebase SDK: "+e.message;$("loginError").classList.remove("hidden")}
+</script>
+</body></html>
